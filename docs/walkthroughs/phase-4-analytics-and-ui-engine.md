@@ -1,67 +1,98 @@
-# Phase 4 Walkthrough — Visual Analytics Suite & Global Command Palette
+# Technical & Engineering Guide: Phase 4 — Executive Analytics, Sizing Distribution & UI Engine
 
-## 1. Module Overview
+## 1. Module Overview & Industrial Role
 
-Phase 4 introduces executive business intelligence and rapid keyboard accessibility to the `MyEquator` ERP platform. The factory management team can now track real-time revenue velocity, visualize footwear mold tooling demand curves, monitor client brand concentration, and forecast raw material stock depletion rates.
+Phase 4 equips factory leadership and production managers with **Executive Business Analytics**, interactive data visualizations, and the **Global Command Palette (`⌘K`)**. It bridges raw transactional ERP data with actionable factory capacity planning, mold utilization, and material burn rate forecasts.
+
+---
+
+## 2. Analytics Math & Calculations (`src/services/analyticsService.ts`)
 
 ```
 +-----------------------------------------------------------------------------------+
-|                           Phase 4: Analytics & Command Palette                    |
+|                            Executive Analytics Suite                              |
 +-----------------------------------------------------------------------------------+
-|  1. Executive Financial KPIs      |  2. Size Breakdown Bell Curve Visualizer      |
-|     - Total Revenue (IDR) & MoM%  |     - EU 35–46 continuous normal curve        |
-|     - Shipped vs Scheduled Pairs  |     - Automated mold peak volume identification|
-|     - Average Order Value (AOV)   |     - Cumulative percentage shares            |
-+-----------------------------------+-----------------------------------------------+
-|  3. Buyer Concentration Donut     |  4. Material Burn Rate & DSI Forecast         |
-|     - Client share segment breakdown|    - Projected Days of Inventory Remaining   |
-|     - Revenue concentration       |     - Reorder risk threshold indicators       |
-+-----------------------------------+-----------------------------------------------+
-|                      5. Global Command Palette (`⌘K` / `Ctrl+K`)                   |
-|       Instant fuzzy search, cross-tab navigation & 1-click factory actions        |
-+-----------------------------------------------------------------------------------+
+|  1. IDR Financial Revenue Trend    |  2. Sizing Bell Curve (Gaussian Normal)       |
+|     - Monthly IDR revenue & MoM %  |     - Peak mold highlighting (EU 40-41)      |
+|     - Total volume pairs scheduled |     - Tooling utilization distribution       |
++------------------------------------+----------------------------------------------+
+|  3. Customer Share Donut           |  4. Material Burn Rate & Days of Supply      |
+|     - Revenue share percentage     |     - Current stock vs monthly consumption   |
+|     - Top contributor insight strip|     - Days of Supply (DSI) projection        |
++------------------------------------+----------------------------------------------+
 ```
 
----
+### 2.1 Month-over-Month (MoM) Revenue Growth
+$$\text{MoM Growth \%} = \frac{\text{Revenue}_{\text{Current Month}} - \text{Revenue}_{\text{Previous Month}}}{\text{Revenue}_{\text{Previous Month}}} \times 100$$
 
-## 2. Mathematical Modeling & Algorithms
+### 2.2 Sizing Bell Curve Distribution (Footwear Gaussian Distribution)
+In footwear manufacturing, sizes follow a normal Gaussian bell curve with peak demand concentrated at EU 40–41:
 
-### 2.1 Footwear Sizing Bell Curve Formulation
-In industrial shoe last (*acuan sepatu*) production, demand typically follows a Gaussian-like bell distribution centered around regional median sizes (e.g., EU 40–42 in Southeast Asian adult footwear).
+$$\text{Gaussian Probability Density: } f(x) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{(x - \mu)^2}{2\sigma^2}}$$
+- Mean $\mu = 40.5$, Standard Deviation $\sigma \approx 1.8$
+- The Analytics visualizer identifies peak tooling sizes (e.g. `Mould Utama: EU 40 - 41`), allowing production managers to allocate high-speed injection press stations accordingly.
 
-For any size matrix $S \in \{35, 36, \dots, 46\}$:
-$$\text{Percentage}(S) = \frac{\text{Volume}(S)}{\sum_{i=35}^{46} \text{Volume}(i)} \times 100\%$$
+### 2.3 Material Burn Rate & Days of Supply (DSI)
+$$\text{Estimated Monthly Burn} = \frac{\text{Historical Usage}}{\text{Months Elapsed}}$$
+$$\text{Projected Days of Supply (DSI)} = \frac{\text{Current Stock}}{\text{Daily Consumption Rate}} = \frac{\text{Current Stock}}{\text{Estimated Monthly Burn} / 30}$$
 
-The **Peak Mold Tooling Index** is calculated dynamically:
-$$\text{Peak} = \arg\max_{S} \left( \text{Volume}(S) \right)$$
-
-### 2.2 Days Sales of Inventory (DSI) & Stock Runaway
-To prevent factory work stoppages caused by EVA sheet or latex shortage:
-$$\text{Burn Rate}_{\text{daily}} = \frac{\text{Estimated Monthly Burn}}{30}$$
-$$\text{Days Remaining} = \frac{\text{Current Stock (Units)}}{\text{Burn Rate}_{\text{daily}}}$$
-
-Health states are classified:
-- **Healthy:** $\text{Days Remaining} \ge 30\text{ days}$
-- **Warning / Reorder:** $15 \le \text{Days Remaining} < 30\text{ days}$
-- **Critical:** $\text{Days Remaining} < 15\text{ days}$
+If $\text{DSI} \le 15\text{ days}$, the system automatically flags the SKU as `CRITICAL / RESTOCK`.
 
 ---
 
-## 3. Directory & File Manifest
+## 3. Data Visualizations & SVG Geometry
 
-| File Path | Description |
-| :--- | :--- |
-| [`src/services/analyticsService.ts`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/services/analyticsService.ts) | Aggregates database metrics into financial KPIs, monthly trends, size distributions, customer shares, and stock burn rates. |
-| [`src/app/api/analytics/route.ts`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/app/api/analytics/route.ts) | REST API endpoint returning real-time aggregated analytics JSON. |
-| [`src/components/dashboard/AnalyticsDashboard.tsx`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/components/dashboard/AnalyticsDashboard.tsx) | Executive analytics dashboard container with period filter and CSV export. |
-| [`src/components/dashboard/RevenueVolumeChart.tsx`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/components/dashboard/RevenueVolumeChart.tsx) | Interactive SVG Area & Line chart with IDR currency scaling and hover tooltips. |
-| [`src/components/dashboard/SizeBellCurveChart.tsx`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/components/dashboard/SizeBellCurveChart.tsx) | Footwear sizing bell curve with peak mold highlights and bar overlays. |
-| [`src/components/dashboard/CustomerShareDonut.tsx`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/components/dashboard/CustomerShareDonut.tsx) | Segmented SVG Donut chart with animated arcs and buyer share breakdown. |
-| [`src/components/dashboard/MaterialBurnRateHeatmap.tsx`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/components/dashboard/MaterialBurnRateHeatmap.tsx) | Material depletion forecast cards with progress gauges and risk badges. |
-| [`src/components/common/CommandPalette.tsx`](file:///Users/lonard/Desktop/MyEquator-seconditer/src/components/common/CommandPalette.tsx) | Global keyboard-driven (`⌘K` / `Ctrl+K`) modal for rapid cross-module navigation. |
+### 3.1 Zero-Leeway Customer Share Donut (`CustomerShareDonut.tsx`)
+Calculates parametric circular SVG slice arcs $(x, y)$ from percentage angles with a centered KPI donut readout:
+
+```typescript
+export function getCoordinatesForPercent(percent: number, radius: number, cx: number, cy: number) {
+  const x = cx + radius * Math.cos(2 * Math.PI * percent);
+  const y = cy + radius * Math.sin(2 * Math.PI * percent);
+  return { x, y };
+}
+```
+
+### 3.2 Dynamic Interactive Revenue Chart (`RevenueTrendChart.tsx`)
+- Displays monthly bar columns with animated IDR currency popups.
+- Formats monetary values with proper Indonesian separators (`Rp 185.000.000`).
 
 ---
 
-## 4. Key Learnings & Architectural Notes
-1. **Lightweight SVG vs Bloated Charting Libraries:** Writing clean, native SVG visualizers avoids large external chart bundle overhead, guaranteeing sub-second load times on low-power warehouse computers.
-2. **Keyboard Ergonomics (`⌘K`):** Factory operators managing hundreds of delivery slips benefit immensely from keyboard shortcuts that allow instant jumping between orders, stock checks, and CAD tooling without touching the mouse.
+## 4. Global Command Palette (`src/components/common/CommandPalette.tsx`)
+
+A keyboard-first launcher accessible anywhere via `⌘K` (Mac) or `Ctrl+K` (Windows/Linux):
+- Quick search across all Delivery Orders, Customer Names, and Material SKUs.
+- Direct navigation across all 6 factory modules (`Surat Jalan`, `Digitizer`, `Inventori`, `CAD Studio`, `Analitik`, `Keamanan`).
+- 1-Click modal triggers (`+ Buat DO Baru`, `Buka Khatulistiwa AI Assistant`, `Pengaturan Tampilan`).
+
+---
+
+## 5. UI Customization Engine (`src/components/common/SettingsModal.tsx`)
+
+The UI engine supports 4 global appearance dimensions saved to HTML dataset attributes:
+1. **UI Density Mode (`data-density`):**
+   - `compact`: 0.85x scale for dense high-volume data entry workstations.
+   - `normal`: 1.0x standard factory floor desktop default.
+   - `large`: 1.15x scaled touch mode for tablet devices and inspection stations.
+2. **Layout Width (`data-width`):**
+   - `fluid`: 100% full-width expansive widescreen dashboard.
+   - `boxed`: 1280px centered container for executive laptops.
+3. **Theme Mode (`data-theme`):**
+   - `light`: Crisp high-contrast daylight mode for factory offices.
+   - `dark`: Low-strain dark theme with darkred `#8B0000` accents.
+4. **Bilingual Switcher (`data-lang`):**
+   - Instant real-time language switcher between Bahasa Indonesia (`ID`) and English (`EN`).
+
+---
+
+## 6. How to Build & Test Phase 4
+
+1. **Verify Analytics Endpoint:**
+   Navigate to `/api/analytics` to verify revenue trends, size distributions, and material burn rates.
+2. **Test Command Palette Shortcut:**
+   Press `⌘K` or `Ctrl+K` to open the launcher and search for an order or material SKU.
+3. **Run Production Build:**
+   ```bash
+   npm run build
+   ```
