@@ -12,9 +12,11 @@ import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer"
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
+import { SecurityDashboard } from "@/components/security/SecurityDashboard";
 import { CommandPalette } from "@/components/common/CommandPalette";
 import { KhatulistiwaAssistant } from "@/components/assistant/KhatulistiwaAssistant";
 import { SettingsModal } from "@/components/common/SettingsModal";
+import { FACTORY_DEMO_ACCOUNTS, FactoryUser } from "@/lib/auth/types";
 import {
   FileText,
   Boxes,
@@ -37,6 +39,9 @@ export default function HomePage() {
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
   const [currentTab, setCurrentTab] = useState<NavTab>("DELIVERY_ORDERS");
+
+  // Factory Authentication & Active User
+  const [currentUser, setCurrentUser] = useState<FactoryUser>(FACTORY_DEMO_ACCOUNTS[0]);
 
   // UI Settings State (5-tier density)
   const [density, setDensity] = useState<DensityMode>("normal");
@@ -177,6 +182,8 @@ export default function HomePage() {
         onLanguageToggle={handleLanguageToggle}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        currentUser={currentUser}
+        onOpenSecurity={() => setCurrentTab("SECURITY")}
       />
 
       {/* Main Workspace Layout Shell */}
@@ -436,29 +443,11 @@ export default function HomePage() {
           ) : currentTab === "ANALYTICS" ? (
             <AnalyticsDashboard language={language} />
           ) : (
-            /* Upcoming Modules Placeholder (Security) */
-            <div className="flex-1 flex items-center justify-center p-8 text-center animate-in fade-in duration-200">
-              <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="inline-flex p-3 rounded-2xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400 shadow-inner">
-                  <ShieldCheck className="h-8 w-8" />
-                </div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                  {isId ? "Modul ini dijadwalkan pada fase berikutnya" : "Module Scheduled for Upcoming Phase"}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {isId
-                    ? "Arsitektur, skema database, dan panduan AGENTS.md telah siap untuk dikembangkan."
-                    : "Architecture and database schema ready in accordance with AGENTS.md roadmap."}
-                </p>
-                <button
-                  onClick={() => setCurrentTab("DELIVERY_ORDERS")}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-semibold hover:bg-[#A00000] active:scale-95 shadow-md transition"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  <span>{isId ? "Kembali ke Surat Jalan" : "Back to Delivery Orders"}</span>
-                </button>
-              </div>
-            </div>
+            <SecurityDashboard
+              currentUser={currentUser}
+              onUserChange={setCurrentUser}
+              language={language}
+            />
           )}
         </main>
       </div>
@@ -556,11 +545,18 @@ export default function HomePage() {
         </button>
 
         <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="flex flex-col items-center text-[10px] font-bold text-gray-500 dark:text-gray-400 active:scale-95 transition"
+          onClick={() => {
+            setCurrentTab("SECURITY");
+            setIsMobileDetailOpen(false);
+          }}
+          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
+            currentTab === "SECURITY"
+              ? "text-[#8B0000] dark:text-red-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
         >
-          <Sliders className="h-5 w-5" />
-          <span>Settings</span>
+          <ShieldCheck className="h-5 w-5" />
+          <span>Keamanan</span>
         </button>
       </div>
 
