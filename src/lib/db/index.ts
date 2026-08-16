@@ -10,11 +10,37 @@ if (!fs.existsSync(dbDir)) {
 }
 
 const dbPath = path.join(dbDir, "myequator.db");
-const sqlite = new Database(dbPath);
 
-// Enable SQLite Write-Ahead Logging for high concurrency and performance
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
+// Maintain singleton on globalThis to prevent V8 GC / CleanupHook crash during Next.js dev reloads and concurrent API requests
+declare global {
+  // eslint-disable-next-line no-var
+  var _sqlite: InstanceType<typeof Database> | undefined;
+  // eslint-disable-next-line no-var
+  var _db: ReturnType<typeof drizzle<typeof schema>> | undefined;
+}
 
-export const db = drizzle(sqlite, { schema });
+const sqlite =
+  globalThis._sqlite ??
+  (() => {
+    const client = new Database(dbPath);
+    client.pragma("journal_mode = WAL");
+    client.pragma("foreign_keys = ON");
+    client.pragma("busy_timeout = 5000");
+    return client;
+  })();
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis._sqlite = sqlite;
+}
+
+export const db =
+  globalThis._db ??
+  (() => {
+    const instance = drizzle(sqlite, { schema });
+    if (process.env.NODE_ENV !== "production") {
+      globalThis._db = instance;
+    }
+    return instance;
+  })();
+
 export { sqlite };

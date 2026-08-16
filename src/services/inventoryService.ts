@@ -233,29 +233,30 @@ export class InventoryService {
    * Retrieves movement history log with material names
    */
   static async getMovements(materialId?: string): Promise<StockMovement[]> {
-    let rows;
-    if (materialId) {
-      rows = await db
-        .select()
-        .from(inventoryMovements)
-        .where(eq(inventoryMovements.materialId, materialId))
-        .orderBy(desc(inventoryMovements.createdAt));
-    } else {
-      rows = await db
-        .select()
-        .from(inventoryMovements)
-        .orderBy(desc(inventoryMovements.createdAt))
-        .limit(100);
-    }
+    const baseQuery = db
+      .select({
+        id: inventoryMovements.id,
+        materialId: inventoryMovements.materialId,
+        materialName: materials.name,
+        type: inventoryMovements.type,
+        quantity: inventoryMovements.quantity,
+        referenceNumber: inventoryMovements.referenceNumber,
+        operatorName: inventoryMovements.operatorName,
+        notes: inventoryMovements.notes,
+        createdAt: inventoryMovements.createdAt,
+      })
+      .from(inventoryMovements)
+      .leftJoin(materials, eq(inventoryMovements.materialId, materials.id))
+      .orderBy(desc(inventoryMovements.createdAt));
 
-    // Map material names
-    const allMaterials = await this.getAllMaterials();
-    const matMap = new Map(allMaterials.map((m) => [m.id, m.name]));
+    const rows = materialId
+      ? await baseQuery.where(eq(inventoryMovements.materialId, materialId)).limit(100)
+      : await baseQuery.limit(100);
 
     return rows.map((r) => ({
       id: r.id,
       materialId: r.materialId,
-      materialName: matMap.get(r.materialId) || "Unknown Material",
+      materialName: r.materialName || "Unknown Material",
       type: r.type as MovementType,
       quantity: r.quantity,
       referenceNumber: r.referenceNumber || undefined,
