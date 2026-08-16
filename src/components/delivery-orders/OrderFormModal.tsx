@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FootwearSize, SizeBreakdown } from "@/types";
-import { X, Plus, Trash2, Save, Calculator, Grid, Touchpad } from "lucide-react";
+import { X, Plus, Trash2, Save, Calculator, Grid, Touchpad, Sparkles } from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
 import { TouchSizePad } from "./TouchSizePad";
 
@@ -10,6 +10,7 @@ interface OrderFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialDraftData?: any;
   language: "id" | "en";
 }
 
@@ -29,6 +30,7 @@ export function OrderFormModal({
   isOpen,
   onClose,
   onSuccess,
+  initialDraftData,
   language,
 }: OrderFormModalProps) {
   const isId = language === "id";
@@ -58,6 +60,64 @@ export function OrderFormModal({
   ]);
 
   const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
+
+  // Sync initialDraftData if provided (e.g. from Khatulistiwa AI assistant)
+  useEffect(() => {
+    if (initialDraftData && isOpen) {
+      setRecipientName(initialDraftData.recipient_name || "");
+      setDestinationAddress(initialDraftData.destination_address || "");
+      setPoNumber(initialDraftData.po_number || "");
+      setVehicleNumber(initialDraftData.vehicle_number || "");
+      setDriverName(initialDraftData.driver_name || "");
+      setDeliveryDate(initialDraftData.delivery_date || new Date().toISOString().split("T")[0]);
+      setNotes(initialDraftData.notes || "");
+
+      if (Array.isArray(initialDraftData.items) && initialDraftData.items.length > 0) {
+        const mappedItems: FormItem[] = initialDraftData.items.map((it: any, idx: number) => {
+          const parsedSizes: SizeBreakdown = {};
+          if (it.sizes && typeof it.sizes === "object") {
+            Object.entries(it.sizes).forEach(([s, q]) => {
+              const numS = parseInt(s, 10);
+              const numQ = typeof q === "number" ? q : parseInt(q as string, 10);
+              if (!isNaN(numS) && !isNaN(numQ)) {
+                parsedSizes[numS as FootwearSize] = numQ;
+              }
+            });
+          }
+          return {
+            id: `item-${Date.now()}-${idx}`,
+            articleCode: it.article_code || `EQ-ART-0${idx + 1}`,
+            articleName: it.article_name || "Insole Custom Moulded",
+            colorway: it.colorway || "Black",
+            unitPrice: it.unit_price || 20000,
+            sizes: parsedSizes,
+            notes: it.notes || "",
+          };
+        });
+        setItems(mappedItems);
+      }
+    } else if (isOpen && !initialDraftData) {
+      // Default initial state
+      setRecipientName("");
+      setDestinationAddress("");
+      setPoNumber("");
+      setVehicleNumber("");
+      setDriverName("");
+      setDeliveryDate(new Date().toISOString().split("T")[0]);
+      setNotes("");
+      setItems([
+        {
+          id: "item-1",
+          articleCode: "EQ-SPORT-01",
+          articleName: "Insole EVA Ortho Sport EQ-01",
+          colorway: "Black / Red",
+          unitPrice: 18500,
+          sizes: { 38: 20, 39: 50, 40: 50, 41: 50, 42: 30 },
+          notes: "Laminasi BK Mesh",
+        },
+      ]);
+    }
+  }, [initialDraftData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -99,8 +159,6 @@ export function OrderFormModal({
   };
 
   const handleTouchPadChange = (newSizes: SizeBreakdown) => {
-    const activeItem = items[activeItemIndex];
-    if (!activeItem) return;
     setItems(
       items.map((item, idx) => (idx === activeItemIndex ? { ...item, sizes: newSizes } : item))
     );
@@ -164,12 +222,18 @@ export function OrderFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
           <div>
             <h3 className="font-bold text-base text-gray-900 dark:text-white flex items-center gap-2">
               {isId ? "Buat Surat Jalan (Delivery Order) Baru" : "Create New Delivery Order"}
+              {initialDraftData && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center gap-1 border border-emerald-300">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Khatulistiwa AI Staged</span>
+                </span>
+              )}
             </h3>
             <p className="text-xs text-gray-500">
               {isId ? "Nomor surat jalan di-generate otomatis: SJ/EQ/YYYY/MM/XXXX" : "Standard auto-increment numbering"}
@@ -177,7 +241,7 @@ export function OrderFormModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
           >
             <X className="h-5 w-5" />
           </button>
@@ -197,7 +261,7 @@ export function OrderFormModal({
                 placeholder="e.g. PT INDO SEPATU MAJU"
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -210,7 +274,7 @@ export function OrderFormModal({
                 placeholder="e.g. PO-8821 / SPK-04"
                 value={poNumber}
                 onChange={(e) => setPoNumber(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -223,7 +287,7 @@ export function OrderFormModal({
                 required
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -237,7 +301,7 @@ export function OrderFormModal({
                 placeholder="e.g. Kawasan Industri Jatake Blok C No. 12, Tangerang"
                 value={destinationAddress}
                 onChange={(e) => setDestinationAddress(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -250,7 +314,7 @@ export function OrderFormModal({
                 placeholder="e.g. Asep Sunandar"
                 value={driverName}
                 onChange={(e) => setDriverName(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -263,7 +327,7 @@ export function OrderFormModal({
                 placeholder="e.g. D 8842 AB"
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
@@ -276,7 +340,7 @@ export function OrderFormModal({
                 placeholder="e.g. Mohon stempel rangkap 3 & cek kualitas"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
           </div>
@@ -291,11 +355,11 @@ export function OrderFormModal({
 
               {/* View Switcher: Spreadsheet vs Touch Pad */}
               <div className="flex items-center space-x-2">
-                <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 text-xs font-semibold">
+                <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-0.5 text-xs font-semibold">
                   <button
                     type="button"
                     onClick={() => setInputMode("GRID")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "GRID"
                         ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                         : "text-gray-500"
@@ -307,7 +371,7 @@ export function OrderFormModal({
                   <button
                     type="button"
                     onClick={() => setInputMode("TOUCH_PAD")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "TOUCH_PAD"
                         ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                         : "text-gray-500"
@@ -321,7 +385,7 @@ export function OrderFormModal({
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#8B0000] dark:text-red-400 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#8B0000] dark:text-red-400 hover:underline active:scale-95"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>{isId ? "+ Baris Baru" : "+ Add Row"}</span>
@@ -339,7 +403,7 @@ export function OrderFormModal({
                       key={item.id}
                       type="button"
                       onClick={() => setActiveItemIndex(idx)}
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition ${
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition active:scale-95 ${
                         activeItemIndex === idx
                           ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
                           : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
@@ -351,7 +415,7 @@ export function OrderFormModal({
                 </div>
 
                 {/* Item Details Form */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
                   <div>
                     <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Kode Artikel</label>
                     <input
@@ -362,7 +426,7 @@ export function OrderFormModal({
                           items.map((it, i) => (i === activeItemIndex ? { ...it, articleCode: e.target.value } : it))
                         )
                       }
-                      className="w-full rounded border px-2 py-1 text-xs font-mono font-bold"
+                      className="w-full rounded-lg border px-2 py-1 text-xs font-mono font-bold"
                     />
                   </div>
                   <div>
@@ -375,7 +439,7 @@ export function OrderFormModal({
                           items.map((it, i) => (i === activeItemIndex ? { ...it, articleName: e.target.value } : it))
                         )
                       }
-                      className="w-full rounded border px-2 py-1 text-xs font-semibold"
+                      className="w-full rounded-lg border px-2 py-1 text-xs font-semibold"
                     />
                   </div>
                   <div>
@@ -390,7 +454,7 @@ export function OrderFormModal({
                           )
                         )
                       }
-                      className="w-full rounded border px-2 py-1 text-xs font-semibold"
+                      className="w-full rounded-lg border px-2 py-1 text-xs font-semibold"
                     />
                   </div>
                 </div>
@@ -404,7 +468,7 @@ export function OrderFormModal({
               </div>
             ) : (
               /* Spreadsheet Grid View */
-              <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto bg-gray-50/50 dark:bg-gray-800/30">
+              <div className="border border-gray-200 dark:border-gray-800 rounded-2xl overflow-x-auto bg-gray-50/50 dark:bg-gray-800/30">
                 <table className="w-full text-xs">
                   <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
                     <tr>
@@ -510,7 +574,7 @@ export function OrderFormModal({
             )}
 
             {/* Live Summary Bar */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40">
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40">
               <span className="text-xs font-semibold text-red-900 dark:text-red-200">
                 {isId ? "Total Pasang Siap Kirim:" : "Total Pairs to Ship:"}
               </span>
@@ -532,14 +596,14 @@ export function OrderFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 active:scale-95 transition"
             >
               {isId ? "Batal" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-sm transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Surat Jalan" : "Save Order"}</span>
