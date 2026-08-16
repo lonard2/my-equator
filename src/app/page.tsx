@@ -17,7 +17,6 @@ import {
   Boxes,
   Compass,
   BarChart3,
-  Bot,
   ShieldCheck,
   Plus,
   Truck,
@@ -27,8 +26,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   TrendingUp,
-  PackageCheck,
-  Clock,
   Sliders,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
@@ -398,31 +395,8 @@ export default function HomePage() {
             />
           ) : currentTab === "INVENTORY" ? (
             <InventoryDashboard language={language} />
-          ) : currentTab === "AI_ASSISTANT" ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50 dark:bg-gray-950">
-              <div className="max-w-md p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/60 inline-flex text-[#8B0000] dark:text-red-400">
-                  <Compass className="h-10 w-10 animate-spin-slow" />
-                </div>
-                <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
-                  {isId ? "Khatulistiwa AI Assistant" : "Equator AI Business Assistant"}
-                </h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  {isId
-                    ? "Asisten cerdas operasional pabrik yang siap membantu pembuatan draft Surat Jalan, monitoring stok bahan baku, dan kalkulasi BOM secara otomatis."
-                    : "Intelligent factory assistant ready to auto-draft delivery orders, query inventory balances, and compute material BOM."}
-                </p>
-                <button
-                  onClick={() => setIsAssistantOpen(true)}
-                  className="w-full py-3 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
-                >
-                  <Bot className="h-4 w-4" />
-                  <span>{isId ? "Buka Drawer Asisten AI" : "Launch AI Chat Drawer"}</span>
-                </button>
-              </div>
-            </div>
           ) : (
-            /* Upcoming Modules Placeholder (CAD & Analytics) */
+            /* Upcoming Modules Placeholder (CAD & Analytics & Security) */
             <div className="flex-1 flex items-center justify-center p-8 text-center animate-in fade-in duration-200">
               <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="inline-flex p-3 rounded-2xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400 shadow-inner">
@@ -536,14 +510,6 @@ export default function HomePage() {
         </button>
 
         <button
-          onClick={() => setIsAssistantOpen(true)}
-          className="flex flex-col items-center text-[10px] font-bold text-[#8B0000] dark:text-red-400 active:scale-95 transition"
-        >
-          <Compass className="h-5 w-5 animate-spin-slow" />
-          <span>AI Chat</span>
-        </button>
-
-        <button
           onClick={() => setIsSettingsOpen(true)}
           className="flex flex-col items-center text-[10px] font-bold text-gray-500 dark:text-gray-400 active:scale-95 transition"
         >
@@ -552,7 +518,7 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Khatulistiwa AI Assistant Floating Button & Drawer */}
+      {/* Khatulistiwa AI Assistant Truly Floating Pop-up Widget */}
       <KhatulistiwaAssistant
         isOpen={isAssistantOpen}
         onToggle={() => setIsAssistantOpen(!isAssistantOpen)}

@@ -7,11 +7,10 @@ import {
   Boxes,
   Compass,
   BarChart3,
-  Bot,
   ShieldCheck,
 } from "lucide-react";
 
-export type NavTab = "DELIVERY_ORDERS" | "DIGITIZER" | "INVENTORY" | "CAD_STUDIO" | "ANALYTICS" | "AI_ASSISTANT" | "SECURITY";
+export type NavTab = "DELIVERY_ORDERS" | "DIGITIZER" | "INVENTORY" | "CAD_STUDIO" | "ANALYTICS" | "SECURITY";
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -50,12 +49,6 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
       icon: BarChart3,
     },
     {
-      id: "AI_ASSISTANT",
-      label: isId ? "Khatulistiwa AI" : "Khatulistiwa AI",
-      icon: Bot,
-      badge: "AI",
-    },
-    {
       id: "SECURITY",
       label: isId ? "Keamanan & Backup" : "Security & Backup",
       icon: ShieldCheck,
@@ -75,9 +68,9 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition active:scale-95 ${
                 isActive
-                  ? "bg-red-50 dark:bg-red-950/50 text-[#8B0000] dark:text-red-400 font-semibold"
+                  ? "bg-red-50 dark:bg-red-950/50 text-[#8B0000] dark:text-red-400 font-bold shadow-xs border border-red-100 dark:border-red-900/40"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
@@ -86,7 +79,7 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
                 <span>{item.label}</span>
               </div>
               {item.badge && (
-                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/60 text-[#8B0000] dark:text-red-300">
+                <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/60 text-[#8B0000] dark:text-red-300">
                   {item.badge}
                 </span>
               )}
@@ -95,9 +88,9 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
         })}
       </div>
 
-      <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs">
-        <p className="font-semibold text-gray-800 dark:text-gray-200">Equator Insole System</p>
-        <p className="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5">ESC/P Dot Matrix & SQLite Ready</p>
+      <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs space-y-1">
+        <p className="font-bold text-gray-800 dark:text-gray-200">Equator Insole Bandung</p>
+        <p className="text-gray-500 dark:text-gray-400 text-[11px]">Khatulistiwa AI Copilot Ready</p>
       </div>
     </aside>
   );
