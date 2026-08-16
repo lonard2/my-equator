@@ -70,14 +70,14 @@ export default function HomePage() {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.id) {
           setCurrentUser(parsed);
+        } else {
+          setCurrentUser(null);
         }
       } else {
-        // Default to Super Admin demo account if fresh
-        setCurrentUser(FACTORY_DEMO_ACCOUNTS[0]);
-        localStorage.setItem("myequator_session", JSON.stringify(FACTORY_DEMO_ACCOUNTS[0]));
+        setCurrentUser(null);
       }
     } catch (e) {
-      setCurrentUser(FACTORY_DEMO_ACCOUNTS[0]);
+      setCurrentUser(null);
     } finally {
       setAuthInitialized(true);
     }

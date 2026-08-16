@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { users, auditLogs } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, or, desc } from "drizzle-orm";
 import { UserRole } from "@/types";
 import { FactoryUser, FACTORY_DEMO_ACCOUNTS } from "@/lib/auth/types";
 export { FACTORY_DEMO_ACCOUNTS };
@@ -22,7 +22,7 @@ export async function ensureDemoUsersSeeded(): Promise<void> {
   const now = new Date().toISOString();
 
   for (const acc of FACTORY_DEMO_ACCOUNTS) {
-    const found = existing.find((u) => u.username === acc.username);
+    const found = existing.find((u) => u.username === acc.username || u.email === acc.email);
     if (!found) {
       const salt = generateSalt();
       const hash = hashPassword(acc.plainPassword, salt);
@@ -43,10 +43,14 @@ export async function ensureDemoUsersSeeded(): Promise<void> {
   }
 }
 
-export async function authenticateUser(username: string, plainPassword: string): Promise<FactoryUser | null> {
+export async function authenticateUser(identifier: string, plainPassword: string): Promise<FactoryUser | null> {
   await ensureDemoUsersSeeded();
 
-  const [user] = await db.select().from(users).where(eq(users.username, username.trim().toLowerCase()));
+  const normalized = identifier.trim().toLowerCase();
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(or(eq(users.username, normalized), eq(users.email, normalized)));
   if (!user || user.isActive !== 1) return null;
 
   const computedHash = hashPassword(plainPassword, user.salt);

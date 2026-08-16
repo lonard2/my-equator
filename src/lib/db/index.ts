@@ -134,6 +134,13 @@ async function initializeTables(cli: ReturnType<typeof createClient>) {
         updated_at TEXT NOT NULL
       );
     `);
+
+    // Safe column migrations for existing SQLite database files
+    try {
+      await cli.execute("ALTER TABLE audit_logs ADD COLUMN user_role TEXT NOT NULL DEFAULT 'SALES_OPERATOR'");
+    } catch {
+      // Column already exists
+    }
   } catch (e) {
     // Non-fatal if tables already initialized
   }
