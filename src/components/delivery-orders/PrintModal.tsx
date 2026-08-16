@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { DeliveryOrder, FootwearSize } from "@/types";
 import { generateEscpMonospaceText } from "@/lib/printer/escp";
 import { formatIndonesianDate, formatShortDate, formatIDR, terbilang } from "@/lib/utils/formatters";
-import { X, Printer, FileDown, Terminal, FileText, Check } from "lucide-react";
+import { X, Printer, FileDown, Terminal, FileText, Check, Edit3, RefreshCw } from "lucide-react";
 
 interface PrintModalProps {
   isOpen: boolean;
@@ -20,9 +20,30 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
   const [activeTab, setActiveTab] = useState<"DOT_MATRIX" | "HTML_SHEET">("DOT_MATRIX");
   const [copied, setCopied] = useState(false);
 
+  // In-place tweaking for print overrides
+  const [customDriver, setCustomDriver] = useState("");
+  const [customVehicle, setCustomVehicle] = useState("");
+  const [customNotes, setCustomNotes] = useState("");
+
+  useEffect(() => {
+    if (order) {
+      setCustomDriver(order.driverName || "");
+      setCustomVehicle(order.vehicleNumber || "");
+      setCustomNotes(order.notes || "");
+    }
+  }, [order]);
+
   if (!isOpen || !order) return null;
 
-  const monospaceText = generateEscpMonospaceText(order);
+  // Clone order with overrides for preview
+  const previewOrder: DeliveryOrder = {
+    ...order,
+    driverName: customDriver || order.driverName,
+    vehicleNumber: customVehicle || order.vehicleNumber,
+    notes: customNotes || order.notes,
+  };
+
+  const monospaceText = generateEscpMonospaceText(previewOrder);
 
   const handleDownloadPrn = () => {
     window.open(`/api/orders/${order.id}/print-escp?format=binary`, "_blank");
@@ -40,13 +61,13 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Modal Header with Tab Switcher */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        {/* Modal Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/60">
           <div className="flex items-center space-x-3">
             <h3 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
               <Printer className="h-4 w-4 text-[#8B0000]" />
-              <span>{isId ? "Pratinjau Cetak Surat Jalan" : "Print Preview"}</span>
+              <span>{isId ? "Pratinjau Cetak & Generator Dokumen" : "Print Preview"}</span>
               <span className="text-xs font-mono font-normal text-gray-500">({order.orderNumber})</span>
             </h3>
 
@@ -83,6 +104,44 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Live Override Bar */}
+        <div className="bg-red-50/60 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900/40 px-4 py-2 flex flex-wrap items-center gap-3 text-xs">
+          <span className="font-bold text-[#8B0000] dark:text-red-300 flex items-center gap-1">
+            <Edit3 className="h-3.5 w-3.5" />
+            <span>{isId ? "Tweak Cetak:" : "Print Tweak:"}</span>
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-gray-600 dark:text-gray-400">{isId ? "Sopir:" : "Driver:"}</span>
+            <input
+              type="text"
+              placeholder="Nama Sopir"
+              value={customDriver}
+              onChange={(e) => setCustomDriver(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-900 dark:text-white"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-gray-600 dark:text-gray-400">{isId ? "No Kend:" : "Vehicle:"}</span>
+            <input
+              type="text"
+              placeholder="No Kendaraan"
+              value={customVehicle}
+              onChange={(e) => setCustomVehicle(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-900 dark:text-white"
+            />
+          </div>
+          <div className="flex items-center gap-1 flex-1 min-w-[200px]">
+            <span className="text-gray-600 dark:text-gray-400">{isId ? "Catatan:" : "Notes:"}</span>
+            <input
+              type="text"
+              placeholder="Catatan tambahan di kertas"
+              value={customNotes}
+              onChange={(e) => setCustomNotes(e.target.value)}
+              className="w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-900 dark:text-white"
+            />
+          </div>
         </div>
 
         {/* Modal Body */}
@@ -135,7 +194,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                 </button>
               </div>
 
-              {/* Printable HTML Sheet (A4 / Half Page preview) */}
+              {/* Printable HTML Sheet */}
               <div className="bg-white text-gray-900 border border-gray-300 rounded-xl p-8 shadow-sm space-y-6 print-page">
                 {/* Header */}
                 <div className="border-b-2 border-gray-900 pb-4 flex justify-between items-start">
@@ -154,7 +213,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                     <h3 className="text-base font-extrabold uppercase tracking-wide">
                       SURAT JALAN
                     </h3>
-                    <p className="font-mono font-bold text-sm text-[#8B0000]">{order.orderNumber}</p>
+                    <p className="font-mono font-bold text-sm text-[#8B0000]">{previewOrder.orderNumber}</p>
                   </div>
                 </div>
 
@@ -163,26 +222,26 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                   <div className="space-y-1">
                     <p>
                       <span className="font-semibold text-gray-500">Kepada Yth:</span>{" "}
-                      <span className="font-bold">{order.recipientName}</span>
+                      <span className="font-bold">{previewOrder.recipientName}</span>
                     </p>
                     <p>
                       <span className="font-semibold text-gray-500">Alamat Tujuan:</span>{" "}
-                      <span>{order.destinationAddress}</span>
+                      <span>{previewOrder.destinationAddress}</span>
                     </p>
                   </div>
                   <div className="space-y-1 text-right">
                     <p>
                       <span className="font-semibold text-gray-500">Tanggal Kirim:</span>{" "}
-                      <span className="font-bold">{formatIndonesianDate(order.deliveryDate)}</span>
+                      <span className="font-bold">{formatIndonesianDate(previewOrder.deliveryDate)}</span>
                     </p>
                     <p>
                       <span className="font-semibold text-gray-500">No. PO / SPK:</span>{" "}
-                      <span className="font-mono font-semibold">{order.poNumber || "-"}</span>
+                      <span className="font-mono font-semibold">{previewOrder.poNumber || "-"}</span>
                     </p>
                     <p>
                       <span className="font-semibold text-gray-500">No. Kendaraan / Sopir:</span>{" "}
                       <span>
-                        {order.vehicleNumber || "-"} / {order.driverName || "-"}
+                        {previewOrder.vehicleNumber || "-"} / {previewOrder.driverName || "-"}
                       </span>
                     </p>
                   </div>
@@ -203,7 +262,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {order.items?.map((item, idx) => (
+                    {previewOrder.items?.map((item, idx) => (
                       <tr key={item.id}>
                         <td className="p-2 border-r border-gray-300 text-center">{idx + 1}</td>
                         <td className="p-2 border-r border-gray-300">
@@ -228,7 +287,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                       </td>
                       {STANDARD_SIZES.map((s) => {
                         const colSum =
-                          order.items?.reduce((sum, item) => sum + (item.sizes?.[s] || 0), 0) || 0;
+                          previewOrder.items?.reduce((sum, item) => sum + (item.sizes?.[s] || 0), 0) || 0;
                         return (
                           <td key={s} className="p-1 border-r border-gray-300 text-center font-mono font-bold">
                             {colSum > 0 ? colSum : "-"}
@@ -236,17 +295,23 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                         );
                       })}
                       <td className="p-2 text-right font-extrabold text-[#8B0000]">
-                        {order.totalQuantity} psg
+                        {previewOrder.totalQuantity} psg
                       </td>
                     </tr>
                   </tfoot>
                 </table>
 
                 {/* Terbilang & Signatures Triad */}
-                {order.totalAmount && order.totalAmount > 0 && (
+                {previewOrder.totalAmount && previewOrder.totalAmount > 0 && (
                   <div className="text-xs bg-gray-50 p-2.5 rounded border border-gray-200">
                     <span className="font-semibold text-gray-500">Terbilang:</span>{" "}
-                    <span className="italic font-bold">"{terbilang(order.totalAmount)}"</span>
+                    <span className="italic font-bold">"{terbilang(previewOrder.totalAmount)}"</span>
+                  </div>
+                )}
+
+                {previewOrder.notes && (
+                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-200">
+                    <span className="font-semibold text-gray-500">Catatan:</span> {previewOrder.notes}
                   </div>
                 )}
 
@@ -258,7 +323,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                   <div>
                     <p className="font-semibold text-gray-600 mb-16">Pengirim / Sopir</p>
                     <p className="font-bold border-t border-gray-400 pt-1 mx-4">
-                      ( {order.driverName || "................................"} )
+                      ( {previewOrder.driverName || "................................"} )
                     </p>
                   </div>
                   <div>
