@@ -105,9 +105,8 @@ export interface Point2D {
   y: number;
 }
 
-// UI State & Device Simulation Types
-export type DeviceViewMode = "DESKTOP" | "TABLET" | "MOBILE";
-export type DensityMode = "compact" | "normal" | "large";
+// UI State & Typography Scaling Types
+export type DensityMode = "xs" | "compact" | "normal" | "large" | "xl";
 export type LayoutWidth = "fluid" | "boxed";
 export type ThemeMode = "light" | "dark";
 export type Language = "id" | "en";

@@ -23,22 +23,31 @@
     --brand-text-muted: #9CA3AF;
   }
 
-  /* Real Root Font-Size Scaling for Entire Tailwind rem Engine */
+  /* 5-Step Granular Typography & Density Scale Engine */
   html {
     font-size: 16px;
     -webkit-tap-highlight-color: transparent;
+    transition: font-size 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html[data-density="xs"] {
+    font-size: 12.5px;
   }
 
   html[data-density="compact"] {
-    font-size: 13.5px;
+    font-size: 14.0px;
   }
 
   html[data-density="normal"] {
-    font-size: 16px;
+    font-size: 16.0px;
   }
 
   html[data-density="large"] {
-    font-size: 19px;
+    font-size: 18.0px;
+  }
+
+  html[data-density="xl"] {
+    font-size: 20.5px;
   }
 
   body {
@@ -51,14 +60,34 @@
   }
 }
 
-/* Tablet & Mobile Touch Enhancements */
+/* Micro-Interaction Animation Utilities */
+@keyframes bump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.animate-bump {
+  animation: bump 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.animate-pulse-slow {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+/* Tablet & Mobile Touch Target Improvements */
 @media (max-width: 1024px) {
-  button, input, select {
+  button, input, select, a {
     touch-action: manipulation;
   }
 }
 
-/* Print specific styles for ESC/P simulation and high-fidelity paper */
+/* Print specific styles */
 @media print {
   body {
     background: #FFFFFF !important;

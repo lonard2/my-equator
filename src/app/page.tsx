@@ -22,8 +22,11 @@ import {
   Printer,
   ChevronRight,
   X,
-  Phone,
-  Share2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  TrendingUp,
+  PackageCheck,
+  Clock,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -32,11 +35,15 @@ export default function HomePage() {
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
   const [currentTab, setCurrentTab] = useState<NavTab>("DELIVERY_ORDERS");
 
-  // UI Settings State
+  // UI Settings State (5-tier density)
   const [density, setDensity] = useState<DensityMode>("normal");
   const [layoutWidth, setLayoutWidth] = useState<LayoutWidth>("fluid");
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [language, setLanguage] = useState<Language>("id");
+
+  // Tablet & Desktop Workspace State
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isListRailCollapsed, setIsListRailCollapsed] = useState(false);
 
   // Modals & Mobile Sheet States
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -126,6 +133,11 @@ export default function HomePage() {
 
   const isId = language === "id";
 
+  // Factory Summary Metrics
+  const totalVolumePairs = orders.reduce((sum, o) => sum + o.totalQuantity, 0);
+  const readyOrDispatchedCount = orders.filter((o) => o.status === "PRINTED" || o.status === "DISPATCHED").length;
+  const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
       {/* Global Brand Header with Compass Logo */}
@@ -140,11 +152,11 @@ export default function HomePage() {
       {/* Main Container Wrapper */}
       <div
         className={`flex-1 flex overflow-hidden w-full mx-auto transition-all ${
-          layoutWidth === "boxed" ? "max-w-[1280px] my-2 sm:px-4" : "w-full"
+          layoutWidth === "boxed" ? "max-w-[1340px] my-2 sm:px-4" : "w-full"
         }`}
       >
         {/* Sidebar Navigation (Visible on Tablet & Desktop) */}
-        <div className="hidden md:flex shrink-0">
+        <div className="hidden md:flex shrink-0 transition-all duration-200">
           <Sidebar
             currentTab={currentTab}
             onTabChange={setCurrentTab}
@@ -155,138 +167,209 @@ export default function HomePage() {
         {/* Dynamic Main Workspace Content */}
         <main className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950">
           {currentTab === "DELIVERY_ORDERS" ? (
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-              {/* Left Master List (Desktop & Tablet multi-pane, Mobile full-width feed) */}
-              <div className="w-full md:w-80 lg:w-96 shrink-0 h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
-                {/* Mobile View Header Card */}
-                <div className="md:hidden p-3.5 bg-[#8B0000] text-white flex items-center justify-between shadow-xs">
-                  <div>
-                    <h2 className="font-bold text-sm">Surat Jalan (Warehouse)</h2>
-                    <p className="text-[10px] text-red-200">{orders.length} DO Aktif di Sistem</p>
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+              {/* Tablet & Desktop Top KPI Ribbon */}
+              <div className="hidden md:grid grid-cols-3 gap-3 p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
+                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-red-50/70 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-[#8B0000] dark:text-red-300 shadow-xs">
+                    <FileText className="h-4 w-4" />
                   </div>
-                  <button
-                    onClick={() => setIsFormOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-[#8B0000] font-bold text-xs shadow-xs"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Buat DO</span>
-                  </button>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-red-900/70 dark:text-red-300">
+                      {isId ? "Surat Jalan Aktif" : "Active Orders"}
+                    </p>
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+                      {orders.length} <span className="text-xs font-normal text-gray-500">Dokumen</span>
+                    </p>
+                  </div>
                 </div>
 
-                {/* Mobile Specific Card Feed (Visible only on < md) */}
-                <div className="md:hidden flex-1 overflow-y-auto p-3 space-y-3 pb-20">
-                  {orders.map((order) => (
-                    <div
-                      key={order.id}
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setIsMobileDetailOpen(true);
-                      }}
-                      className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.99] transition cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-[#8B0000] dark:text-red-400 font-mono">
-                          {order.orderNumber}
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950 text-[#8B0000] dark:text-red-300">
-                          {order.status}
-                        </span>
-                      </div>
-
-                      <div>
-                        <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">
-                          {order.recipientName}
-                        </p>
-                        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
-                          {order.destinationAddress}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 dark:border-gray-800">
-                        <span className="text-gray-500">{formatIndonesianDate(order.deliveryDate)}</span>
-                        <span className="font-extrabold text-[#8B0000] dark:text-red-400">
-                          {order.totalQuantity.toLocaleString("id-ID")} psg
-                        </span>
-                      </div>
-
-                      {/* Mobile 1-Tap Quick Action Row */}
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPrintOrder(order);
-                          }}
-                          className="py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1"
-                        >
-                          <Printer className="h-3.5 w-3.5" />
-                          <span>Slip Cetak</span>
-                        </button>
-                        {order.status === "PRINTED" || order.status === "CONFIRMED" ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStatusChange(order.id, "DISPATCHED");
-                            }}
-                            className="py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs"
-                          >
-                            <Truck className="h-3.5 w-3.5" />
-                            <span>Dispatch</span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedOrder(order);
-                              setIsMobileDetailOpen(true);
-                            }}
-                            className="py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1"
-                          >
-                            <span>Detail</span>
-                            <ChevronRight className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 shadow-xs">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-amber-900/70 dark:text-amber-300">
+                      {isId ? "Total Pasang Terjadwal" : "Total Scheduled Pairs"}
+                    </p>
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+                      {totalVolumePairs.toLocaleString("id-ID")}{" "}
+                      <span className="text-xs font-normal text-gray-500">pasang</span>
+                    </p>
+                  </div>
                 </div>
 
-                {/* Desktop & Tablet OrderList (Visible on md and up) */}
-                <div className="hidden md:flex flex-col flex-1 overflow-hidden">
-                  <OrderList
-                    orders={orders}
-                    selectedOrderId={selectedOrder?.id || null}
-                    onSelectOrder={setSelectedOrder}
-                    onCreateNew={() => setIsFormOpen(true)}
-                    onOpenPrint={(order) => setPrintOrder(order)}
-                    language={language}
-                  />
+                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 shadow-xs">
+                    <Truck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-emerald-900/70 dark:text-emerald-300">
+                      {isId ? "Proses Pengiriman / Selesai" : "In Transit / Delivered"}
+                    </p>
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+                      {readyOrDispatchedCount} <span className="text-xs font-normal text-gray-500">Kirim</span>{" "}
+                      • {completedCount} <span className="text-xs font-normal text-gray-500">Selesai</span>
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Right Detail Pane (Visible on md and up) */}
-              <div className="hidden md:flex flex-1 h-full overflow-hidden">
-                {selectedOrder ? (
-                  <OrderDetail
-                    order={selectedOrder}
-                    onStatusChange={handleStatusChange}
-                    onOpenPrint={(order) => setPrintOrder(order)}
-                    onDeleteOrder={handleDeleteOrder}
-                    onOrderUpdated={fetchOrders}
-                    language={language}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-center p-8 text-gray-400">
+              {/* Master-Detail Dual Pane */}
+              <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+                {/* Left Rail (List) */}
+                <div
+                  className={`transition-all duration-200 overflow-hidden flex flex-col shrink-0 ${
+                    isListRailCollapsed
+                      ? "md:w-0 border-none"
+                      : "w-full md:w-80 lg:w-[360px] h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800"
+                  }`}
+                >
+                  {/* Mobile Header Card */}
+                  <div className="md:hidden p-3.5 bg-[#8B0000] text-white flex items-center justify-between shadow-xs">
                     <div>
-                      <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
-                      <p className="font-semibold text-sm text-gray-600 dark:text-gray-400">
-                        {isId ? "Pilih surat jalan dari daftar sebelah kiri" : "Select an order to view details"}
-                      </p>
+                      <h2 className="font-bold text-sm">Surat Jalan (Warehouse)</h2>
+                      <p className="text-[10px] text-red-200">{orders.length} DO Aktif di Sistem</p>
                     </div>
+                    <button
+                      onClick={() => setIsFormOpen(true)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-[#8B0000] font-bold text-xs shadow-xs active:scale-95 transition"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Buat DO</span>
+                    </button>
                   </div>
-                )}
+
+                  {/* Mobile Specific Card Feed */}
+                  <div className="md:hidden flex-1 overflow-y-auto p-3 space-y-3 pb-20">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setIsMobileDetailOpen(true);
+                        }}
+                        className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-[#8B0000] dark:text-red-400 font-mono">
+                            {order.orderNumber}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950 text-[#8B0000] dark:text-red-300">
+                            {order.status}
+                          </span>
+                        </div>
+
+                        <div>
+                          <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">
+                            {order.recipientName}
+                          </p>
+                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                            {order.destinationAddress}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 dark:border-gray-800">
+                          <span className="text-gray-500">{formatIndonesianDate(order.deliveryDate)}</span>
+                          <span className="font-extrabold text-[#8B0000] dark:text-red-400">
+                            {order.totalQuantity.toLocaleString("id-ID")} psg
+                          </span>
+                        </div>
+
+                        {/* Mobile 1-Tap Quick Action Row */}
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPrintOrder(order);
+                            }}
+                            className="py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                            <span>Slip Cetak</span>
+                          </button>
+                          {order.status === "PRINTED" || order.status === "CONFIRMED" ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusChange(order.id, "DISPATCHED");
+                              }}
+                              className="py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs active:scale-95 transition"
+                            >
+                              <Truck className="h-3.5 w-3.5" />
+                              <span>Dispatch</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedOrder(order);
+                                setIsMobileDetailOpen(true);
+                              }}
+                              className="py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
+                            >
+                              <span>Detail</span>
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop & Tablet OrderList */}
+                  <div className="hidden md:flex flex-col flex-1 overflow-hidden">
+                    <OrderList
+                      orders={orders}
+                      selectedOrderId={selectedOrder?.id || null}
+                      onSelectOrder={setSelectedOrder}
+                      onCreateNew={() => setIsFormOpen(true)}
+                      onOpenPrint={(order) => setPrintOrder(order)}
+                      language={language}
+                    />
+                  </div>
+                </div>
+
+                {/* Right Rail (Detail Workspace) */}
+                <div className="hidden md:flex flex-1 flex-col h-full overflow-hidden relative">
+                  {/* Tablet/Desktop Expand / Collapse List Rail Button */}
+                  <div className="absolute top-4 left-4 z-20">
+                    <button
+                      onClick={() => setIsListRailCollapsed(!isListRailCollapsed)}
+                      className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 hover:text-[#8B0000] active:scale-95 transition"
+                      title={isListRailCollapsed ? "Buka Daftar Surat Jalan" : "Tutup Panel Samping"}
+                    >
+                      {isListRailCollapsed ? (
+                        <PanelLeftOpen className="h-4 w-4" />
+                      ) : (
+                        <PanelLeftClose className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+
+                  {selectedOrder ? (
+                    <OrderDetail
+                      order={selectedOrder}
+                      onStatusChange={handleStatusChange}
+                      onOpenPrint={(order) => setPrintOrder(order)}
+                      onDeleteOrder={handleDeleteOrder}
+                      onOrderUpdated={fetchOrders}
+                      language={language}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-center p-8 text-gray-400">
+                      <div className="animate-in fade-in zoom-in duration-200">
+                        <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
+                        <p className="font-semibold text-sm text-gray-600 dark:text-gray-400">
+                          {isId ? "Pilih surat jalan dari daftar sebelah kiri" : "Select an order to view details"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : currentTab === "DIGITIZER" ? (
@@ -299,9 +382,9 @@ export default function HomePage() {
             />
           ) : (
             /* Upcoming Modules Placeholder */
-            <div className="flex-1 flex items-center justify-center p-8 text-center">
-              <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="inline-flex p-3 rounded-xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400">
+            <div className="flex-1 flex items-center justify-center p-8 text-center animate-in fade-in duration-200">
+              <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="inline-flex p-3 rounded-2xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400 shadow-inner">
                   {currentTab === "INVENTORY" ? (
                     <Boxes className="h-8 w-8" />
                   ) : currentTab === "CAD_STUDIO" ? (
@@ -324,7 +407,7 @@ export default function HomePage() {
                 </p>
                 <button
                   onClick={() => setCurrentTab("DELIVERY_ORDERS")}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#8B0000] text-white text-xs font-semibold hover:bg-[#A00000] transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-semibold hover:bg-[#A00000] active:scale-95 shadow-md transition"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   <span>{isId ? "Kembali ke Surat Jalan" : "Back to Delivery Orders"}</span>
@@ -339,13 +422,13 @@ export default function HomePage() {
       {isMobileDetailOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-150">
           <div className="bg-white dark:bg-gray-900 rounded-t-3xl border-t border-gray-200 dark:border-gray-800 shadow-2xl h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
-            <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/60">
-              <span className="font-bold text-sm text-gray-900 dark:text-white">
-                Detail: {selectedOrder.orderNumber}
+            <div className="p-3.5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/60">
+              <span className="font-bold text-sm text-gray-900 dark:text-white font-mono">
+                {selectedOrder.orderNumber}
               </span>
               <button
                 onClick={() => setIsMobileDetailOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100"
+                className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -368,14 +451,14 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Mobile Thumb Bottom Navigation Bar (Visible only on < md) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex items-center justify-around py-2 px-3 shadow-lg">
+      {/* Mobile Thumb Bottom Navigation Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex items-center justify-around py-2 px-3 shadow-lg">
         <button
           onClick={() => {
             setCurrentTab("DELIVERY_ORDERS");
             setIsMobileDetailOpen(false);
           }}
-          className={`flex flex-col items-center text-[10px] font-bold ${
+          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "DELIVERY_ORDERS"
               ? "text-[#8B0000] dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
@@ -390,7 +473,7 @@ export default function HomePage() {
             setCurrentTab("DIGITIZER");
             setIsMobileDetailOpen(false);
           }}
-          className={`flex flex-col items-center text-[10px] font-bold ${
+          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "DIGITIZER"
               ? "text-[#8B0000] dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
@@ -405,7 +488,7 @@ export default function HomePage() {
             setCurrentTab("INVENTORY");
             setIsMobileDetailOpen(false);
           }}
-          className={`flex flex-col items-center text-[10px] font-bold ${
+          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "INVENTORY"
               ? "text-[#8B0000] dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
@@ -417,7 +500,7 @@ export default function HomePage() {
 
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="flex flex-col items-center text-[10px] font-bold text-gray-500 dark:text-gray-400"
+          className="flex flex-col items-center text-[10px] font-bold text-gray-500 dark:text-gray-400 active:scale-95 transition"
         >
           <Compass className="h-5 w-5" />
           <span>Settings</span>
