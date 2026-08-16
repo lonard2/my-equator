@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-primary: #8B0000; /* Darkred */
+    --brand-primary-hover: #A00000;
+    --brand-accent: #DC2626; /* Equator Insole Red */
+    --brand-surface: #FFFFFF;
+    --brand-subtle: #F9FAFB;
+    --brand-border: #E5E7EB;
+    --brand-text: #111827;
+    --brand-text-muted: #6B7280;
+
+    /* Theme scaling */
+    --font-scale: 1;
+    --layout-max-width: 1440px;
+  }
+
+  [data-theme="dark"] {
+    --brand-primary: #DC2626;
+    --brand-primary-hover: #EF4444;
+    --brand-accent: #F87171;
+    --brand-surface: #111827;
+    --brand-subtle: #1F2937;
+    --brand-border: #374151;
+    --brand-text: #F9FAFB;
+    --brand-text-muted: #9CA3AF;
+  }
+
+  [data-density="compact"] {
+    --font-scale: 0.9;
+  }
+
+  [data-density="large"] {
+    --font-scale: 1.1;
+  }
+
+  [data-width="boxed"] {
+    --layout-max-width: 1200px;
+  }
+
+  [data-width="fluid"] {
+    --layout-max-width: 100%;
+  }
+
+  body {
+    background-color: var(--brand-subtle);
+    color: var(--brand-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: calc(1rem * var(--font-scale));
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Print specific styles for ESC/P simulation and high-fidelity paper */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page {
+    page-break-after: always;
+    margin: 0;
+    padding: 10mm;
+    box-shadow: none !important;
+  }
+}

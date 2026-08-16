@@ -91,6 +91,8 @@ logs/
 *.sqlite
 *.sqlite3
 *.db
+*.db-*
+data/
 
 # Temporary / Cache
 tmp/

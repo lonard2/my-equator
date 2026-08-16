@@ -1,0 +1,326 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { DeliveryOrder, DeliveryOrderStatus, DeviceViewMode, ThemeMode, Language } from "@/types";
+import { Header } from "@/components/common/Header";
+import { Sidebar, NavTab } from "@/components/common/Sidebar";
+import { OrderList } from "@/components/delivery-orders/OrderList";
+import { OrderDetail } from "@/components/delivery-orders/OrderDetail";
+import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
+import { PrintModal } from "@/components/delivery-orders/PrintModal";
+import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
+import {
+  FileText,
+  Boxes,
+  Compass,
+  BarChart3,
+  Bot,
+  ShieldCheck,
+  Smartphone,
+  Tablet,
+  Monitor,
+  Printer,
+  Truck,
+  Plus,
+} from "lucide-react";
+import { formatIndonesianDate } from "@/lib/utils/formatters";
+
+export default function HomePage() {
+  const [orders, setOrders] = useState<DeliveryOrder[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
+  const [currentTab, setCurrentTab] = useState<NavTab>("DELIVERY_ORDERS");
+  const [deviceMode, setDeviceMode] = useState<DeviceViewMode>("DESKTOP");
+  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [language, setLanguage] = useState<Language>("id");
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/orders");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setOrders(json.data);
+        if (json.data.length > 0 && !selectedOrder) {
+          setSelectedOrder(json.data[0]);
+        } else if (selectedOrder) {
+          const updated = json.data.find((o: DeliveryOrder) => o.id === selectedOrder.id);
+          if (updated) setSelectedOrder(updated);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load orders:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleThemeToggle = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+  };
+
+  const handleLanguageToggle = () => {
+    setLanguage(language === "id" ? "en" : "id");
+  };
+
+  const handleStatusChange = async (id: string, newStatus: DeliveryOrderStatus) => {
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    try {
+      const res = await fetch(`/api/orders/${id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        setSelectedOrder(null);
+        fetchOrders();
+      }
+    } catch (err) {
+      console.error("Failed to delete order:", err);
+    }
+  };
+
+  const isId = language === "id";
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+      {/* Global Brand Header */}
+      <Header
+        deviceMode={deviceMode}
+        onDeviceModeChange={setDeviceMode}
+        theme={theme}
+        onThemeToggle={handleThemeToggle}
+        language={language}
+        onLanguageToggle={handleLanguageToggle}
+      />
+
+      {/* Main Container Wrapper simulating Device Modes if chosen */}
+      <div
+        className={`flex-1 flex overflow-hidden transition-all mx-auto w-full ${
+          deviceMode === "TABLET"
+            ? "max-w-[860px] my-4 rounded-3xl border-8 border-gray-800 shadow-2xl bg-white dark:bg-gray-900"
+            : deviceMode === "MOBILE"
+            ? "max-w-[420px] my-4 rounded-[40px] border-[10px] border-gray-900 shadow-2xl bg-white dark:bg-gray-900 overflow-hidden"
+            : "w-full"
+        }`}
+      >
+        {/* Sidebar Navigation (hidden in Mobile Simulation mode for bottom app bar) */}
+        {deviceMode !== "MOBILE" && (
+          <Sidebar
+            currentTab={currentTab}
+            onTabChange={setCurrentTab}
+            language={language}
+          />
+        )}
+
+        {/* Dynamic Main Workspace Content */}
+        <main className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950">
+          {currentTab === "DELIVERY_ORDERS" ? (
+            deviceMode === "MOBILE" ? (
+              /* Mobile Specific Warehouse Layout */
+              <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden">
+                {/* Mobile Top Bar */}
+                <div className="p-3.5 bg-[#8B0000] text-white flex items-center justify-between">
+                  <div>
+                    <h2 className="font-bold text-sm">Surat Jalan (Warehouse)</h2>
+                    <p className="text-[10px] text-red-200">{orders.length} DO Aktif</p>
+                  </div>
+                  <button
+                    onClick={() => setIsFormOpen(true)}
+                    className="p-1.5 rounded-lg bg-white text-[#8B0000] font-bold text-xs"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Mobile Orders List */}
+                <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-2">
+                  {orders.map((order) => (
+                    <div
+                      key={order.id}
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setPrintOrder(order);
+                      }}
+                      className="p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/60 space-y-1.5 cursor-pointer shadow-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-[#8B0000] dark:text-red-400 font-mono">
+                          {order.orderNumber}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950 text-[#8B0000] dark:text-red-300">
+                          {order.status}
+                        </span>
+                      </div>
+                      <p className="font-semibold text-xs text-gray-900 dark:text-white truncate">
+                        {order.recipientName}
+                      </p>
+                      <div className="flex items-center justify-between text-[11px] text-gray-500">
+                        <span>{formatIndonesianDate(order.deliveryDate)}</span>
+                        <span className="font-bold text-gray-800 dark:text-gray-200">
+                          {order.totalQuantity} psg
+                        </span>
+                      </div>
+                      {/* Mobile Quick Dispatch Toggle */}
+                      {order.status === "PRINTED" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(order.id, "DISPATCHED");
+                          }}
+                          className="w-full mt-1 py-1 rounded bg-[#8B0000] text-white text-[11px] font-bold flex items-center justify-center gap-1"
+                        >
+                          <Truck className="h-3 w-3" />
+                          <span>Dispatch Armada</span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mobile Bottom Navigation Bar */}
+                <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-around text-[10px] font-semibold text-gray-600 dark:text-gray-400">
+                  <button
+                    onClick={() => setCurrentTab("DELIVERY_ORDERS")}
+                    className="flex flex-col items-center text-[#8B0000] dark:text-red-400"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Surat Jalan</span>
+                  </button>
+                  <button
+                    onClick={() => setCurrentTab("DIGITIZER")}
+                    className="flex flex-col items-center"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Quick Digit</span>
+                  </button>
+                  <button
+                    onClick={() => setCurrentTab("INVENTORY")}
+                    className="flex flex-col items-center"
+                  >
+                    <Boxes className="h-4 w-4" />
+                    <span>Stok</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Desktop & Tablet Master-Detail Layout */
+              <div className="flex-1 flex overflow-hidden">
+                <div className="w-80 md:w-96 shrink-0 h-full">
+                  <OrderList
+                    orders={orders}
+                    selectedOrderId={selectedOrder?.id || null}
+                    onSelectOrder={setSelectedOrder}
+                    onCreateNew={() => setIsFormOpen(true)}
+                    onOpenPrint={(order) => setPrintOrder(order)}
+                    language={language}
+                  />
+                </div>
+
+                <div className="flex-1 h-full overflow-hidden">
+                  {selectedOrder ? (
+                    <OrderDetail
+                      order={selectedOrder}
+                      onStatusChange={handleStatusChange}
+                      onOpenPrint={(order) => setPrintOrder(order)}
+                      onDeleteOrder={handleDeleteOrder}
+                      language={language}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-center p-8 text-gray-400">
+                      <div>
+                        <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
+                        <p className="font-semibold text-sm text-gray-600 dark:text-gray-400">
+                          {isId ? "Pilih surat jalan dari daftar sebelah kiri" : "Select an order to view details"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          ) : currentTab === "DIGITIZER" ? (
+            <ArchiveDigitizer
+              onSuccess={() => {
+                fetchOrders();
+                setCurrentTab("DELIVERY_ORDERS");
+              }}
+              language={language}
+            />
+          ) : (
+            /* Placeholder for upcoming phases */
+            <div className="flex-1 flex items-center justify-center p-8 text-center">
+              <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="inline-flex p-3 rounded-xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400">
+                  {currentTab === "INVENTORY" ? (
+                    <Boxes className="h-8 w-8" />
+                  ) : currentTab === "CAD_STUDIO" ? (
+                    <Compass className="h-8 w-8" />
+                  ) : currentTab === "ANALYTICS" ? (
+                    <BarChart3 className="h-8 w-8" />
+                  ) : currentTab === "AI_ASSISTANT" ? (
+                    <Bot className="h-8 w-8" />
+                  ) : (
+                    <ShieldCheck className="h-8 w-8" />
+                  )}
+                </div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  {isId ? "Modul ini siap dikembangkan pada fase berikutnya" : "Module Scheduled for Upcoming Phase"}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {isId
+                    ? "Fondasi database, tipe data TypeScript, dan arsitektur telah siap sesuai panduan AGENTS.md."
+                    : "Architecture and database schema ready in accordance with AGENTS.md roadmap."}
+                </p>
+                <button
+                  onClick={() => setCurrentTab("DELIVERY_ORDERS")}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#8B0000] text-white text-xs font-semibold hover:bg-[#A00000] transition"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>{isId ? "Kembali ke Surat Jalan" : "Back to Delivery Orders"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Create Order Modal */}
+      <OrderFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={fetchOrders}
+        language={language}
+      />
+
+      {/* Dual Mode Print Modal */}
+      <PrintModal
+        isOpen={!!printOrder}
+        order={printOrder}
+        onClose={() => setPrintOrder(null)}
+        language={language}
+      />
+    </div>
+  );
+}
