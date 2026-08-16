@@ -10,7 +10,7 @@
 
 - [x] **Phase 0: Project Planning, Architecture & Design Standards** (Completed)
 - [x] **Phase 1: Core Foundation, Layout Shell & Delivery Orders MVP** (Completed)
-- [ ] **Phase 2: Materials Inventory & Khatulistiwa AI Assistant** (Pending)
+- [x] **Phase 2: Materials Inventory & Khatulistiwa AI Assistant** (Completed)
 - [ ] **Phase 3: Insole CAD Studio & Generative Vector Design** (Pending)
 - [ ] **Phase 4: Visual Analytics Suite & Instant UI Preference Engine** (Pending)
 - [ ] **Phase 5: Factory Security, RBAC Lockdown, Audit Trails & Offline Resiliency** (Pending)
@@ -33,28 +33,29 @@
 ### Phase 1: Core Foundation, Layout Shell & Delivery Orders MVP
 - [x] Initialize Next.js 15+ App Router project with TypeScript, TailwindCSS v4, and Lucide icons.
 - [x] Setup Drizzle ORM with SQLite database and migration pipeline.
-- [x] Build adaptive navigation shell with Desktop multi-pane layout, Tablet drawer, and Mobile warehouse bar + Device simulation mode toggle.
+- [x] Build adaptive navigation shell with Desktop multi-pane layout, Tablet drawer, and Mobile warehouse bar + Compass brand logo.
 - [x] Implement Delivery Order database schema with standard numbering `SJ/EQ/YYYY/MM/XXXX`.
-- [x] Size breakdown matrix component (EU 36–45) with reactive pair auto-summation.
+- [x] Size breakdown matrix component (EU 36–45) with reactive pair auto-summation & Touch Size Pad.
 - [x] Delivery Order lifecycle state machine: `DRAFT` -> `CONFIRMED` -> `PRINTED` -> `DISPATCHED` -> `DELIVERED`.
 - [x] Dual print pipeline:
   - Live 80-column ESC/P monospace preview and binary `.prn` export for Epson LX-300 / LX-310.
-  - CSS `@media print` formatted printable delivery slip with in-place editing.
+  - CSS `@media print` formatted printable delivery slip with in-place live print tweaks.
 - [x] Archive Quick Digitizer keyboard-first batch entry grid with Tab/Enter rapid navigation.
+- [x] 5-Tier typography scale engine (`xs`, `compact`, `normal`, `large`, `xl`) and micro-animations.
 - [x] Database seed script with realistic Indonesian factory delivery orders (`scripts/seed.ts`).
 - [x] Phase 1 educational walkthrough ([`docs/walkthroughs/phase-1-delivery-orders.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-1-delivery-orders.md)).
 
 ---
 
 ### Phase 2: Materials Inventory & Khatulistiwa AI Assistant
-- [ ] Materials database schema and full CRUD interface (EVA sheets, Latex rolls, PU chemical drums, TPU shanks, fabrics).
-- [ ] Dynamic stock safety threshold editing per SKU with status indicators (`OK`, `Low Stock`, `Critical`).
-- [ ] Stock movement recording modal (IN / OUT / Adjustment / Wastage) with transaction audit trail.
-- [ ] Category allocation breakdown chart and warehouse stock health visualizer.
-- [ ] OpenRouter AI client setup supporting multi-model roster (`google/gemini-3.5-flash-lite`, `google/gemini-3.7-flash`, `deepseek/deepseek-v4-pro-0813`, `qwen/qwen3.7-plus`).
-- [ ] Khatulistiwa AI conversational workspace drawer with natural language Delivery Order drafting and live staging action.
-- [ ] AI real-time inventory query tools and factory calculation aids.
-- [ ] Phase 2 test suite and educational walkthrough ([`docs/walkthroughs/phase-2-inventory-and-ai.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-2-inventory-and-ai.md)).
+- [x] Materials database schema and full CRUD interface (EVA sheets, Latex rolls, PU chemicals, TPU shanks, fabrics, cutting dies).
+- [x] Dynamic stock safety threshold editing per SKU with status indicators (`OK / Healthy`, `Low Stock`, `Critical`).
+- [x] Stock movement recording modal (IN / OUT / Adjustment / Wastage) with transaction audit trail.
+- [x] Category allocation breakdown and warehouse stock health visualizer with total IDR valuation.
+- [x] OpenRouter AI client setup supporting multi-model roster (`google/gemini-3.5-flash-lite`, `google/gemini-3.7-flash`, `deepseek/deepseek-v4-pro-0813`, `qwen/qwen3.7-plus`, `openai/gpt-5.6-luna`).
+- [x] Khatulistiwa AI conversational workspace drawer with natural language Delivery Order drafting and 1-click staging action.
+- [x] AI real-time inventory query tools and factory calculation aids (BOM estimation).
+- [x] Phase 2 educational walkthrough ([`docs/walkthroughs/phase-2-inventory-and-ai.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-2-inventory-and-ai.md)).
 
 ---
 
@@ -76,11 +77,6 @@
 - [ ] Footwear Size Breakdown Bell Curve chart (EU 36–45 distribution).
 - [ ] Customer Market Share Donut chart.
 - [ ] Raw material burn-rate forecast and stock health heatmaps.
-- [ ] Instant UI Settings Engine:
-  - Font size scaling (`Compact`, `Normal`, `Large`).
-  - Layout width toggling (`Fluid`, `Boxed`).
-  - Dark / Light mode theme toggling with `darkred` / `red` brand palette.
-- [ ] Instant Bilingual Language Switcher (`ID` / `EN`).
 - [ ] Global Command Palette (`⌘K` / `Ctrl+K`) for rapid navigation and actions.
 - [ ] Phase 4 test suite and educational walkthrough ([`docs/walkthroughs/phase-4-analytics-and-ui-engine.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-4-analytics-and-ui-engine.md)).
 

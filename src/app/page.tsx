@@ -9,6 +9,8 @@ import { OrderDetail } from "@/components/delivery-orders/OrderDetail";
 import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
+import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
+import { KhatulistiwaAssistant } from "@/components/assistant/KhatulistiwaAssistant";
 import { SettingsModal } from "@/components/common/SettingsModal";
 import {
   FileText,
@@ -27,6 +29,7 @@ import {
   TrendingUp,
   PackageCheck,
   Clock,
+  Sliders,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -42,12 +45,13 @@ export default function HomePage() {
   const [language, setLanguage] = useState<Language>("id");
 
   // Tablet & Desktop Workspace State
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isListRailCollapsed, setIsListRailCollapsed] = useState(false);
 
-  // Modals & Mobile Sheet States
+  // Modals & Assistant States
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [stagedDraftData, setStagedDraftData] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,6 +133,12 @@ export default function HomePage() {
     } catch (err) {
       console.error("Failed to delete order:", err);
     }
+  };
+
+  const handleApplyDraftOrder = (draftData: any) => {
+    setStagedDraftData(draftData);
+    setIsAssistantOpen(false);
+    setIsFormOpen(true);
   };
 
   const isId = language === "id";
@@ -232,7 +242,10 @@ export default function HomePage() {
                       <p className="text-[10px] text-red-200">{orders.length} DO Aktif di Sistem</p>
                     </div>
                     <button
-                      onClick={() => setIsFormOpen(true)}
+                      onClick={() => {
+                        setStagedDraftData(null);
+                        setIsFormOpen(true);
+                      }}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-[#8B0000] font-bold text-xs shadow-xs active:scale-95 transition"
                     >
                       <Plus className="h-4 w-4" />
@@ -326,7 +339,10 @@ export default function HomePage() {
                       orders={orders}
                       selectedOrderId={selectedOrder?.id || null}
                       onSelectOrder={setSelectedOrder}
-                      onCreateNew={() => setIsFormOpen(true)}
+                      onCreateNew={() => {
+                        setStagedDraftData(null);
+                        setIsFormOpen(true);
+                      }}
                       onOpenPrint={(order) => setPrintOrder(order)}
                       language={language}
                     />
@@ -380,19 +396,40 @@ export default function HomePage() {
               }}
               language={language}
             />
+          ) : currentTab === "INVENTORY" ? (
+            <InventoryDashboard language={language} />
+          ) : currentTab === "AI_ASSISTANT" ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50 dark:bg-gray-950">
+              <div className="max-w-md p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/60 inline-flex text-[#8B0000] dark:text-red-400">
+                  <Compass className="h-10 w-10 animate-spin-slow" />
+                </div>
+                <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+                  {isId ? "Khatulistiwa AI Assistant" : "Equator AI Business Assistant"}
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  {isId
+                    ? "Asisten cerdas operasional pabrik yang siap membantu pembuatan draft Surat Jalan, monitoring stok bahan baku, dan kalkulasi BOM secara otomatis."
+                    : "Intelligent factory assistant ready to auto-draft delivery orders, query inventory balances, and compute material BOM."}
+                </p>
+                <button
+                  onClick={() => setIsAssistantOpen(true)}
+                  className="w-full py-3 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
+                >
+                  <Bot className="h-4 w-4" />
+                  <span>{isId ? "Buka Drawer Asisten AI" : "Launch AI Chat Drawer"}</span>
+                </button>
+              </div>
+            </div>
           ) : (
-            /* Upcoming Modules Placeholder */
+            /* Upcoming Modules Placeholder (CAD & Analytics) */
             <div className="flex-1 flex items-center justify-center p-8 text-center animate-in fade-in duration-200">
               <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="inline-flex p-3 rounded-2xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400 shadow-inner">
-                  {currentTab === "INVENTORY" ? (
-                    <Boxes className="h-8 w-8" />
-                  ) : currentTab === "CAD_STUDIO" ? (
+                  {currentTab === "CAD_STUDIO" ? (
                     <Compass className="h-8 w-8" />
                   ) : currentTab === "ANALYTICS" ? (
                     <BarChart3 className="h-8 w-8" />
-                  ) : currentTab === "AI_ASSISTANT" ? (
-                    <Bot className="h-8 w-8" />
                   ) : (
                     <ShieldCheck className="h-8 w-8" />
                   )}
@@ -470,21 +507,6 @@ export default function HomePage() {
 
         <button
           onClick={() => {
-            setCurrentTab("DIGITIZER");
-            setIsMobileDetailOpen(false);
-          }}
-          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
-            currentTab === "DIGITIZER"
-              ? "text-[#8B0000] dark:text-red-400"
-              : "text-gray-500 dark:text-gray-400"
-          }`}
-        >
-          <Plus className="h-5 w-5" />
-          <span>Quick Digit</span>
-        </button>
-
-        <button
-          onClick={() => {
             setCurrentTab("INVENTORY");
             setIsMobileDetailOpen(false);
           }}
@@ -499,19 +521,54 @@ export default function HomePage() {
         </button>
 
         <button
+          onClick={() => {
+            setCurrentTab("DIGITIZER");
+            setIsMobileDetailOpen(false);
+          }}
+          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
+            currentTab === "DIGITIZER"
+              ? "text-[#8B0000] dark:text-red-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
+        >
+          <Plus className="h-5 w-5" />
+          <span>Quick Digit</span>
+        </button>
+
+        <button
+          onClick={() => setIsAssistantOpen(true)}
+          className="flex flex-col items-center text-[10px] font-bold text-[#8B0000] dark:text-red-400 active:scale-95 transition"
+        >
+          <Compass className="h-5 w-5 animate-spin-slow" />
+          <span>AI Chat</span>
+        </button>
+
+        <button
           onClick={() => setIsSettingsOpen(true)}
           className="flex flex-col items-center text-[10px] font-bold text-gray-500 dark:text-gray-400 active:scale-95 transition"
         >
-          <Compass className="h-5 w-5" />
+          <Sliders className="h-5 w-5" />
           <span>Settings</span>
         </button>
       </div>
 
-      {/* Create Order Modal */}
+      {/* Khatulistiwa AI Assistant Floating Button & Drawer */}
+      <KhatulistiwaAssistant
+        isOpen={isAssistantOpen}
+        onToggle={() => setIsAssistantOpen(!isAssistantOpen)}
+        onApplyDraftOrder={handleApplyDraftOrder}
+        language={language}
+      />
+
+      {/* Create Order Modal (Supports AI Staged Prefill) */}
       <OrderFormModal
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={() => {
+          setIsFormOpen(false);
+          setStagedDraftData(null);
+        }}
         onSuccess={fetchOrders}
+        initialDraftData={stagedDraftData}
         language={language}
       />
 
