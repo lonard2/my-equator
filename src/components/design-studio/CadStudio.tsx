@@ -28,6 +28,8 @@ import {
   Info,
   Sliders,
   Globe2,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import { CadAiModal } from "./CadAiModal";
 
@@ -74,6 +76,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [savedBlueprints, setSavedBlueprints] = useState<any[]>([]);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
 
   // Recalculate derived dimensions when sizing changes
@@ -618,35 +621,58 @@ export function CadStudio({ language }: CadStudioProps) {
           )}
 
           {/* Floating Viewport Overlay Toolbar */}
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white">
-            <button
-              onClick={() => setZoomScale(Math.min(2.5, zoomScale + 0.15))}
-              className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
-              title="Zoom In"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setZoomScale(Math.max(0.5, zoomScale - 0.15))}
-              className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
-              title="Zoom Out"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => {
-                setZoomScale(1.0);
-                setPanOffset({ x: 0, y: 0 });
-              }}
-              className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
-              title="Reset View"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <div className="h-4 w-px bg-gray-700 mx-1" />
-            <span className="text-[11px] font-mono font-bold px-1.5 text-gray-300">
-              {Math.round(zoomScale * 100)}%
-            </span>
+          <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
+              <button
+                onClick={() => setZoomScale(Math.min(2.5, zoomScale + 0.15))}
+                className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
+                title="Zoom In"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setZoomScale(Math.max(0.5, zoomScale - 0.15))}
+                className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
+                title="Zoom Out"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => {
+                  setZoomScale(1.0);
+                  setPanOffset({ x: 0, y: 0 });
+                }}
+                className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
+                title="Reset View"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+              <div className="h-4 w-px bg-gray-700 mx-1" />
+              <span className="text-[11px] font-mono font-bold px-1.5 text-gray-300">
+                {Math.round(zoomScale * 100)}%
+              </span>
+            </div>
+
+            {/* Right Sidebar Collapse / Expand Button */}
+            <div className="pointer-events-auto">
+              <button
+                onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                className="p-2 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 hover:bg-gray-800 text-white active:scale-95 transition shadow-xl flex items-center gap-1.5 text-xs font-semibold"
+                title={isRightSidebarOpen ? (isId ? "Tutup Panel Samping" : "Close Inspector") : (isId ? "Buka Panel Samping" : "Open Inspector")}
+              >
+                {isRightSidebarOpen ? (
+                  <>
+                    <PanelRightClose className="h-4 w-4 text-red-400" />
+                    <span className="hidden sm:inline text-[11px]">{isId ? "Tutup Layer" : "Hide"}</span>
+                  </>
+                ) : (
+                  <>
+                    <PanelRightOpen className="h-4 w-4 text-red-400" />
+                    <span className="hidden sm:inline text-[11px]">{isId ? "Layer & Info" : "Layers"}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Live Authentic Insole SVG Vector Container */}
@@ -768,7 +794,13 @@ export function CadStudio({ language }: CadStudioProps) {
         </div>
 
         {/* Right Panel: Layer Stack & CNC Material Yield */}
-        <div className="w-full md:w-72 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-5 overflow-y-auto shrink-0 text-xs">
+        <div
+          className={`transition-all duration-200 shrink-0 ${
+            isRightSidebarOpen
+              ? "w-full md:w-72 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-5 overflow-y-auto"
+              : "w-0 p-0 border-none overflow-hidden"
+          } text-xs`}
+        >
           {/* Layer Visibility Stack */}
           <div className="space-y-2">
             <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
