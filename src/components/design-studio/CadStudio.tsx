@@ -33,6 +33,9 @@ import {
   PanelRightOpen,
   Wrench,
   Shield,
+  Eye,
+  SlidersHorizontal,
+  FileCode,
 } from "lucide-react";
 import { CadAiModal } from "./CadAiModal";
 
@@ -40,8 +43,13 @@ interface CadStudioProps {
   language: "id" | "en";
 }
 
+type MobileCadView = "CANVAS" | "PARAMETERS" | "ORTHOTICS" | "EXPORT";
+
 export function CadStudio({ language }: CadStudioProps) {
   const isId = language === "id";
+
+  // Mobile Active View Mode Tab
+  const [mobileCadView, setMobileCadView] = useState<MobileCadView>("CANVAS");
 
   // Sizing System & Values
   const [sizingSystem, setSizingSystem] = useState<SizingSystem>("EU");
@@ -102,14 +110,12 @@ export function CadStudio({ language }: CadStudioProps) {
     setWaistWidth(defaults.waistWidth);
   }, [sizingSystem, rawSizeValue, customLengthMm]);
 
-  // Load Saved Blueprints
+  // Fetch Blueprints
   const fetchBlueprints = async () => {
     try {
       const res = await fetch("/api/cad/blueprints");
       const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setSavedBlueprints(json.data);
-      }
+      if (json.success) setSavedBlueprints(json.data);
     } catch (err) {
       console.error("Failed to load blueprints:", err);
     }
@@ -119,20 +125,25 @@ export function CadStudio({ language }: CadStudioProps) {
     fetchBlueprints();
   }, []);
 
-  // Compute Current Geometry
+  // Compute Active Sizing Conversion
   const conversion = convertSizing(sizingSystem, rawSizeValue);
   const effectiveLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
 
-  const geometry: InsoleGeometry = buildInsoleGeometry({
+  // Build Insole Geometry
+  const geometryParams: InsoleParameters = {
+    shoeSize: conversion.eu,
     sizingSystem,
     rawSizeValue,
     baseLengthMm: effectiveLength,
-    ballWidthMm: ballWidth,
-    heelWidthMm: heelWidth,
-    waistWidthMm: waistWidth,
     archProfile,
     archOffsetFactor: archFactor,
     toeShape,
+    ballWidthMm: ballWidth,
+    heelWidthMm: heelWidth,
+    waistWidthMm: waistWidth,
+    thicknessForefootMm: forefootThickness,
+    thicknessHeelMm: heelThickness,
+    materialType,
     archPlateLengthFactor: archPlateLength,
     archPlateWidthFactor: archPlateWidth,
     archPlateLateralWing,
@@ -140,7 +151,9 @@ export function CadStudio({ language }: CadStudioProps) {
     heelCupRadiusFactor: heelCupRadius,
     metatarsalPadSizeFactor: metatarsalSize,
     metatarsalPadYPosition: metatarsalYPos,
-  });
+  };
+
+  const geometry: InsoleGeometry = buildInsoleGeometry(geometryParams);
 
   // Apply Preset
   const handleApplyPreset = (preset: typeof INSOLE_PRESETS[0]) => {
@@ -150,6 +163,7 @@ export function CadStudio({ language }: CadStudioProps) {
     setForefootThickness(preset.thicknessForefootMm);
     setHeelThickness(preset.thicknessHeelMm);
     setMaterialType(preset.materialType);
+    setBlueprintName(preset.name);
     if (preset.archPlateLengthFactor) setArchPlateLength(preset.archPlateLengthFactor);
     if (preset.archPlateWidthFactor) setArchPlateWidth(preset.archPlateWidthFactor);
     if (preset.archPlateLateralWing !== undefined) setArchPlateLateralWing(preset.archPlateLateralWing);
@@ -157,51 +171,51 @@ export function CadStudio({ language }: CadStudioProps) {
     if (preset.heelCupRadiusFactor) setHeelCupRadius(preset.heelCupRadiusFactor);
     if (preset.metatarsalPadSizeFactor) setMetatarsalSize(preset.metatarsalPadSizeFactor);
     if (preset.metatarsalPadYPosition) setMetatarsalYPos(preset.metatarsalPadYPosition);
-    setBlueprintName(`${preset.name} ${geometry.sizingLabel}`);
   };
 
-  // Apply Generative AI Model
-  const handleApplyAiGenerated = (params: any) => {
-    setBlueprintName(params.name || "Generative AI Insole");
-    if (params.sizingSystem) setSizingSystem(params.sizingSystem);
-    if (params.rawSizeValue) setRawSizeValue(params.rawSizeValue);
-    if (params.archProfile) setArchProfile(params.archProfile);
-    if (params.archOffsetFactor) setArchFactor(params.archOffsetFactor);
-    if (params.toeShape) setToeShape(params.toeShape);
-    if (params.thicknessForefootMm) setForefootThickness(params.thicknessForefootMm);
-    if (params.thicknessHeelMm) setHeelThickness(params.thicknessHeelMm);
-    if (params.materialType) setMaterialType(params.materialType);
-    if (params.archPlateLengthFactor) setArchPlateLength(params.archPlateLengthFactor);
-    if (params.archPlateWidthFactor) setArchPlateWidth(params.archPlateWidthFactor);
-    if (params.archPlateLateralWing !== undefined) setArchPlateLateralWing(params.archPlateLateralWing);
-    if (params.heelCupDepthProfile) setHeelCupDepth(params.heelCupDepthProfile);
-    if (params.heelCupRadiusFactor) setHeelCupRadius(params.heelCupRadiusFactor);
-    if (params.metatarsalPadSizeFactor) setMetatarsalSize(params.metatarsalPadSizeFactor);
-    if (params.metatarsalPadYPosition) setMetatarsalYPos(params.metatarsalPadYPosition);
+  // Apply Generative AI Insole Parameters
+  const handleApplyAiGeneration = (aiData: any) => {
+    if (aiData.archProfile) setArchProfile(aiData.archProfile);
+    if (aiData.archFactor) setArchFactor(aiData.archFactor);
+    if (aiData.toeShape) setToeShape(aiData.toeShape);
+    if (aiData.forefootThickness) setForefootThickness(aiData.forefootThickness);
+    if (aiData.heelThickness) setHeelThickness(aiData.heelThickness);
+    if (aiData.materialType) setMaterialType(aiData.materialType);
+    if (aiData.name) setBlueprintName(aiData.name);
+    if (aiData.archPlateLengthFactor) setArchPlateLength(aiData.archPlateLengthFactor);
+    if (aiData.archPlateWidthFactor) setArchPlateWidth(aiData.archPlateWidthFactor);
+    if (aiData.archPlateLateralWing !== undefined) setArchPlateLateralWing(aiData.archPlateLateralWing);
+    if (aiData.heelCupDepth) setHeelCupDepth(aiData.heelCupDepth);
+    if (aiData.metatarsalPadSizeFactor) setMetatarsalSize(aiData.metatarsalPadSizeFactor);
+    setMobileCadView("CANVAS");
   };
 
-  // Export DXF
+  // Export DXF (AutoCAD R12 / CorelDRAW)
   const handleExportDxf = async () => {
-    setExporting("DXF");
     try {
+      setExporting("DXF");
       const res = await fetch("/api/cad/export-dxf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          size: geometry.size,
           sizingSystem,
           rawSizeValue,
-          baseLengthMm: effectiveLength,
+          customLengthMm: sizingSystem === "CUSTOM_MM" ? customLengthMm : undefined,
+          foot,
+          archProfile,
+          archFactor,
+          toeShape,
           ballWidthMm: ballWidth,
           heelWidthMm: heelWidth,
           waistWidthMm: waistWidth,
-          archProfile,
-          archOffsetFactor: archFactor,
-          toeShape,
-          foot,
+          thicknessForefootMm: forefootThickness,
+          thicknessHeelMm: heelThickness,
+          materialType,
           archPlateLengthFactor: archPlateLength,
           archPlateWidthFactor: archPlateWidth,
           archPlateLateralWing,
-          heelCupDepthProfile: heelCupDepth,
+          heelCupDepth,
           heelCupRadiusFactor: heelCupRadius,
           metatarsalPadSizeFactor: metatarsalSize,
           metatarsalPadYPosition: metatarsalYPos,
@@ -212,7 +226,7 @@ export function CadStudio({ language }: CadStudioProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}.dxf`;
+      a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}_R12.dxf`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
@@ -225,26 +239,30 @@ export function CadStudio({ language }: CadStudioProps) {
 
   // Export SVG
   const handleExportSvg = async () => {
-    setExporting("SVG");
     try {
+      setExporting("SVG");
       const res = await fetch("/api/cad/export-svg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          size: geometry.size,
           sizingSystem,
           rawSizeValue,
-          baseLengthMm: effectiveLength,
+          customLengthMm: sizingSystem === "CUSTOM_MM" ? customLengthMm : undefined,
+          foot,
+          archProfile,
+          archFactor,
+          toeShape,
           ballWidthMm: ballWidth,
           heelWidthMm: heelWidth,
           waistWidthMm: waistWidth,
-          archProfile,
-          archOffsetFactor: archFactor,
-          toeShape,
-          foot,
+          thicknessForefootMm: forefootThickness,
+          thicknessHeelMm: heelThickness,
+          materialType,
           archPlateLengthFactor: archPlateLength,
           archPlateWidthFactor: archPlateWidth,
           archPlateLateralWing,
-          heelCupDepthProfile: heelCupDepth,
+          heelCupDepth,
           heelCupRadiusFactor: heelCupRadius,
           metatarsalPadSizeFactor: metatarsalSize,
           metatarsalPadYPosition: metatarsalYPos,
@@ -339,45 +357,43 @@ export function CadStudio({ language }: CadStudioProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      {/* Top Header & Action Controls */}
-      <div className="p-3.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+      {/* Top Header & Desktop Action Controls */}
+      <div className="p-3 sm:p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0 shadow-xs">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="p-2 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400 shrink-0">
             <Compass className="h-5 w-5 animate-spin-slow" />
           </div>
           <div>
             <h2 className="font-extrabold text-sm sm:text-base tracking-wide flex items-center gap-2">
-              <span>{isId ? "Studio Insole CAD & Generative Vector" : "Insole CAD & Generative Vector Studio"}</span>
-              <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[10px] font-bold text-[#8B0000] dark:text-red-300">
+              <span>{isId ? "Studio Insole CAD & Vector" : "Insole CAD & Vector Studio"}</span>
+              <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[10px] font-bold text-[#8B0000] dark:text-red-300">
                 CorelDRAW & AutoCAD R12 DXF
               </span>
             </h2>
-            <p className="text-xs text-gray-500">
+            <p className="text-[11px] text-gray-500">
               {isId
                 ? "Generator kontur sol anatomis dengan kustomisasi layer ortotik independen"
-                : "Anatomical parametric insole generator with customizable orthotic component layers"}
+                : "Anatomical parametric insole generator with customizable orthotic layers"}
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* Generative AI Designer Trigger */}
+        {/* Desktop Quick Action Buttons (hidden on mobile, available in mobile tab) */}
+        <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-700 to-[#8B0000] hover:from-red-800 hover:to-[#A00000] text-white text-xs font-bold shadow-md hover:shadow-red-900/30 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-700 to-[#8B0000] hover:from-red-800 hover:to-[#A00000] text-white text-xs font-bold shadow-md hover:shadow-red-900/30 active:scale-95 transition"
           >
             <Sparkles className="h-4 w-4 animate-pulse text-amber-300" />
             <span>{isId ? "Prompt AI Insole" : "AI Insole Generator"}</span>
           </button>
 
-          {/* Preset Selector */}
           <select
             onChange={(e) => {
               const p = INSOLE_PRESETS.find((pr) => pr.id === e.target.value);
               if (p) handleApplyPreset(p);
             }}
-            className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-[#8B0000] focus:outline-none shadow-xs"
+            className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-[#8B0000] focus:outline-none shadow-xs"
           >
             <option value="">{isId ? "Pilih Preset Pabrik..." : "Preset Catalog..."}</option>
             {INSOLE_PRESETS.map((p) => (
@@ -387,40 +403,36 @@ export function CadStudio({ language }: CadStudioProps) {
             ))}
           </select>
 
-          {/* Catalog Library */}
           <button
             onClick={() => setIsLibraryOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
           >
             <FolderOpen className="h-4 w-4 text-[#8B0000]" />
-            <span className="hidden sm:inline">{isId ? "Katalog" : "Library"}</span>
+            <span>{isId ? "Katalog" : "Library"}</span>
           </button>
 
-          {/* Save Blueprint */}
           <button
             onClick={handleSaveBlueprint}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
             title="Simpan Blueprint"
           >
             <Save className="h-4 w-4" />
-            <span className="hidden sm:inline">{isId ? "Simpan" : "Save"}</span>
+            <span>{isId ? "Simpan" : "Save"}</span>
           </button>
 
-          {/* Export DXF */}
           <button
             onClick={handleExportDxf}
             disabled={exporting === "DXF"}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             <span>{exporting === "DXF" ? "Exporting..." : "DXF (R12)"}</span>
           </button>
 
-          {/* Export SVG */}
           <button
             onClick={handleExportSvg}
             disabled={exporting === "SVG"}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
           >
             <Share2 className="h-4 w-4" />
             <span>SVG</span>
@@ -428,10 +440,65 @@ export function CadStudio({ language }: CadStudioProps) {
         </div>
       </div>
 
+      {/* MOBILE ADAPTIVE VIEW MODE SELECTOR (md:hidden) */}
+      <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-1.5 px-3 flex items-center justify-between gap-1 overflow-x-auto shrink-0 shadow-xs">
+        <button
+          onClick={() => setMobileCadView("CANVAS")}
+          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
+            mobileCadView === "CANVAS"
+              ? "bg-[#8B0000] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          }`}
+        >
+          <Eye className="h-3.5 w-3.5" />
+          <span>Canvas</span>
+        </button>
+
+        <button
+          onClick={() => setMobileCadView("PARAMETERS")}
+          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
+            mobileCadView === "PARAMETERS"
+              ? "bg-[#8B0000] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          }`}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span>Ukuran</span>
+        </button>
+
+        <button
+          onClick={() => setMobileCadView("ORTHOTICS")}
+          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
+            mobileCadView === "ORTHOTICS"
+              ? "bg-[#8B0000] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          }`}
+        >
+          <Shield className="h-3.5 w-3.5" />
+          <span>Ortotik</span>
+        </button>
+
+        <button
+          onClick={() => setMobileCadView("EXPORT")}
+          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
+            mobileCadView === "EXPORT"
+              ? "bg-[#8B0000] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          }`}
+        >
+          <FileCode className="h-3.5 w-3.5" />
+          <span>AI & Ekspor</span>
+        </button>
+      </div>
+
       {/* Main Multi-Pane Workspace */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Left Toolbar: Base Sizing & Outline Parameters */}
-        <div className="w-full md:w-80 lg:w-88 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4 overflow-y-auto shrink-0 text-xs">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        {/* Left Toolbar: Base Sizing & Outline Parameters (Desktop or Mobile PARAMETERS view) */}
+        <div
+          className={`w-full md:w-80 lg:w-88 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4 overflow-y-auto shrink-0 text-xs ${
+            mobileCadView === "PARAMETERS" ? "block flex-1 pb-24" : "hidden md:block"
+          }`}
+        >
           {/* Multi-System Size Switcher */}
           <div className="space-y-2">
             <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] flex items-center justify-between">
@@ -457,7 +524,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 <button
                   key={sys.id}
                   onClick={() => setSizingSystem(sys.id as SizingSystem)}
-                  className={`py-1.5 rounded-xl font-bold text-[11px] transition active:scale-95 ${
+                  className={`py-2 rounded-xl font-bold text-[11px] transition active:scale-95 ${
                     sizingSystem === sys.id
                       ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
@@ -486,16 +553,16 @@ export function CadStudio({ language }: CadStudioProps) {
                 />
               </div>
             ) : (
-              <div className="space-y-1.5 pt-1">
+              <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     onClick={() => setRawSizeValue(Math.max(1, Math.round((rawSizeValue - 0.5) * 10) / 10))}
-                    className="p-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-3"
+                    className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-4 text-base active:scale-95"
                   >
                     -
                   </button>
                   <div className="text-center flex-1">
-                    <span className="text-base font-extrabold text-gray-900 dark:text-white font-mono">
+                    <span className="text-lg font-black text-gray-900 dark:text-white font-mono">
                       {rawSizeValue}
                     </span>
                     <p className="text-[10px] text-gray-500 font-mono">
@@ -504,7 +571,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   </div>
                   <button
                     onClick={() => setRawSizeValue(Math.round((rawSizeValue + 0.5) * 10) / 10)}
-                    className="p-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-3"
+                    className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-4 text-base active:scale-95"
                   >
                     +
                   </button>
@@ -530,7 +597,7 @@ export function CadStudio({ language }: CadStudioProps) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setFoot("RIGHT")}
-                className={`py-2 rounded-xl font-bold text-xs transition active:scale-95 ${
+                className={`py-2.5 rounded-xl font-bold text-xs transition active:scale-95 ${
                   foot === "RIGHT"
                     ? "bg-red-50 dark:bg-red-950/60 border-2 border-[#8B0000] text-[#8B0000] dark:text-red-300 shadow-xs"
                     : "border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
@@ -540,7 +607,7 @@ export function CadStudio({ language }: CadStudioProps) {
               </button>
               <button
                 onClick={() => setFoot("LEFT")}
-                className={`py-2 rounded-xl font-bold text-xs transition active:scale-95 ${
+                className={`py-2.5 rounded-xl font-bold text-xs transition active:scale-95 ${
                   foot === "LEFT"
                     ? "bg-red-50 dark:bg-red-950/60 border-2 border-[#8B0000] text-[#8B0000] dark:text-red-300 shadow-xs"
                     : "border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
@@ -560,7 +627,7 @@ export function CadStudio({ language }: CadStudioProps) {
               <select
                 value={archProfile}
                 onChange={(e) => setArchProfile(e.target.value as ArchProfile)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-semibold"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
               >
                 <option value="FLAT">Flat / Low</option>
                 <option value="MEDIUM">Neutral</option>
@@ -575,7 +642,7 @@ export function CadStudio({ language }: CadStudioProps) {
               <select
                 value={toeShape}
                 onChange={(e) => setToeShape(e.target.value as ToeShape)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-semibold"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
               >
                 <option value="ROUNDED">Round</option>
                 <option value="ANATOMIC">Anatomic</option>
@@ -636,9 +703,11 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
         </div>
 
-        {/* Center Interactive SVG / CAD Viewport */}
+        {/* Center Interactive SVG / CAD Viewport (Desktop or Mobile CANVAS view) */}
         <div
-          className="flex-1 relative bg-gray-900 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+          className={`flex-1 relative bg-gray-900 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none ${
+            mobileCadView === "CANVAS" ? "flex" : "hidden md:flex"
+          }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -658,7 +727,7 @@ export function CadStudio({ language }: CadStudioProps) {
           )}
 
           {/* Floating Viewport Overlay Toolbar */}
-          <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+          <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
               <button
                 onClick={() => setZoomScale(Math.min(2.5, zoomScale + 0.15))}
@@ -690,12 +759,12 @@ export function CadStudio({ language }: CadStudioProps) {
               </span>
             </div>
 
-            {/* Right Sidebar Collapse / Expand Button */}
-            <div className="pointer-events-auto">
+            {/* Desktop Right Sidebar Collapse / Expand Button */}
+            <div className="hidden md:block pointer-events-auto">
               <button
                 onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
                 className="p-2 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 hover:bg-gray-800 text-white active:scale-95 transition shadow-xl flex items-center gap-1.5 text-xs font-semibold"
-                title={isRightSidebarOpen ? (isId ? "Tutup Panel Samping" : "Close Inspector") : (isId ? "Buka Panel Samping" : "Open Inspector")}
+                title={isRightSidebarOpen ? "Tutup Panel" : "Buka Panel"}
               >
                 {isRightSidebarOpen ? (
                   <>
@@ -705,7 +774,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 ) : (
                   <>
                     <PanelRightOpen className="h-4 w-4 text-red-400" />
-                    <span className="hidden sm:inline text-[11px]">{isId ? "Komponen Ortotik & Layer" : "Layers & Components"}</span>
+                    <span className="hidden sm:inline text-[11px]">{isId ? "Layer & Ortotik" : "Layers"}</span>
                   </>
                 )}
               </button>
@@ -723,8 +792,8 @@ export function CadStudio({ language }: CadStudioProps) {
               viewBox={`0 0 ${vbW} ${vbH}`}
               className="drop-shadow-2xl"
               style={{
-                width: `${vbW * 1.55}px`,
-                height: `${vbH * 1.55}px`,
+                width: `${vbW * 1.45}px`,
+                height: `${vbH * 1.45}px`,
               }}
             >
               {/* Outer Cut Outline (Anatomical Footwear Cut) */}
@@ -809,8 +878,8 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
 
           {/* Bottom Live Dimension Callout Strip */}
-          <div className="absolute bottom-4 left-4 right-4 z-20 flex items-center justify-between p-2.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs">
-            <div className="flex items-center gap-4 font-mono">
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between p-2.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 font-mono text-[11px]">
               <span>
                 <strong className="text-red-400">{geometry.sizingLabel}</strong> ({foot})
               </span>
@@ -824,25 +893,27 @@ export function CadStudio({ language }: CadStudioProps) {
                 Tumit: <strong className="text-emerald-400">{heelWidth} mm</strong>
               </span>
             </div>
-            <span className="text-[10px] text-gray-400 font-semibold hidden sm:inline">
+            <span className="text-[10px] text-gray-400 font-semibold hidden lg:inline">
               Equator Anatomical CAD Engine v3.0
             </span>
           </div>
         </div>
 
-        {/* Right Inspector: Customizable Orthotic Components, Layers & Specs */}
+        {/* Right Inspector: Customizable Orthotic Components, Layers & Specs (Desktop or Mobile ORTHOTICS view) */}
         <div
-          className={`transition-all duration-200 shrink-0 ${
-            isRightSidebarOpen
-              ? "w-full md:w-80 lg:w-88 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4 overflow-y-auto"
-              : "w-0 p-0 border-none overflow-hidden"
-          } text-xs`}
+          className={`shrink-0 ${
+            mobileCadView === "ORTHOTICS"
+              ? "block w-full flex-1 p-4 space-y-4 overflow-y-auto pb-24 bg-white dark:bg-gray-900 text-xs"
+              : isRightSidebarOpen
+              ? "hidden md:block w-full md:w-80 lg:w-88 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4 overflow-y-auto text-xs"
+              : "hidden"
+          }`}
         >
           {/* Inspector Mode Switcher */}
           <div className="grid grid-cols-3 gap-1 rounded-2xl bg-gray-100 dark:bg-gray-800 p-1 font-bold text-[10px]">
             <button
               onClick={() => setInspectorTab("COMPONENTS")}
-              className={`py-1.5 rounded-xl transition ${
+              className={`py-2 rounded-xl transition ${
                 inspectorTab === "COMPONENTS"
                   ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                   : "text-gray-500"
@@ -852,7 +923,7 @@ export function CadStudio({ language }: CadStudioProps) {
             </button>
             <button
               onClick={() => setInspectorTab("LAYERS")}
-              className={`py-1.5 rounded-xl transition ${
+              className={`py-2 rounded-xl transition ${
                 inspectorTab === "LAYERS"
                   ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                   : "text-gray-500"
@@ -862,7 +933,7 @@ export function CadStudio({ language }: CadStudioProps) {
             </button>
             <button
               onClick={() => setInspectorTab("SPECS")}
-              className={`py-1.5 rounded-xl transition ${
+              className={`py-2 rounded-xl transition ${
                 inspectorTab === "SPECS"
                   ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                   : "text-gray-500"
@@ -947,39 +1018,39 @@ export function CadStudio({ language }: CadStudioProps) {
                       key={dp}
                       type="button"
                       onClick={() => setHeelCupDepth(dp)}
-                      className={`py-1 rounded-lg font-bold transition ${
+                      className={`py-1.5 rounded-lg font-bold transition ${
                         heelCupDepth === dp
                           ? "bg-emerald-700 text-white shadow-xs"
-                          : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                       }`}
                     >
-                      {dp === "SHALLOW" ? "Dangkal" : dp === "MEDIUM" ? "Standar" : "Dalam (12mm)"}
+                      {dp}
                     </button>
                   ))}
                 </div>
 
                 <div>
                   <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Radius Cekungan Mangkok:</span>
+                    <span>Radius Distribusi Beban:</span>
                     <span className="font-bold">{heelCupRadius.toFixed(2)}x</span>
                   </div>
                   <input
                     type="range"
-                    min={0.70}
-                    max={1.30}
+                    min={0.8}
+                    max={1.4}
                     step={0.05}
                     value={heelCupRadius}
                     onChange={(e) => setHeelCupRadius(parseFloat(e.target.value))}
-                    className="w-full accent-emerald-700"
+                    className="w-full accent-emerald-600"
                   />
                 </div>
               </div>
 
-              {/* 3. Metatarsal Dome Customizer */}
+              {/* 3. Metatarsal Pad Customizer */}
               <div className="p-3 rounded-2xl bg-cyan-50/60 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-900/40 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-xs text-cyan-950 dark:text-cyan-300">
-                    Kubah Metatarsal (Dome Pad)
+                    Bantalan Metatarsal (Cushion Dome)
                   </span>
                   <span className="font-mono text-[10px] font-bold text-cyan-700 dark:text-cyan-400">
                     {metatarsalSize.toFixed(2)}x
@@ -988,212 +1059,229 @@ export function CadStudio({ language }: CadStudioProps) {
 
                 <div>
                   <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Ukuran Kubah:</span>
+                    <span>Ukuran Diameter Kubah:</span>
                     <span className="font-bold">{metatarsalSize.toFixed(2)}x</span>
                   </div>
                   <input
                     type="range"
-                    min={0.60}
-                    max={1.40}
+                    min={0.7}
+                    max={1.4}
                     step={0.05}
                     value={metatarsalSize}
                     onChange={(e) => setMetatarsalSize(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-700"
+                    className="w-full accent-cyan-600"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
                     <span>Posisi Longitudinal (Y):</span>
-                    <span className="font-bold">{Math.round(metatarsalYPos * 100)}% L</span>
+                    <span className="font-bold">{Math.round(metatarsalYPos * 100)}%</span>
                   </div>
                   <input
                     type="range"
-                    min={0.58}
-                    max={0.72}
+                    min={0.55}
+                    max={0.75}
                     step={0.01}
                     value={metatarsalYPos}
                     onChange={(e) => setMetatarsalYPos(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-700"
+                    className="w-full accent-cyan-600"
                   />
                 </div>
               </div>
             </div>
           ) : inspectorTab === "LAYERS" ? (
-            /* Layer Visibility Stack */
+            /* Layer Visibility Controls */
             <div className="space-y-2">
-              <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Layers className="h-4 w-4 text-[#8B0000]" />
-                <span>{isId ? "Visibilitas Layer DXF" : "DXF Layers"}</span>
-              </label>
-
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 cursor-pointer">
+              {[
+                { label: "Kontur Luar Sol (EVA Cut)", state: showOutline, setter: setShowOutline, color: "bg-[#8B0000]" },
+                { label: "Plat Arch Shank (TPU Bridge)", state: showArchPlate, setter: setShowArchPlate, color: "bg-red-500" },
+                { label: "Mangkuk Tumit (Heel Cup)", state: showHeelCup, setter: setShowHeelCup, color: "bg-emerald-500" },
+                { label: "Kubah Metatarsal Pad", state: showMetatarsal, setter: setShowMetatarsal, color: "bg-cyan-500" },
+                { label: "Garis Ukur Dimensi CAD (mm)", state: showDimensions, setter: setShowDimensions, color: "bg-blue-500" },
+                { label: "Grid Matriks Milimeter", state: showGrid, setter: setShowGrid, color: "bg-gray-400" },
+              ].map((item, idx) => (
+                <label
+                  key={idx}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                    <span className="font-semibold text-gray-800 dark:text-gray-200 text-xs">{item.label}</span>
+                  </div>
                   <input
                     type="checkbox"
-                    checked={showOutline}
-                    onChange={(e) => setShowOutline(e.target.checked)}
+                    checked={item.state}
+                    onChange={(e) => item.setter(e.target.checked)}
                     className="rounded text-[#8B0000] focus:ring-0"
                   />
-                  <span className="w-3 h-3 rounded-full bg-red-600 shrink-0" />
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">CUT_OUTLINE (Pisau Potong)</span>
                 </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showArchPlate}
-                    onChange={(e) => setShowArchPlate(e.target.checked)}
-                    className="rounded text-[#8B0000] focus:ring-0"
-                  />
-                  <span className="w-3 h-3 rounded-full bg-red-400 shrink-0" />
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">ARCH_SUPPORT (Plat TPU)</span>
-                </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showHeelCup}
-                    onChange={(e) => setShowHeelCup(e.target.checked)}
-                    className="rounded text-[#8B0000] focus:ring-0"
-                  />
-                  <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">HEEL_CUP (Bantalan Tumit)</span>
-                </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showMetatarsal}
-                    onChange={(e) => setShowMetatarsal(e.target.checked)}
-                    className="rounded text-[#8B0000] focus:ring-0"
-                  />
-                  <span className="w-3 h-3 rounded-full bg-cyan-500 shrink-0" />
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">METATARSAL (Kubah Depan)</span>
-                </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showDimensions}
-                    onChange={(e) => setShowDimensions(e.target.checked)}
-                    className="rounded text-[#8B0000] focus:ring-0"
-                  />
-                  <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0" />
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">DIMENSIONS (Garis Ukur)</span>
-                </label>
-              </div>
+              ))}
             </div>
           ) : (
-            /* Material & Thickness Specs */
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px]">
-                  {isId ? "Spesifikasi Ketebalan Moulding" : "Thickness & Moulding"}
-                </label>
-
-                <div className="grid grid-cols-2 gap-2">
+            /* Manufacturing Specs & Yield Calculations */
+            <div className="space-y-3">
+              <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 space-y-2">
+                <span className="font-bold text-[11px] text-gray-500 uppercase block">Kalkulasi Material Insole</span>
+                <div className="grid grid-cols-2 gap-2 font-mono text-xs">
                   <div>
-                    <label className="text-[10px] font-semibold text-gray-500">Tebal Depan (mm)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={forefootThickness}
-                      onChange={(e) => setForefootThickness(parseFloat(e.target.value) || 3)}
-                      className="w-full rounded-lg border px-2 py-1 text-xs font-mono font-bold"
-                    />
+                    <span className="text-[10px] text-gray-400 block">Tebal Forefoot</span>
+                    <span className="font-bold">{forefootThickness} mm</span>
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold text-gray-500">Tebal Tumit (mm)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      value={heelThickness}
-                      onChange={(e) => setHeelThickness(parseFloat(e.target.value) || 5)}
-                      className="w-full rounded-lg border px-2 py-1 text-xs font-mono font-bold"
-                    />
+                    <span className="text-[10px] text-gray-400 block">Tebal Heel Drop</span>
+                    <span className="font-bold">{heelThickness} mm</span>
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-semibold text-gray-500">Material Formula</label>
-                  <input
-                    type="text"
-                    value={materialType}
-                    onChange={(e) => setMaterialType(e.target.value)}
-                    className="w-full rounded-lg border px-2.5 py-1.5 text-xs font-semibold"
-                  />
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Luas Area Potong</span>
+                    <span className="font-bold">~{Math.round(geometry.length * ballWidth * 0.007)} cm²</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block">Yield per Lembar EVA</span>
+                    <span className="font-bold">~18-22 psg</span>
+                  </div>
                 </div>
               </div>
 
-              {/* CNC Yield */}
-              <div className="p-3.5 rounded-2xl bg-red-50/70 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 space-y-2">
-                <h4 className="font-extrabold text-xs text-[#8B0000] dark:text-red-300 flex items-center gap-1.5">
-                  <Info className="h-4 w-4" />
-                  <span>{isId ? "Estimasi Yield Pemotongan EVA" : "EVA Cutting Yield"}</span>
-                </h4>
-                <div className="text-[11px] text-gray-700 dark:text-gray-300 space-y-1">
-                  <p>
-                    Lembar EVA Standar: <strong>1.2m x 2.4m</strong>
-                  </p>
-                  <p>
-                    Hasil Potong: <strong>~14 pasang</strong> / lembar
-                  </p>
-                  <p>
-                    Keliling Pisau: <strong>~{Math.round(geometry.length * 2.2)} mm</strong>
-                  </p>
-                </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Tipe Material EVA / PU</label>
+                <input
+                  type="text"
+                  value={materialType}
+                  onChange={(e) => setMaterialType(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 font-semibold text-xs text-gray-900 dark:text-white"
+                />
               </div>
             </div>
           )}
         </div>
+
+        {/* Mobile Dedicated AI & EXPORT Panel (Mobile EXPORT view only) */}
+        {mobileCadView === "EXPORT" && (
+          <div className="md:hidden w-full flex-1 p-4 space-y-4 overflow-y-auto pb-24 bg-white dark:bg-gray-900 text-xs">
+            <div className="space-y-1">
+              <h3 className="font-black text-sm text-gray-900 dark:text-white">
+                Generative AI & Ekspor CAD
+              </h3>
+              <p className="text-xs text-gray-500">
+                Gunakan asisten AI untuk memformulasikan sol atau unduh format CNC
+              </p>
+            </div>
+
+            {/* AI Generator Trigger */}
+            <button
+              onClick={() => setIsAiModalOpen(true)}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-700 to-[#8B0000] text-white text-xs font-black shadow-md flex items-center justify-center gap-2 active:scale-95 transition"
+            >
+              <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
+              <span>Prompt AI Generative Insole</span>
+            </button>
+
+            {/* Preset Selector */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">Pilih Preset Model Pabrik</label>
+              <select
+                onChange={(e) => {
+                  const p = INSOLE_PRESETS.find((pr) => pr.id === e.target.value);
+                  if (p) {
+                    handleApplyPreset(p);
+                    setMobileCadView("CANVAS");
+                  }
+                }}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
+              >
+                <option value="">Pilih Preset Pabrik...</option>
+                {INSOLE_PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.archProfile})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Save Blueprint */}
+            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">Nama Blueprint Model</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={blueprintName}
+                  onChange={(e) => setBlueprintName(e.target.value)}
+                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-semibold"
+                />
+                <button
+                  onClick={handleSaveBlueprint}
+                  className="px-4 py-2 rounded-xl bg-[#8B0000] text-white font-bold text-xs shadow-xs active:scale-95"
+                >
+                  Simpan
+                </button>
+              </div>
+            </div>
+
+            {/* Export Buttons */}
+            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <span className="text-[10px] font-bold uppercase text-gray-400 block">Unduh Berkas CAD & Vektor</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleExportDxf}
+                  disabled={exporting === "DXF"}
+                  className="py-3 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-md flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>{exporting === "DXF" ? "Exporting..." : "DXF (R12 / Corel)"}</span>
+                </button>
+                <button
+                  onClick={handleExportSvg}
+                  disabled={exporting === "SVG"}
+                  className="py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span>Vektor SVG</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Generative AI Insole Modal */}
+      {/* AI Insole Generative Modal */}
       <CadAiModal
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
-        onApplyGeneratedModel={handleApplyAiGenerated}
+        onApplyGeneratedModel={handleApplyAiGeneration}
         language={language}
       />
 
-      {/* Blueprint Library Drawer Modal */}
+      {/* Blueprint Library Catalog Modal */}
       {isLibraryOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
-              <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                <FolderOpen className="h-4 w-4 text-[#8B0000]" />
-                <span>{isId ? "Katalog Blueprint Insole Tersimpan" : "Saved Insole Blueprints"}</span>
-              </h3>
-              <button
-                onClick={() => setIsLibraryOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-gray-700"
-              >
-                ✕
-              </button>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+              <h3 className="font-bold text-base">Katalog Blueprint Insole Tersimpan</h3>
+              <button onClick={() => setIsLibraryOpen(false)} className="p-1 rounded-lg hover:bg-white/10">✕</button>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-              {savedBlueprints.map((bp) => (
-                <div
-                  key={bp.id}
-                  className="p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/40 flex items-center justify-between hover:border-red-300 transition"
-                >
-                  <div>
-                    <p className="font-bold text-xs text-gray-900 dark:text-white">{bp.name}</p>
-                    <p className="text-[11px] text-gray-500 font-mono">
-                      EU {bp.shoeSize} • L:{bp.baseLengthMm}mm • W:{bp.ballWidthMm}mm • {bp.archProfile} Arch
-                    </p>
-                  </div>
-                  <button
+            <div className="p-4 space-y-2 overflow-y-auto flex-1 text-xs">
+              {savedBlueprints.length === 0 ? (
+                <p className="text-center text-gray-400 py-8">Belum ada blueprint tersimpan.</p>
+              ) : (
+                savedBlueprints.map((bp) => (
+                  <div
+                    key={bp.id}
                     onClick={() => handleLoadBlueprint(bp)}
-                    className="px-3 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+                    className="p-3 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-[#8B0000] cursor-pointer flex items-center justify-between transition"
                   >
-                    {isId ? "Buka di CAD" : "Load"}
-                  </button>
-                </div>
-              ))}
+                    <div>
+                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">{bp.name}</h4>
+                      <p className="text-[11px] text-gray-500">
+                        Size EU {bp.shoeSize} • Panjang: {bp.baseLengthMm} mm • Arch: {bp.archProfile}
+                      </p>
+                    </div>
+                    <button className="px-3 py-1 rounded-xl bg-red-50 text-[#8B0000] font-bold text-xs">
+                      Muat
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -232,6 +232,11 @@ export default function HomePage() {
         currentUser={currentUser}
         onOpenSecurity={() => setCurrentTab("SECURITY")}
         onLogout={handleLogout}
+        currentTab={currentTab}
+        onTabChange={(tab) => {
+          setCurrentTab(tab);
+          setIsMobileDetailOpen(false);
+        }}
       />
 
       {/* Main Workspace Layout Shell */}
