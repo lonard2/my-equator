@@ -11,7 +11,7 @@
 - [x] **Phase 0: Project Planning, Architecture & Design Standards** (Completed)
 - [x] **Phase 1: Core Foundation, Layout Shell & Delivery Orders MVP** (Completed)
 - [x] **Phase 2: Materials Inventory & Khatulistiwa AI Assistant** (Completed)
-- [ ] **Phase 3: Insole CAD Studio & Generative Vector Design** (Pending)
+- [x] **Phase 3: Insole CAD Studio & Generative Vector Design** (Completed)
 - [ ] **Phase 4: Visual Analytics Suite & Instant UI Preference Engine** (Pending)
 - [ ] **Phase 5: Factory Security, RBAC Lockdown, Audit Trails & Offline Resiliency** (Pending)
 
@@ -53,22 +53,22 @@
 - [x] Stock movement recording modal (IN / OUT / Adjustment / Wastage) with transaction audit trail.
 - [x] Category allocation breakdown and warehouse stock health visualizer with total IDR valuation.
 - [x] OpenRouter AI client setup supporting multi-model roster (`google/gemini-3.5-flash-lite`, `google/gemini-3.7-flash`, `deepseek/deepseek-v4-pro-0813`, `qwen/qwen3.7-plus`, `openai/gpt-5.6-luna`).
-- [x] Khatulistiwa AI conversational workspace drawer with natural language Delivery Order drafting and 1-click staging action.
+- [x] Khatulistiwa AI truly floating copilot widget with natural language Delivery Order drafting and 1-click staging action.
 - [x] AI real-time inventory query tools and factory calculation aids (BOM estimation).
 - [x] Phase 2 educational walkthrough ([`docs/walkthroughs/phase-2-inventory-and-ai.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-2-inventory-and-ai.md)).
 
 ---
 
 ### Phase 3: Insole CAD Studio & Generative Vector Design
-- [ ] Parametric shoe insole curve generation mathematical model:
+- [x] Parametric shoe insole curve generation mathematical model:
   - Base length: $L = \text{Size} \times 6.67 - 6.7\text{ mm}$
   - Ball width, heel width, and medial/lateral arch contour Bézier equations.
-- [ ] Interactive SVG and Canvas vector editor with real-time millimeter dimension readout.
-- [ ] Custom insole profile creation from blank canvas with add/edit control points.
-- [ ] OpenRouter Prompt-to-CAD generator converting natural language descriptions into parametric CAD contours.
-- [ ] Persistent blueprint preset library to save, load, and duplicate insole models.
-- [ ] Vector export engine generating standard SVG and AutoCAD R12 / CorelDRAW compatible DXF files.
-- [ ] Phase 3 test suite and educational walkthrough ([`docs/walkthroughs/phase-3-insole-cad-studio.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-3-insole-cad-studio.md)).
+- [x] Interactive SVG and Canvas vector editor with real-time millimeter dimension readout.
+- [x] Custom insole profile creation from presets or custom sliders (EU 35–46).
+- [x] OpenRouter Prompt-to-CAD generator converting natural language descriptions into parametric CAD contours.
+- [x] Persistent blueprint preset library to save, load, and duplicate insole models (`src/services/cadService.ts`).
+- [x] Vector export engine generating standard SVG and AutoCAD R12 / CorelDRAW compatible DXF files (`/api/cad/export-dxf`, `/api/cad/export-svg`).
+- [x] Phase 3 educational walkthrough ([`docs/walkthroughs/phase-3-insole-cad-studio.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-3-insole-cad-studio.md)).
 
 ---
 

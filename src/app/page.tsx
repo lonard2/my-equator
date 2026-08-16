@@ -10,6 +10,7 @@ import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
+import { CadStudio } from "@/components/design-studio/CadStudio";
 import { KhatulistiwaAssistant } from "@/components/assistant/KhatulistiwaAssistant";
 import { SettingsModal } from "@/components/common/SettingsModal";
 import {
@@ -395,14 +396,14 @@ export default function HomePage() {
             />
           ) : currentTab === "INVENTORY" ? (
             <InventoryDashboard language={language} />
+          ) : currentTab === "CAD_STUDIO" ? (
+            <CadStudio language={language} />
           ) : (
-            /* Upcoming Modules Placeholder (CAD & Analytics & Security) */
+            /* Upcoming Modules Placeholder (Analytics & Security) */
             <div className="flex-1 flex items-center justify-center p-8 text-center animate-in fade-in duration-200">
               <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="inline-flex p-3 rounded-2xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400 shadow-inner">
-                  {currentTab === "CAD_STUDIO" ? (
-                    <Compass className="h-8 w-8" />
-                  ) : currentTab === "ANALYTICS" ? (
+                  {currentTab === "ANALYTICS" ? (
                     <BarChart3 className="h-8 w-8" />
                   ) : (
                     <ShieldCheck className="h-8 w-8" />

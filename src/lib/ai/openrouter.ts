@@ -113,6 +113,27 @@ export const AI_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "generate_insole_cad",
+      description: "Generate parametric insole CAD geometry parameters from natural language design requirements.",
+      parameters: {
+        type: "object",
+        required: ["shoe_size", "model_name"],
+        properties: {
+          shoe_size: { type: "number", description: "EU shoe size, e.g. 40, 42" },
+          model_name: { type: "string", description: "Name of the insole model" },
+          arch_profile: { type: "string", enum: ["FLAT", "MEDIUM", "HIGH"] },
+          arch_offset_factor: { type: "number", description: "Arch depth multiplier (0.8 to 1.5)" },
+          toe_shape: { type: "string", enum: ["ROUNDED", "ANATOMIC", "SQUARE_ROUND"] },
+          thickness_forefoot_mm: { type: "number" },
+          thickness_heel_mm: { type: "number" },
+          material_type: { type: "string" },
+        },
+      },
+    },
+  },
 ];
 
 /**
@@ -120,6 +141,23 @@ export const AI_TOOLS = [
  */
 export async function executeTool(toolName: string, args: any): Promise<any> {
   switch (toolName) {
+    case "generate_insole_cad": {
+      const size = args.shoe_size || 41;
+      return {
+        status: "CAD_STAGED",
+        blueprintData: {
+          name: args.model_name || `Generative Insole EU ${size}`,
+          shoeSize: size,
+          archProfile: args.arch_profile || "MEDIUM",
+          archOffsetFactor: args.arch_offset_factor || 1.1,
+          toeShape: args.toe_shape || "ROUNDED",
+          thicknessForefootMm: args.thickness_forefoot_mm || 3.0,
+          thicknessHeelMm: args.thickness_heel_mm || 5.0,
+          materialType: args.material_type || "EVA High Density",
+        },
+        message: `Desain CAD Insole untuk ukuran EU ${size} telah di-generate secara parametrik.`,
+      };
+    }
     case "check_inventory_stock": {
       const allMaterials = await InventoryService.getAllMaterials();
       let filtered = allMaterials;
@@ -208,6 +246,7 @@ export async function executeTool(toolName: string, args: any): Promise<any> {
 export async function generateFallbackResponse(userPrompt: string): Promise<{
   content: string;
   stagedDraft?: any;
+  stagedCad?: any;
 }> {
   const lower = userPrompt.toLowerCase();
 
@@ -262,6 +301,29 @@ export async function generateFallbackResponse(userPrompt: string): Promise<{
     text += `Klik tombol **"Terapkan ke Form DO"** di bawah untuk langsung membuka form dengan data ini.`;
 
     return { content: text, stagedDraft: draftData };
+  }
+
+  if (lower.includes("cad") || lower.includes("desain") || lower.includes("sol") || lower.includes("vektor") || lower.includes("contour")) {
+    const size = 42;
+    const cadData = {
+      model_name: "Ortho High Dynamic Racer",
+      shoe_size: size,
+      arch_profile: "HIGH",
+      arch_offset_factor: 1.25,
+      toe_shape: "ANATOMIC",
+      thickness_forefoot_mm: 3.5,
+      thickness_heel_mm: 6.0,
+      material_type: "High Density EVA + Carbon TPU Plate",
+    };
+    const cadResult = await executeTool("generate_insole_cad", cadData);
+    let text = `👟 **Desain CAD Insole Parametrik Telah Disusun:**\n\n`;
+    text += `- Model: **${cadData.model_name}**\n`;
+    text += `- Ukuran Sepatu: **EU ${cadData.shoe_size}** (Panjang: 273.3 mm)\n`;
+    text += `- Kontur Arch: **High Arch Support (Factor 1.25x)**\n`;
+    text += `- Bentuk Ujung Jari: **Anatomic Toe Box**\n`;
+    text += `- Rekomendasi Bahan: **${cadData.material_type}**\n\n`;
+    text += `Kontur siap diekspor ke format **AutoCAD R12 DXF** dan **SVG** untuk mesin CNC / Laser Cutting di Studio Insole CAD.`;
+    return { content: text, stagedCad: cadResult.blueprintData };
   }
 
   if (lower.includes("bom") || lower.includes("kalkulasi") || lower.includes("kebutuhan") || lower.includes("hitung")) {
