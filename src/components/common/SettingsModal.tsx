@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { DeviceViewMode, DensityMode, LayoutWidth, ThemeMode, Language } from "@/types";
-import { X, Sliders, Monitor, Tablet, Smartphone, Sparkles, Sun, Moon, Globe, Check } from "lucide-react";
+import { DensityMode, LayoutWidth, ThemeMode, Language } from "@/types";
+import { X, Sliders, Sun, Moon, Type, Layout, Globe, Check } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  deviceMode: DeviceViewMode | "AUTO";
-  onDeviceModeChange: (mode: DeviceViewMode | "AUTO") => void;
   density: DensityMode;
   onDensityChange: (density: DensityMode) => void;
   layoutWidth: LayoutWidth;
@@ -22,8 +20,6 @@ interface SettingsModalProps {
 export function SettingsModal({
   isOpen,
   onClose,
-  deviceMode,
-  onDeviceModeChange,
   density,
   onDensityChange,
   layoutWidth,
@@ -39,17 +35,17 @@ export function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
           <div className="flex items-center gap-2">
             <Sliders className="h-5 w-5 text-[#8B0000] dark:text-red-400" />
             <div>
               <h3 className="font-bold text-sm text-gray-900 dark:text-white">
-                {isId ? "Pengaturan Tampilan & UI (Preferences)" : "UI & Display Preferences"}
+                {isId ? "Pengaturan Tampilan & Tipografi" : "Display & Typography Settings"}
               </h3>
               <p className="text-[11px] text-gray-500">
-                {isId ? "Kustomisasi skala huruf, lebar layout, dan adaptasi perangkat" : "Customize font scale and layout"}
+                {isId ? "Kustomisasi skala huruf, layout, dan tema" : "Customize font size, width & theme"}
               </p>
             </div>
           </div>
@@ -61,148 +57,123 @@ export function SettingsModal({
           </button>
         </div>
 
-        {/* Content */}
+        {/* Settings Body */}
         <div className="p-5 space-y-5 text-xs">
-          {/* 1. Responsiveness / Device Simulation */}
+          {/* 1. Real Font Scaling / Density */}
           <div className="space-y-2">
-            <label className="font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider text-[11px]">
-              {isId ? "Mode Responsif Perangkat" : "Responsive Device Mode"}
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: "AUTO", label: isId ? "Otomatis" : "Auto Fluid", icon: Sparkles },
-                { id: "DESKTOP", label: "Desktop", icon: Monitor },
-                { id: "TABLET", label: "Tablet", icon: Tablet },
-                { id: "MOBILE", label: "Mobile", icon: Smartphone },
-              ].map((item) => {
-                const isSelected = deviceMode === item.id;
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onDeviceModeChange(item.id as any)}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border font-semibold transition gap-1.5 ${
-                      isSelected
-                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 shadow-xs"
-                        : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="text-[11px]">{item.label}</span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200 font-bold uppercase tracking-wider text-[11px]">
+              <Type className="h-3.5 w-3.5 text-[#8B0000] dark:text-red-400" />
+              <span>{isId ? "Skala Ukuran Huruf (Typography Scale)" : "Font Size Scale"}</span>
             </div>
-          </div>
-
-          {/* 2. UI Density & Font Scaling */}
-          <div className="space-y-2">
-            <label className="font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider text-[11px]">
-              {isId ? "Kerapatan Tampilan & Skala Font (UI Density)" : "UI Density & Scaling"}
-            </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "compact", label: isId ? "Kompak (0.9x)" : "Compact", desc: "Data padat" },
-                { id: "normal", label: isId ? "Normal (1.0x)" : "Normal", desc: "Standar" },
-                { id: "large", label: isId ? "Besar (1.1x)" : "Large", desc: "Mudah dibaca" },
+                { id: "compact", label: isId ? "Kompak" : "Compact", size: "13.5px", desc: isId ? "Tampilan padat" : "Dense data" },
+                { id: "normal", label: isId ? "Normal" : "Normal", size: "16.0px", desc: isId ? "Standar pabrik" : "Default" },
+                { id: "large", label: isId ? "Besar" : "Large", size: "19.0px", desc: isId ? "Jelas & nyaman" : "Easy read" },
               ].map((item) => {
                 const isSelected = density === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => onDensityChange(item.id as DensityMode)}
-                    className={`p-2.5 rounded-xl border text-left font-medium transition ${
+                    className={`p-3 rounded-xl border text-left font-medium transition ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 shadow-xs ring-1 ring-[#8B0000]"
                         : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
                     }`}
                   >
                     <p className="font-bold text-xs">{item.label}</p>
-                    <p className="text-[10px] text-gray-500">{item.desc}</p>
+                    <p className="text-[11px] font-mono text-[#8B0000] dark:text-red-400 font-bold mt-0.5">{item.size}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* 3. Layout Width */}
+          {/* 2. Layout Max Width */}
           <div className="space-y-2">
-            <label className="font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider text-[11px]">
-              {isId ? "Lebar Ruang Kerja (Layout Width)" : "Workspace Width"}
-            </label>
+            <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200 font-bold uppercase tracking-wider text-[11px]">
+              <Layout className="h-3.5 w-3.5 text-[#8B0000] dark:text-red-400" />
+              <span>{isId ? "Lebar Ruang Kerja (Layout Width)" : "Workspace Width"}</span>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { id: "fluid", label: isId ? "Lebar Penuh (Fluid 100%)" : "Fluid (Full Width)", desc: "Maksimal monitor lebar" },
-                { id: "boxed", label: isId ? "Kotak (Boxed 1200px)" : "Boxed (1200px)", desc: "Terpusat di tengah" },
+                { id: "fluid", label: isId ? "Fluid (100%)" : "Fluid (100%)", desc: isId ? "Memenuhi layar penuh" : "Full width" },
+                { id: "boxed", label: isId ? "Boxed (1240px)" : "Boxed (1240px)", desc: isId ? "Terpusat rapi" : "Centered max width" },
               ].map((item) => {
                 const isSelected = layoutWidth === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => onLayoutWidthChange(item.id as LayoutWidth)}
-                    className={`p-2.5 rounded-xl border text-left font-medium transition ${
+                    className={`p-3 rounded-xl border text-left font-medium transition ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 shadow-xs ring-1 ring-[#8B0000]"
                         : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
                     }`}
                   >
                     <p className="font-bold text-xs">{item.label}</p>
-                    <p className="text-[10px] text-gray-500">{item.desc}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* 4. Theme & Language Quick Row */}
+          {/* 3. Theme & Language */}
           <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200 dark:border-gray-800">
             <div className="space-y-1.5">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">{isId ? "Tema Warna:" : "Theme:"}</span>
+              <span className="font-bold text-gray-700 dark:text-gray-300 text-[11px] uppercase tracking-wide">
+                {isId ? "Tema Warna" : "Theme"}
+              </span>
               <div className="flex gap-2">
                 <button
                   onClick={() => onThemeChange("light")}
-                  className={`flex-1 py-1.5 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1.5 ${
                     theme === "light"
-                      ? "border-[#8B0000] bg-red-50 text-[#8B0000]"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600"
+                      ? "border-[#8B0000] bg-red-50 text-[#8B0000] ring-1 ring-[#8B0000]"
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
                   <Sun className="h-3.5 w-3.5" />
-                  <span>Terang</span>
+                  <span>Light</span>
                 </button>
                 <button
                   onClick={() => onThemeChange("dark")}
-                  className={`flex-1 py-1.5 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1.5 ${
                     theme === "dark"
-                      ? "border-red-500 bg-red-950/80 text-red-300"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600"
+                      ? "border-red-500 bg-red-950/80 text-red-300 ring-1 ring-red-500"
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
                   <Moon className="h-3.5 w-3.5" />
-                  <span>Gelap</span>
+                  <span>Dark</span>
                 </button>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">{isId ? "Bahasa:" : "Language:"}</span>
+              <span className="font-bold text-gray-700 dark:text-gray-300 text-[11px] uppercase tracking-wide">
+                {isId ? "Bahasa" : "Language"}
+              </span>
               <div className="flex gap-2">
                 <button
                   onClick={() => onLanguageChange("id")}
-                  className={`flex-1 py-1.5 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-2 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1 ${
                     language === "id"
-                      ? "border-[#8B0000] bg-red-50 text-[#8B0000]"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600"
+                      ? "border-[#8B0000] bg-red-50 text-[#8B0000] ring-1 ring-[#8B0000]"
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
                   <span>🇮🇩 ID</span>
                 </button>
                 <button
                   onClick={() => onLanguageChange("en")}
-                  className={`flex-1 py-1.5 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1 ${
+                  className={`flex-1 py-2 px-2 rounded-lg border text-center font-bold flex items-center justify-center gap-1 ${
                     language === "en"
-                      ? "border-[#8B0000] bg-red-50 text-[#8B0000]"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600"
+                      ? "border-[#8B0000] bg-red-50 text-[#8B0000] ring-1 ring-[#8B0000]"
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
                   <span>🇬🇧 EN</span>
@@ -216,9 +187,9 @@ export function SettingsModal({
         <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 text-right">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-xs transition"
+            className="px-4 py-2 rounded-lg bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-xs transition"
           >
-            {isId ? "Tutup & Terapkan" : "Close & Apply"}
+            {isId ? "Tutup & Terapkan" : "Apply & Close"}
           </button>
         </div>
       </div>
