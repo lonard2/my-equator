@@ -5,7 +5,7 @@ This directory manages the Drizzle ORM schema, SQLite database connection, autom
 
 ## 2. Technology & Driver Stack
 - **Database Engine:** SQLite (stored locally at `data/myequator.db`).
-- **ORM:** Drizzle ORM with `better-sqlite3` driver.
+- **ORM:** Drizzle ORM with `@libsql/client` driver (resilient local file mode with zero native C++ V8 hook issues).
 - **Migration Protocol:** Drizzle Kit (`drizzle-kit generate` & `drizzle-kit push / migrate`).
 
 ## 3. Schema Design Standards

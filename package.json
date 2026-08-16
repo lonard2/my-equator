@@ -13,7 +13,7 @@
     "db:seed": "node --import tsx scripts/seed.ts"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
+    "@libsql/client": "^0.17.4",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.39.3",
     "dxf-writer": "^1.18.4",
@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.7",
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
