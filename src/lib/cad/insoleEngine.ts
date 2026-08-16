@@ -267,32 +267,43 @@ function generateAnatomicalInsoleContour(
 }
 
 /**
- * Generate TPU / EVA Arch Support Plate Contour (Anatomical Medial Shell)
+ * Generate TPU / EVA Arch Support Plate Contour (Anatomical Medial Shell strictly within insole bounds)
  */
-function generateAnatomicalArchPlate(length: number, ballWidth: number, heelWidth: number, waistWidth: number): Point2D[] {
+function generateAnatomicalArchPlate(
+  length: number,
+  ballWidth: number,
+  heelWidth: number,
+  waistWidth: number
+): Point2D[] {
+  const halfBall = ballWidth / 2;
+  const halfHeel = heelWidth / 2;
+  const halfWaist = waistWidth / 2;
+
+  // Medial shell plate positioned strictly on the inner arch quadrant
   const landmarks: Point2D[] = [
-    { x: heelWidth * 0.4, y: length * 0.14 },
-    { x: waistWidth * 0.75, y: length * 0.34 },
-    { x: ballWidth * 0.75, y: length * 0.58 },
-    { x: ballWidth * 0.25, y: length * 0.64 },
-    { x: -waistWidth * 0.25, y: length * 0.42 },
-    { x: -heelWidth * 0.15, y: length * 0.18 },
-    { x: 0, y: length * 0.10 },
+    { x: halfHeel * 0.35, y: length * 0.15 },
+    { x: halfWaist * 0.30, y: length * 0.36 },
+    { x: halfBall * 0.42, y: length * 0.58 },
+    { x: halfBall * 0.18, y: length * 0.62 },
+    { x: -halfWaist * 0.18, y: length * 0.42 },
+    { x: -halfHeel * 0.12, y: length * 0.20 },
+    { x: 0, y: length * 0.12 },
   ];
   return interpolateSpline(landmarks, 4);
 }
 
 /**
- * Generate Heel Cup Cushion Contour (Ergonomic Concave Cup)
+ * Generate Heel Cup Cushion Contour (Ergonomic Concave Cup nestled within heel perimeter)
  */
 function generateAnatomicalHeelCup(length: number, heelWidth: number): Point2D[] {
+  const halfHeel = heelWidth / 2;
   const landmarks: Point2D[] = [
-    { x: 0, y: length * 0.02 },
-    { x: heelWidth * 0.65, y: length * 0.08 },
-    { x: heelWidth * 0.55, y: length * 0.16 },
-    { x: 0, y: length * 0.20 },
-    { x: -heelWidth * 0.55, y: length * 0.16 },
-    { x: -heelWidth * 0.65, y: length * 0.08 },
+    { x: 0, y: length * 0.025 },
+    { x: halfHeel * 0.68, y: length * 0.08 },
+    { x: halfHeel * 0.58, y: length * 0.15 },
+    { x: 0, y: length * 0.185 },
+    { x: -halfHeel * 0.58, y: length * 0.15 },
+    { x: -halfHeel * 0.68, y: length * 0.08 },
   ];
   return interpolateSpline(landmarks, 4);
 }
@@ -301,18 +312,19 @@ function generateAnatomicalHeelCup(length: number, heelWidth: number): Point2D[]
  * Generate Metatarsal Pad (Tear-drop dome cushion placed at 2nd-4th metatarsal heads)
  */
 function generateAnatomicalMetatarsalPad(length: number, ballWidth: number): Point2D[] {
-  const centerX = ballWidth * 0.08;
-  const centerY = length * 0.66;
-  const rx = ballWidth * 0.18;
-  const ry = length * 0.07;
+  const halfBall = ballWidth / 2;
+  const centerX = halfBall * 0.12;
+  const centerY = length * 0.65;
+  const rx = halfBall * 0.32;
+  const ry = length * 0.055;
   const landmarks: Point2D[] = [];
   const steps = 16;
 
   for (let i = 0; i < steps; i++) {
     const angle = (i / steps) * 2 * Math.PI;
     const x = centerX + rx * Math.cos(angle);
-    // Tear drop shape: slightly pointed toward the heel
-    const y = centerY + ry * Math.sin(angle) * (1 - 0.2 * Math.sin(angle));
+    // Tear drop shape: slightly pointed toward the posterior
+    const y = centerY + ry * Math.sin(angle) * (1 - 0.25 * Math.sin(angle));
     landmarks.push({ x, y });
   }
   return interpolateSpline(landmarks, 2);
