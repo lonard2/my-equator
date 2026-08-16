@@ -1,12 +1,13 @@
 /**
  * Equator Insole CAD Engine
  * Parametric footwear insole geometry builder, multi-standard size converter,
- * SVG generator, and AutoCAD R12 DXF stream writer.
+ * customizable orthotic layer components, SVG generator, and AutoCAD R12 DXF stream writer.
  * All units in Millimeters (mm).
  */
 
 export type SizingSystem = "EU" | "US_MEN" | "US_WOMEN" | "UK" | "MONDOPOINT_CM" | "CUSTOM_MM";
 export type ArchProfile = "FLAT" | "MEDIUM" | "HIGH";
+export type HeelCupDepthProfile = "SHALLOW" | "MEDIUM" | "DEEP";
 export type FootType = "LEFT" | "RIGHT" | "PAIR";
 export type ToeShape = "ROUNDED" | "ANATOMIC" | "SQUARE_ROUND";
 
@@ -35,9 +36,15 @@ export interface InsoleParameters {
   thicknessForefootMm?: number;
   thicknessHeelMm?: number;
   materialType?: string;
-  hasArchPlate?: boolean;
-  hasHeelCup?: boolean;
-  hasMetatarsalPad?: boolean;
+
+  // Customizable Orthotic Component Layer Parameters:
+  archPlateLengthFactor?: number; // 0.75 to 1.35 (Length of TPU bridge)
+  archPlateWidthFactor?: number; // 0.70 to 1.30 (Medial flange height/spread)
+  archPlateLateralWing?: boolean; // Anti-torsion outer wing
+  heelCupDepthProfile?: HeelCupDepthProfile; // SHALLOW, MEDIUM, DEEP
+  heelCupRadiusFactor?: number; // 0.70 to 1.30 (Heel cupping diameter)
+  metatarsalPadSizeFactor?: number; // 0.60 to 1.40 (Dome size)
+  metatarsalPadYPosition?: number; // 0.58 to 0.72 (Longitudinal position)
 }
 
 export interface Point2D {
@@ -89,19 +96,15 @@ export function convertSizing(system: SizingSystem, val: number): SizingConversi
       eu = val;
       break;
     case "US_MEN":
-      // US Men 8.5 ~ EU 42, US Men 8 ~ EU 41
       eu = Math.round((val + 33) * 10) / 10;
       break;
     case "US_WOMEN":
-      // US Women 9.5 ~ EU 41
       eu = Math.round((val + 31.5) * 10) / 10;
       break;
     case "UK":
-      // UK 7.5 ~ EU 41
       eu = Math.round((val + 33.5) * 10) / 10;
       break;
     case "MONDOPOINT_CM":
-      // Mondopoint in cm, e.g. 26.5 cm -> EU ~ 41
       eu = Math.round(((val * 10 + 6.6667) / 6.6667) * 10) / 10;
       break;
     case "CUSTOM_MM":
@@ -109,7 +112,6 @@ export function convertSizing(system: SizingSystem, val: number): SizingConversi
       break;
   }
 
-  // Derive all standard equivalents from EU
   const lengthMm =
     system === "CUSTOM_MM"
       ? Math.round(val * 10) / 10
@@ -149,7 +151,6 @@ export function calculateDefaultWidths(length: number) {
  */
 function interpolateSpline(controlPoints: Point2D[], subdivisions: number = 6): Point2D[] {
   const pts = [...controlPoints];
-  // Ensure closed loop
   const n = pts.length;
   const result: Point2D[] = [];
 
@@ -164,7 +165,6 @@ function interpolateSpline(controlPoints: Point2D[], subdivisions: number = 6): 
       const t2 = t * t;
       const t3 = t2 * t;
 
-      // Catmull-Rom basis matrix
       const x =
         0.5 *
         (2 * p1.x +
@@ -188,11 +188,6 @@ function interpolateSpline(controlPoints: Point2D[], subdivisions: number = 6): 
 
 /**
  * Generate Authentic Anatomical Footwear Insole Perimeter (Right Foot)
- * Local Coordinates:
- *   Heel center: (0, 0)
- *   Medial (Inner foot): +X
- *   Lateral (Outer foot): -X
- *   Toe: Y = L
  */
 function generateAnatomicalInsoleContour(
   length: number,
@@ -207,59 +202,27 @@ function generateAnatomicalInsoleContour(
   const halfHeel = heelWidth / 2;
   const halfWaist = waistWidth / 2;
 
-  // Arch curvature multiplier
   const archMultiplier = archProfile === "FLAT" ? 0.75 : archProfile === "HIGH" ? 1.35 : 1.0;
   const effectiveArchDepth = archFactor * archMultiplier;
 
-  // Toe box modifier
-  const greatToeOffset = toeShape === "ANATOMIC" ? halfBall * 0.32 : toeShape === "SQUARE_ROUND" ? halfBall * 0.12 : halfBall * 0.22;
+  const greatToeOffset =
+    toeShape === "ANATOMIC" ? halfBall * 0.32 : toeShape === "SQUARE_ROUND" ? halfBall * 0.12 : halfBall * 0.22;
   const lateralToeDrop = toeShape === "SQUARE_ROUND" ? 0.94 : 0.88;
 
-  // 14 Anatomical Footwear Landmark Points
   const landmarks: Point2D[] = [
-    // 1. Heel Center (Posterior Apex)
     { x: 0, y: 0 },
-
-    // 2. Medial Heel Flare
     { x: halfHeel * 0.82, y: length * 0.06 },
-
-    // 3. Medial Heel Transition
     { x: halfHeel * 0.96, y: length * 0.14 },
-
-    // 4. Medial Arch Cavity (Navicular / Instep Indentation)
-    {
-      x: halfWaist * 0.45 / effectiveArchDepth,
-      y: length * 0.36,
-    },
-
-    // 5. Medial Arch Anterior Rise (Approaching 1st Metatarsal)
+    { x: halfWaist * 0.45 / effectiveArchDepth, y: length * 0.36 },
     { x: halfBall * 0.58, y: length * 0.56 },
-
-    // 6. 1st Metatarsophalangeal Joint (Ball of Foot Medial Peak)
     { x: halfBall * 1.05, y: length * 0.71 },
-
-    // 7. Medial Forefoot Taper toward Great Toe
     { x: halfBall * 0.88, y: length * 0.86 },
-
-    // 8. Great Toe Apex (Hallux Tip - Topmost Point of Insole)
     { x: greatToeOffset, y: length * 1.0 },
-
-    // 9. Toe Box Contour (2nd / 3rd Toe Curve)
     { x: -halfBall * 0.15, y: length * 0.98 },
-
-    // 10. Lateral Toe Slope (4th / 5th Toe Drop)
     { x: -halfBall * 0.72, y: length * lateralToeDrop },
-
-    // 11. 5th Metatarsal Head (Lateral Ball Flare)
     { x: -halfBall * 0.98, y: length * 0.67 },
-
-    // 12. Lateral Waist (Outer Foot Edge - Smooth, gentle curve)
     { x: -halfWaist * 0.92, y: length * 0.42 },
-
-    // 13. Lateral Heel Transition
     { x: -halfHeel * 0.96, y: length * 0.15 },
-
-    // 14. Lateral Heel Flare
     { x: -halfHeel * 0.82, y: length * 0.06 },
   ];
 
@@ -267,66 +230,92 @@ function generateAnatomicalInsoleContour(
 }
 
 /**
- * Generate TPU / EVA Arch Support Plate Contour (Anatomical Medial Shell strictly within insole bounds)
+ * Generate Customizable TPU / Composite Arch Support Plate
  */
-function generateAnatomicalArchPlate(
+function generateCustomArchPlate(
   length: number,
   ballWidth: number,
   heelWidth: number,
-  waistWidth: number
+  waistWidth: number,
+  lengthFactor: number = 1.0,
+  widthFactor: number = 1.0,
+  hasLateralWing: boolean = false
 ): Point2D[] {
   const halfBall = ballWidth / 2;
   const halfHeel = heelWidth / 2;
   const halfWaist = waistWidth / 2;
 
-  // Medial shell plate positioned strictly on the inner arch quadrant
+  const startY = length * Math.max(0.10, 0.15 * (2 - lengthFactor));
+  const endY = length * Math.min(0.68, 0.58 * lengthFactor);
+  const midY = (startY + endY) / 2;
+
+  const medialSpread = Math.min(halfWaist * 0.38, halfWaist * 0.30 * widthFactor);
+  const lateralSpread = hasLateralWing ? -halfWaist * 0.35 : -halfWaist * 0.18;
+
   const landmarks: Point2D[] = [
-    { x: halfHeel * 0.35, y: length * 0.15 },
-    { x: halfWaist * 0.30, y: length * 0.36 },
-    { x: halfBall * 0.42, y: length * 0.58 },
-    { x: halfBall * 0.18, y: length * 0.62 },
-    { x: -halfWaist * 0.18, y: length * 0.42 },
-    { x: -halfHeel * 0.12, y: length * 0.20 },
-    { x: 0, y: length * 0.12 },
+    { x: halfHeel * 0.35 * widthFactor, y: startY },
+    { x: medialSpread, y: midY },
+    { x: halfBall * 0.40 * widthFactor, y: endY },
+    { x: halfBall * 0.15, y: endY + length * 0.03 },
+    { x: lateralSpread, y: midY },
+    { x: -halfHeel * 0.12, y: startY + length * 0.04 },
+    { x: 0, y: startY - length * 0.02 },
   ];
+
   return interpolateSpline(landmarks, 4);
 }
 
 /**
- * Generate Heel Cup Cushion Contour (Ergonomic Concave Cup nestled within heel perimeter)
+ * Generate Customizable Heel Cup Pad
  */
-function generateAnatomicalHeelCup(length: number, heelWidth: number): Point2D[] {
+function generateCustomHeelCup(
+  length: number,
+  heelWidth: number,
+  depthProfile: HeelCupDepthProfile = "MEDIUM",
+  radiusFactor: number = 1.0
+): Point2D[] {
   const halfHeel = heelWidth / 2;
+  const depthMultiplier = depthProfile === "SHALLOW" ? 0.85 : depthProfile === "DEEP" ? 1.25 : 1.0;
+  const r = Math.min(halfHeel * 0.82, halfHeel * 0.68 * radiusFactor);
+  const topY = length * Math.min(0.24, 0.185 * depthMultiplier);
+
   const landmarks: Point2D[] = [
-    { x: 0, y: length * 0.025 },
-    { x: halfHeel * 0.68, y: length * 0.08 },
-    { x: halfHeel * 0.58, y: length * 0.15 },
-    { x: 0, y: length * 0.185 },
-    { x: -halfHeel * 0.58, y: length * 0.15 },
-    { x: -halfHeel * 0.68, y: length * 0.08 },
+    { x: 0, y: length * 0.02 },
+    { x: r, y: length * 0.08 },
+    { x: r * 0.85, y: length * 0.15 },
+    { x: 0, y: topY },
+    { x: -r * 0.85, y: length * 0.15 },
+    { x: -r, y: length * 0.08 },
   ];
+
   return interpolateSpline(landmarks, 4);
 }
 
 /**
- * Generate Metatarsal Pad (Tear-drop dome cushion placed at 2nd-4th metatarsal heads)
+ * Generate Customizable Metatarsal Dome Cushion
  */
-function generateAnatomicalMetatarsalPad(length: number, ballWidth: number): Point2D[] {
+function generateCustomMetatarsalPad(
+  length: number,
+  ballWidth: number,
+  sizeFactor: number = 1.0,
+  yPositionFactor: number = 0.65
+): Point2D[] {
   const halfBall = ballWidth / 2;
   const centerX = halfBall * 0.12;
-  const centerY = length * 0.65;
-  const rx = halfBall * 0.32;
-  const ry = length * 0.055;
+  const centerY = length * Math.max(0.58, Math.min(0.72, yPositionFactor));
+  const rx = halfBall * 0.32 * Math.max(0.6, Math.min(1.4, sizeFactor));
+  const ry = length * 0.055 * Math.max(0.6, Math.min(1.4, sizeFactor));
+
   const landmarks: Point2D[] = [];
   const steps = 16;
 
   for (let i = 0; i < steps; i++) {
     const angle = (i / steps) * 2 * Math.PI;
     const x = centerX + rx * Math.cos(angle);
-    // Tear drop shape: slightly pointed toward the posterior
     const y = centerY + ry * Math.sin(angle) * (1 - 0.25 * Math.sin(angle));
     landmarks.push({ x, y });
   }
+
   return interpolateSpline(landmarks, 2);
 }
 
@@ -351,7 +340,7 @@ function mirrorPoints(points: Point2D[]): Point2D[] {
 }
 
 /**
- * Build Full Parametric Insole Geometry with Multi-System Support
+ * Build Full Parametric Insole Geometry with Customizable Orthotic Layers
  */
 export function buildInsoleGeometry(params: InsoleParameters): InsoleGeometry {
   const sizing = convertSizing(
@@ -377,16 +366,33 @@ export function buildInsoleGeometry(params: InsoleParameters): InsoleGeometry {
   );
   const outlineLeft = mirrorPoints(outlineRight);
 
-  const archPlateRight = generateAnatomicalArchPlate(length, ballWidth, heelWidth, waistWidth);
+  const archPlateRight = generateCustomArchPlate(
+    length,
+    ballWidth,
+    heelWidth,
+    waistWidth,
+    params.archPlateLengthFactor || 1.0,
+    params.archPlateWidthFactor || 1.0,
+    params.archPlateLateralWing || false
+  );
   const archPlateLeft = mirrorPoints(archPlateRight);
 
-  const heelCupRight = generateAnatomicalHeelCup(length, heelWidth);
+  const heelCupRight = generateCustomHeelCup(
+    length,
+    heelWidth,
+    params.heelCupDepthProfile || "MEDIUM",
+    params.heelCupRadiusFactor || 1.0
+  );
   const heelCupLeft = mirrorPoints(heelCupRight);
 
-  const metatarsalRight = generateAnatomicalMetatarsalPad(length, ballWidth);
+  const metatarsalRight = generateCustomMetatarsalPad(
+    length,
+    ballWidth,
+    params.metatarsalPadSizeFactor || 1.0,
+    params.metatarsalPadYPosition || 0.65
+  );
   const metatarsalLeft = mirrorPoints(metatarsalRight);
 
-  // Compute Bounding Box
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
@@ -446,7 +452,7 @@ export function buildInsoleGeometry(params: InsoleParameters): InsoleGeometry {
 }
 
 /**
- * Standard Presets Catalog
+ * Standard Presets Catalog with Component Layer Defaults
  */
 export const INSOLE_PRESETS = [
   {
@@ -459,6 +465,13 @@ export const INSOLE_PRESETS = [
     thicknessForefootMm: 3.5,
     thicknessHeelMm: 6.0,
     materialType: "High Density EVA 65C + TPU Arch Shank",
+    archPlateLengthFactor: 1.15,
+    archPlateWidthFactor: 1.2,
+    archPlateLateralWing: true,
+    heelCupDepthProfile: "DEEP" as HeelCupDepthProfile,
+    heelCupRadiusFactor: 1.1,
+    metatarsalPadSizeFactor: 1.15,
+    metatarsalPadYPosition: 0.66,
   },
   {
     id: "comfort-everyday-memory",
@@ -470,6 +483,13 @@ export const INSOLE_PRESETS = [
     thicknessForefootMm: 3.0,
     thicknessHeelMm: 4.5,
     materialType: "EVA Foam + Natural Latex Layer",
+    archPlateLengthFactor: 0.95,
+    archPlateWidthFactor: 0.95,
+    archPlateLateralWing: false,
+    heelCupDepthProfile: "MEDIUM" as HeelCupDepthProfile,
+    heelCupRadiusFactor: 1.0,
+    metatarsalPadSizeFactor: 0.9,
+    metatarsalPadYPosition: 0.65,
   },
   {
     id: "flatfoot-correction-firm",
@@ -481,6 +501,13 @@ export const INSOLE_PRESETS = [
     thicknessForefootMm: 3.0,
     thicknessHeelMm: 6.5,
     materialType: "Rigid TPU Support Plate + EVA 70C",
+    archPlateLengthFactor: 1.25,
+    archPlateWidthFactor: 1.3,
+    archPlateLateralWing: true,
+    heelCupDepthProfile: "DEEP" as HeelCupDepthProfile,
+    heelCupRadiusFactor: 1.15,
+    metatarsalPadSizeFactor: 1.2,
+    metatarsalPadYPosition: 0.66,
   },
   {
     id: "diabetic-gentle-cushion",
@@ -492,6 +519,13 @@ export const INSOLE_PRESETS = [
     thicknessForefootMm: 4.5,
     thicknessHeelMm: 5.5,
     materialType: "Plastazote + Soft PU Cushion",
+    archPlateLengthFactor: 0.8,
+    archPlateWidthFactor: 0.85,
+    archPlateLateralWing: false,
+    heelCupDepthProfile: "SHALLOW" as HeelCupDepthProfile,
+    heelCupRadiusFactor: 0.9,
+    metatarsalPadSizeFactor: 0.8,
+    metatarsalPadYPosition: 0.64,
   },
   {
     id: "marathon-racing-ultralight",
@@ -503,6 +537,13 @@ export const INSOLE_PRESETS = [
     thicknessForefootMm: 2.0,
     thicknessHeelMm: 3.8,
     materialType: "Supercritical PEBAX + Carbon Composite Shank",
+    archPlateLengthFactor: 1.05,
+    archPlateWidthFactor: 1.05,
+    archPlateLateralWing: false,
+    heelCupDepthProfile: "MEDIUM" as HeelCupDepthProfile,
+    heelCupRadiusFactor: 0.95,
+    metatarsalPadSizeFactor: 1.0,
+    metatarsalPadYPosition: 0.65,
   },
 ];
 
@@ -517,13 +558,11 @@ export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "R
 
   let dxf = "";
 
-  // 1. DXF Header
   dxf += "0\nSECTION\n2\nHEADER\n";
-  dxf += "9\n$ACADVER\n1\nAC1009\n"; // AutoCAD R12 ASCII
-  dxf += "9\n$INSUNITS\n70\n4\n"; // 4 = Millimeters
+  dxf += "9\n$ACADVER\n1\nAC1009\n";
+  dxf += "9\n$INSUNITS\n70\n4\n";
   dxf += "0\nENDSEC\n";
 
-  // 2. Tables & Layers Definition
   dxf += "0\nSECTION\n2\nTABLES\n";
   dxf += "0\nTABLE\n2\nLAYER\n70\n5\n";
   dxf += "0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n";
@@ -533,7 +572,6 @@ export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "R
   dxf += "0\nLAYER\n2\nMETATARSAL\n70\n0\n62\n4\n6\nCONTINUOUS\n";
   dxf += "0\nENDTAB\n0\nENDSEC\n";
 
-  // 3. Entities Section
   dxf += "0\nSECTION\n2\nENTITIES\n";
 
   const appendPolyline = (pts: Point2D[], layerName: string) => {
@@ -580,9 +618,9 @@ export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}mm" height="${h}mm">
   <style>
     .cut-outline { fill: #f8fafc; stroke: #8B0000; stroke-width: 1.5; }
-    .arch-support { fill: #fee2e2; stroke: #ef4444; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.8; }
-    .heel-cup { fill: #dcfce7; stroke: #16a34a; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.8; }
-    .metatarsal { fill: #e0f2fe; stroke: #0284c7; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.8; }
+    .arch-support { fill: #fee2e2; stroke: #ef4444; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.85; }
+    .heel-cup { fill: #dcfce7; stroke: #16a34a; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.85; }
+    .metatarsal { fill: #e0f2fe; stroke: #0284c7; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.85; }
     .text-label { font-family: monospace; font-size: 8px; fill: #64748b; font-weight: bold; }
   </style>
   <g id="insole-design">
