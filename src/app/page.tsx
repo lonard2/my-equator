@@ -11,6 +11,8 @@ import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
+import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
+import { CommandPalette } from "@/components/common/CommandPalette";
 import { KhatulistiwaAssistant } from "@/components/assistant/KhatulistiwaAssistant";
 import { SettingsModal } from "@/components/common/SettingsModal";
 import {
@@ -49,10 +51,23 @@ export default function HomePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [stagedDraftData, setStagedDraftData] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Global Keyboard Listener for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const fetchOrders = async () => {
     try {
@@ -100,18 +115,22 @@ export default function HomePage() {
   };
 
   const handleLanguageToggle = () => {
-    setLanguage(language === "id" ? "en" : "id");
+    const nextLang = language === "id" ? "en" : "id";
+    setLanguage(nextLang);
   };
 
-  const handleStatusChange = async (id: string, newStatus: DeliveryOrderStatus) => {
+  const handleStatusChange = async (orderId: string, newStatus: DeliveryOrderStatus) => {
     try {
-      const res = await fetch(`/api/orders/${id}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       const json = await res.json();
       if (json.success) {
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder(json.data);
+        }
         fetchOrders();
       }
     } catch (err) {
@@ -119,9 +138,11 @@ export default function HomePage() {
     }
   };
 
-  const handleDeleteOrder = async (id: string) => {
+  const handleDeleteOrder = async (orderId: string) => {
     try {
-      const res = await fetch(`/api/orders/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "DELETE",
+      });
       const json = await res.json();
       if (json.success) {
         setSelectedOrder(null);
@@ -133,68 +154,68 @@ export default function HomePage() {
     }
   };
 
+  // Khatulistiwa AI Assistant: 1-Click Apply Draft Order
   const handleApplyDraftOrder = (draftData: any) => {
     setStagedDraftData(draftData);
-    setIsAssistantOpen(false);
     setIsFormOpen(true);
   };
 
   const isId = language === "id";
 
-  // Factory Summary Metrics
-  const totalVolumePairs = orders.reduce((sum, o) => sum + o.totalQuantity, 0);
+  // Summary Metrics
+  const totalVolumePairs = orders.reduce((sum, o) => sum + (o.totalQuantity || 0), 0);
   const readyOrDispatchedCount = orders.filter((o) => o.status === "PRINTED" || o.status === "DISPATCHED").length;
   const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
-      {/* Global Brand Header with Compass Logo */}
+    <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-950 font-sans antialiased text-gray-900 dark:text-gray-100 overflow-hidden">
+      {/* Top Header */}
       <Header
         theme={theme}
         onThemeToggle={handleThemeToggle}
         language={language}
         onLanguageToggle={handleLanguageToggle}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
-      {/* Main Container Wrapper */}
-      <div
-        className={`flex-1 flex overflow-hidden w-full mx-auto transition-all ${
-          layoutWidth === "boxed" ? "max-w-[1340px] my-2 sm:px-4" : "w-full"
-        }`}
-      >
-        {/* Sidebar Navigation (Visible on Tablet & Desktop) */}
-        <div className="hidden md:flex shrink-0 transition-all duration-200">
+      {/* Main Workspace Layout Shell */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Desktop Navigation Sidebar */}
+        <div className="hidden md:flex shrink-0">
           <Sidebar
             currentTab={currentTab}
-            onTabChange={setCurrentTab}
+            onTabChange={(tab) => {
+              setCurrentTab(tab);
+              setIsMobileDetailOpen(false);
+            }}
             language={language}
           />
         </div>
 
-        {/* Dynamic Main Workspace Content */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950">
+        {/* Dynamic Center Work Area */}
+        <main className="flex-1 flex flex-col overflow-hidden relative">
           {currentTab === "DELIVERY_ORDERS" ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
-              {/* Tablet & Desktop Top KPI Ribbon */}
-              <div className="hidden md:grid grid-cols-3 gap-3 p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
+              {/* Top KPI Micro Strip */}
+              <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
                 <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-red-50/70 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 hover:shadow-xs transition">
-                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-[#8B0000] dark:text-red-300 shadow-xs">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-[#8B0000] dark:text-red-400 shadow-xs">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-bold text-red-900/70 dark:text-red-300">
-                      {isId ? "Surat Jalan Aktif" : "Active Orders"}
+                      {isId ? "Total Surat Jalan" : "Total Orders"}
                     </p>
                     <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
-                      {orders.length} <span className="text-xs font-normal text-gray-500">Dokumen</span>
+                      {orders.length} <span className="text-xs font-normal text-gray-500">dokumen</span>
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 hover:shadow-xs transition">
                   <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 shadow-xs">
-                    <TrendingUp className="h-4 w-4" />
+                    <Boxes className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-bold text-amber-900/70 dark:text-amber-300">
@@ -280,41 +301,55 @@ export default function HomePage() {
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 dark:border-gray-800">
-                          <span className="text-gray-500">{formatIndonesianDate(order.deliveryDate)}</span>
-                          <span className="font-extrabold text-[#8B0000] dark:text-red-400">
-                            {order.totalQuantity.toLocaleString("id-ID")} psg
+                        <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="text-gray-400">Total: </span>
+                            <span className="font-extrabold text-gray-900 dark:text-white">
+                              {order.totalQuantity} psg
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-gray-400">
+                            {formatIndonesianDate(order.deliveryDate)}
                           </span>
                         </div>
 
-                        {/* Mobile 1-Tap Quick Action Row */}
                         <div className="grid grid-cols-2 gap-2 pt-1">
                           <button
-                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setPrintOrder(order);
                             }}
-                            className="py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
+                            className="py-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
                           >
                             <Printer className="h-3.5 w-3.5" />
-                            <span>Slip Cetak</span>
+                            <span>Cetak Slip</span>
                           </button>
-                          {order.status === "PRINTED" || order.status === "CONFIRMED" ? (
+
+                          {order.status === "PRINTED" ? (
                             <button
-                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                setSelectedOrder(order);
                                 handleStatusChange(order.id, "DISPATCHED");
                               }}
-                              className="py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs active:scale-95 transition"
+                              className="py-2 rounded-xl bg-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
                             >
                               <Truck className="h-3.5 w-3.5" />
-                              <span>Dispatch</span>
+                              <span>Kirimkan</span>
+                            </button>
+                          ) : order.status === "DISPATCHED" ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedOrder(order);
+                                handleStatusChange(order.id, "DELIVERED");
+                              }}
+                              className="py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                            >
+                              <span>Tiba di Lokasi</span>
                             </button>
                           ) : (
                             <button
-                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
@@ -398,16 +433,14 @@ export default function HomePage() {
             <InventoryDashboard language={language} />
           ) : currentTab === "CAD_STUDIO" ? (
             <CadStudio language={language} />
+          ) : currentTab === "ANALYTICS" ? (
+            <AnalyticsDashboard language={language} />
           ) : (
-            /* Upcoming Modules Placeholder (Analytics & Security) */
+            /* Upcoming Modules Placeholder (Security) */
             <div className="flex-1 flex items-center justify-center p-8 text-center animate-in fade-in duration-200">
               <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="inline-flex p-3 rounded-2xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400 shadow-inner">
-                  {currentTab === "ANALYTICS" ? (
-                    <BarChart3 className="h-8 w-8" />
-                  ) : (
-                    <ShieldCheck className="h-8 w-8" />
-                  )}
+                  <ShieldCheck className="h-8 w-8" />
                 </div>
                 <h3 className="text-base font-bold text-gray-900 dark:text-white">
                   {isId ? "Modul ini dijadwalkan pada fase berikutnya" : "Module Scheduled for Upcoming Phase"}
@@ -450,10 +483,7 @@ export default function HomePage() {
               <OrderDetail
                 order={selectedOrder}
                 onStatusChange={handleStatusChange}
-                onOpenPrint={(order) => {
-                  setIsMobileDetailOpen(false);
-                  setPrintOrder(order);
-                }}
+                onOpenPrint={(order) => setPrintOrder(order)}
                 onDeleteOrder={handleDeleteOrder}
                 onOrderUpdated={fetchOrders}
                 language={language}
@@ -463,8 +493,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Mobile Thumb Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex items-center justify-around py-2 px-3 shadow-lg">
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2 px-4 flex items-center justify-around shrink-0 shadow-lg z-30">
         <button
           onClick={() => {
             setCurrentTab("DELIVERY_ORDERS");
@@ -497,17 +527,32 @@ export default function HomePage() {
 
         <button
           onClick={() => {
-            setCurrentTab("DIGITIZER");
+            setCurrentTab("CAD_STUDIO");
             setIsMobileDetailOpen(false);
           }}
           className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
-            currentTab === "DIGITIZER"
+            currentTab === "CAD_STUDIO"
               ? "text-[#8B0000] dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
-          <Plus className="h-5 w-5" />
-          <span>Quick Digit</span>
+          <Compass className="h-5 w-5" />
+          <span>Insole CAD</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setCurrentTab("ANALYTICS");
+            setIsMobileDetailOpen(false);
+          }}
+          className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
+            currentTab === "ANALYTICS"
+              ? "text-[#8B0000] dark:text-red-400"
+              : "text-gray-500 dark:text-gray-400"
+          }`}
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span>Analitik</span>
         </button>
 
         <button
@@ -518,6 +563,23 @@ export default function HomePage() {
           <span>Settings</span>
         </button>
       </div>
+
+      {/* Global Command Palette (⌘K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onNavigateTab={(tab) => {
+          setCurrentTab(tab);
+          setIsMobileDetailOpen(false);
+        }}
+        onOpenCreateOrder={() => {
+          setStagedDraftData(null);
+          setIsFormOpen(true);
+        }}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
+        language={language}
+      />
 
       {/* Khatulistiwa AI Assistant Truly Floating Pop-up Widget */}
       <KhatulistiwaAssistant
