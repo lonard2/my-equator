@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DeliveryOrder, DeliveryOrderStatus, DeviceViewMode, ThemeMode, Language } from "@/types";
+import { DeliveryOrder, DeliveryOrderStatus, DeviceViewMode, DensityMode, LayoutWidth, ThemeMode, Language } from "@/types";
 import { Header } from "@/components/common/Header";
 import { Sidebar, NavTab } from "@/components/common/Sidebar";
 import { OrderList } from "@/components/delivery-orders/OrderList";
@@ -9,6 +9,7 @@ import { OrderDetail } from "@/components/delivery-orders/OrderDetail";
 import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
+import { SettingsModal } from "@/components/common/SettingsModal";
 import {
   FileText,
   Boxes,
@@ -16,12 +17,8 @@ import {
   BarChart3,
   Bot,
   ShieldCheck,
-  Smartphone,
-  Tablet,
-  Monitor,
-  Printer,
-  Truck,
   Plus,
+  Truck,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -29,11 +26,17 @@ export default function HomePage() {
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
   const [currentTab, setCurrentTab] = useState<NavTab>("DELIVERY_ORDERS");
-  const [deviceMode, setDeviceMode] = useState<DeviceViewMode>("DESKTOP");
+
+  // UI Settings State
+  const [deviceMode, setDeviceMode] = useState<DeviceViewMode | "AUTO">("AUTO");
+  const [density, setDensity] = useState<DensityMode>("normal");
+  const [layoutWidth, setLayoutWidth] = useState<LayoutWidth>("fluid");
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [language, setLanguage] = useState<Language>("id");
 
+  // Modals State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,10 +65,24 @@ export default function HomePage() {
     fetchOrders();
   }, []);
 
+  const handleDensityChange = (d: DensityMode) => {
+    setDensity(d);
+    document.documentElement.setAttribute("data-density", d);
+  };
+
+  const handleLayoutWidthChange = (w: LayoutWidth) => {
+    setLayoutWidth(w);
+    document.documentElement.setAttribute("data-width", w);
+  };
+
+  const handleThemeChange = (t: ThemeMode) => {
+    setTheme(t);
+    document.documentElement.setAttribute("data-theme", t);
+  };
+
   const handleThemeToggle = () => {
     const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    document.documentElement.setAttribute("data-theme", nextTheme);
+    handleThemeChange(nextTheme);
   };
 
   const handleLanguageToggle = () => {
@@ -113,34 +130,38 @@ export default function HomePage() {
         onThemeToggle={handleThemeToggle}
         language={language}
         onLanguageToggle={handleLanguageToggle}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
-      {/* Main Container Wrapper simulating Device Modes if chosen */}
+      {/* Main Container Wrapper */}
       <div
         className={`flex-1 flex overflow-hidden transition-all mx-auto w-full ${
           deviceMode === "TABLET"
             ? "max-w-[860px] my-4 rounded-3xl border-8 border-gray-800 shadow-2xl bg-white dark:bg-gray-900"
             : deviceMode === "MOBILE"
             ? "max-w-[420px] my-4 rounded-[40px] border-[10px] border-gray-900 shadow-2xl bg-white dark:bg-gray-900 overflow-hidden"
+            : layoutWidth === "boxed"
+            ? "max-w-[1240px] my-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm"
             : "w-full"
         }`}
       >
-        {/* Sidebar Navigation (hidden in Mobile Simulation mode for bottom app bar) */}
-        {deviceMode !== "MOBILE" && (
-          <Sidebar
-            currentTab={currentTab}
-            onTabChange={setCurrentTab}
-            language={language}
-          />
+        {/* Sidebar Navigation */}
+        {(deviceMode === "AUTO" || deviceMode === "DESKTOP" || deviceMode === "TABLET") && (
+          <div className={deviceMode === "AUTO" ? "hidden md:flex" : "flex"}>
+            <Sidebar
+              currentTab={currentTab}
+              onTabChange={setCurrentTab}
+              language={language}
+            />
+          </div>
         )}
 
         {/* Dynamic Main Workspace Content */}
         <main className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-950">
           {currentTab === "DELIVERY_ORDERS" ? (
             deviceMode === "MOBILE" ? (
-              /* Mobile Specific Warehouse Layout */
+              /* Mobile Simulated Layout */
               <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden">
-                {/* Mobile Top Bar */}
                 <div className="p-3.5 bg-[#8B0000] text-white flex items-center justify-between">
                   <div>
                     <h2 className="font-bold text-sm">Surat Jalan (Warehouse)</h2>
@@ -154,7 +175,6 @@ export default function HomePage() {
                   </button>
                 </div>
 
-                {/* Mobile Orders List */}
                 <div className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-2">
                   {orders.map((order) => (
                     <div
@@ -182,7 +202,6 @@ export default function HomePage() {
                           {order.totalQuantity} psg
                         </span>
                       </div>
-                      {/* Mobile Quick Dispatch Toggle */}
                       {order.status === "PRINTED" && (
                         <button
                           onClick={(e) => {
@@ -199,7 +218,6 @@ export default function HomePage() {
                   ))}
                 </div>
 
-                {/* Mobile Bottom Navigation Bar */}
                 <div className="p-2 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-around text-[10px] font-semibold text-gray-600 dark:text-gray-400">
                   <button
                     onClick={() => setCurrentTab("DELIVERY_ORDERS")}
@@ -225,9 +243,9 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              /* Desktop & Tablet Master-Detail Layout */
-              <div className="flex-1 flex overflow-hidden">
-                <div className="w-80 md:w-96 shrink-0 h-full">
+              /* Auto Responsive & Desktop/Tablet Master-Detail Layout */
+              <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <div className="w-full md:w-80 lg:w-96 shrink-0 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800">
                   <OrderList
                     orders={orders}
                     selectedOrderId={selectedOrder?.id || null}
@@ -238,13 +256,14 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div className="flex-1 h-full overflow-hidden">
+                <div className="flex-1 h-1/2 md:h-full overflow-hidden">
                   {selectedOrder ? (
                     <OrderDetail
                       order={selectedOrder}
                       onStatusChange={handleStatusChange}
                       onOpenPrint={(order) => setPrintOrder(order)}
                       onDeleteOrder={handleDeleteOrder}
+                      onOrderUpdated={fetchOrders}
                       language={language}
                     />
                   ) : (
@@ -269,7 +288,7 @@ export default function HomePage() {
               language={language}
             />
           ) : (
-            /* Placeholder for upcoming phases */
+            /* Upcoming Modules Placeholder */
             <div className="flex-1 flex items-center justify-center p-8 text-center">
               <div className="max-w-md space-y-3 bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="inline-flex p-3 rounded-xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-400">
@@ -286,11 +305,11 @@ export default function HomePage() {
                   )}
                 </div>
                 <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                  {isId ? "Modul ini siap dikembangkan pada fase berikutnya" : "Module Scheduled for Upcoming Phase"}
+                  {isId ? "Modul ini dijadwalkan pada fase berikutnya" : "Module Scheduled for Upcoming Phase"}
                 </h3>
                 <p className="text-xs text-gray-500">
                   {isId
-                    ? "Fondasi database, tipe data TypeScript, dan arsitektur telah siap sesuai panduan AGENTS.md."
+                    ? "Arsitektur, skema database, dan panduan AGENTS.md telah siap untuk dikembangkan."
                     : "Architecture and database schema ready in accordance with AGENTS.md roadmap."}
                 </p>
                 <button
@@ -320,6 +339,22 @@ export default function HomePage() {
         order={printOrder}
         onClose={() => setPrintOrder(null)}
         language={language}
+      />
+
+      {/* UI Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        deviceMode={deviceMode}
+        onDeviceModeChange={setDeviceMode}
+        density={density}
+        onDensityChange={handleDensityChange}
+        layoutWidth={layoutWidth}
+        onLayoutWidthChange={handleLayoutWidthChange}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        language={language}
+        onLanguageChange={setLanguage}
       />
     </div>
   );

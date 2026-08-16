@@ -18,6 +18,24 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+    const updated = await OrderService.updateOrder(id, body);
+    if (!updated) {
+      return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("Error updating order:", error);
+    return NextResponse.json({ success: false, error: "Failed to update order" }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -25,11 +43,12 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    if (body.status) {
+    if (body.status && Object.keys(body).length === 1) {
       const updated = await OrderService.updateOrderStatus(id, body.status);
       return NextResponse.json({ success: true, data: updated });
     }
-    return NextResponse.json({ success: false, error: "No update payload provided" }, { status: 400 });
+    const updated = await OrderService.updateOrder(id, body);
+    return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     console.error("Error updating order:", error);
     return NextResponse.json({ success: false, error: "Failed to update order" }, { status: 500 });

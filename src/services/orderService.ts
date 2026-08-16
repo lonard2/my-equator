@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { deliveryOrders, deliveryOrderItems } from "@/lib/db/schema";
 import { DeliveryOrder, DeliveryOrderItem, DeliveryOrderStatus, SizeBreakdown } from "@/types";
-import { eq, desc, sql, like } from "drizzle-orm";
+import { eq, desc, like } from "drizzle-orm";
 import crypto from "crypto";
 
 export class OrderService {
@@ -127,7 +127,7 @@ export class OrderService {
   }
 
   /**
-   * Creates a new delivery order with line items in an atomic transaction
+   * Creates a new delivery order with line items
    */
   static async createOrder(data: {
     orderNumber?: string;
@@ -207,6 +207,97 @@ export class OrderService {
 
     const created = await this.getOrderById(orderId);
     return created!;
+  }
+
+  /**
+   * Updates an existing delivery order and its line items
+   */
+  static async updateOrder(
+    id: string,
+    data: {
+      recipientName?: string;
+      destinationAddress?: string;
+      poNumber?: string;
+      vehicleNumber?: string;
+      driverName?: string;
+      deliveryDate?: string;
+      notes?: string;
+      status?: DeliveryOrderStatus;
+      items?: Array<{
+        id?: string;
+        articleCode: string;
+        articleName: string;
+        colorway?: string;
+        sizes: SizeBreakdown;
+        unitPrice?: number;
+        notes?: string;
+      }>;
+    }
+  ): Promise<DeliveryOrder | null> {
+    const existing = await this.getOrderById(id);
+    if (!existing) return null;
+
+    const now = new Date().toISOString();
+
+    let grandTotalPairs = existing.totalQuantity;
+    let grandTotalAmount = existing.totalAmount || 0;
+
+    if (data.items) {
+      grandTotalPairs = 0;
+      grandTotalAmount = 0;
+
+      // Replace items
+      await db.delete(deliveryOrderItems).where(eq(deliveryOrderItems.deliveryOrderId, id));
+
+      const newRows = data.items.map((item) => {
+        let itemPairs = 0;
+        Object.values(item.sizes).forEach((qty) => {
+          if (typeof qty === "number" && qty > 0) itemPairs += qty;
+        });
+
+        const unitPrice = item.unitPrice || 0;
+        const totalPrice = itemPairs * unitPrice;
+        grandTotalPairs += itemPairs;
+        grandTotalAmount += totalPrice;
+
+        return {
+          id: item.id || crypto.randomUUID(),
+          deliveryOrderId: id,
+          articleCode: item.articleCode,
+          articleName: item.articleName,
+          colorway: item.colorway || null,
+          sizeBreakdown: JSON.stringify(item.sizes),
+          totalPairs: itemPairs,
+          unitPrice: unitPrice,
+          totalPrice: totalPrice,
+          notes: item.notes || null,
+          createdAt: now,
+        };
+      });
+
+      if (newRows.length > 0) {
+        await db.insert(deliveryOrderItems).values(newRows);
+      }
+    }
+
+    await db
+      .update(deliveryOrders)
+      .set({
+        recipientName: data.recipientName !== undefined ? data.recipientName : existing.recipientName,
+        destinationAddress: data.destinationAddress !== undefined ? data.destinationAddress : existing.destinationAddress,
+        poNumber: data.poNumber !== undefined ? data.poNumber : existing.poNumber,
+        vehicleNumber: data.vehicleNumber !== undefined ? data.vehicleNumber : existing.vehicleNumber,
+        driverName: data.driverName !== undefined ? data.driverName : existing.driverName,
+        deliveryDate: data.deliveryDate !== undefined ? data.deliveryDate : existing.deliveryDate,
+        notes: data.notes !== undefined ? data.notes : existing.notes,
+        status: data.status !== undefined ? data.status : existing.status,
+        totalQuantity: grandTotalPairs,
+        totalAmount: grandTotalAmount,
+        updatedAt: now,
+      })
+      .where(eq(deliveryOrders.id, id));
+
+    return this.getOrderById(id);
   }
 
   /**

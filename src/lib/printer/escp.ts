@@ -4,27 +4,28 @@ import { formatIDR, terbilang, formatShortDate } from "@/lib/utils/formatters";
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 /**
- * Pads or truncates a string to fit exactly `width` characters.
+ * Truncates or pads a string to fit exactly `width` monospace characters.
  */
-function padRight(str: string, width: number): string {
-  if (str.length > width) return str.slice(0, width);
-  return str + " ".repeat(width - str.length);
-}
-
-function padLeft(str: string, width: number): string {
-  if (str.length > width) return str.slice(0, width);
-  return " ".repeat(width - str.length) + str;
-}
-
-function padCenter(str: string, width: number): string {
-  if (str.length > width) return str.slice(0, width);
-  const left = Math.floor((width - str.length) / 2);
-  const right = width - str.length - left;
-  return " ".repeat(left) + str + " ".repeat(right);
+function fit(str: string, width: number, align: "left" | "right" | "center" = "left"): string {
+  const cleanStr = (str || "").replace(/[\r\n\t]/g, " ");
+  if (cleanStr.length > width) {
+    return cleanStr.slice(0, width);
+  }
+  const diff = width - cleanStr.length;
+  if (align === "right") {
+    return " ".repeat(diff) + cleanStr;
+  }
+  if (align === "center") {
+    const left = Math.floor(diff / 2);
+    const right = diff - left;
+    return " ".repeat(left) + cleanStr + " ".repeat(right);
+  }
+  return cleanStr + " ".repeat(diff);
 }
 
 /**
- * Generates an exact 80-column plain-text monospace representation of the Surat Jalan (Delivery Order).
+ * Generates an exact 80-column monospace plain-text representation of the Surat Jalan.
+ * Total width is guaranteed to be 80 characters on every line.
  */
 export function generateEscpMonospaceText(order: DeliveryOrder): string {
   const lines: string[] = [];
@@ -32,40 +33,41 @@ export function generateEscpMonospaceText(order: DeliveryOrder): string {
 
   // Header
   lines.push("=".repeat(W));
-  lines.push(padCenter("EQUATOR INSOLE BANDUNG", W));
-  lines.push(padCenter("SURAT JALAN / DELIVERY ORDER", W));
-  lines.push(padCenter("Jl. Industri Insole No. 88, Bandung, Jawa Barat | Telp: (022) 540-8899", W));
+  lines.push(fit("EQUATOR INSOLE BANDUNG", W, "center"));
+  lines.push(fit("SURAT JALAN / DELIVERY ORDER", W, "center"));
+  lines.push(fit("Jl. Industri Insole No. 88, Bandung, Jawa Barat | Telp: (022) 540-8899", W, "center"));
   lines.push("-".repeat(W));
 
   // Metadata Row 1
-  const metaLeft1 = `No. Surat Jalan : ${order.orderNumber}`;
-  const metaRight1 = `Tanggal : ${formatShortDate(order.deliveryDate)}`;
-  lines.push(metaLeft1 + " ".repeat(Math.max(2, W - metaLeft1.length - metaRight1.length)) + metaRight1);
+  const metaL1 = `No. Surat Jalan : ${order.orderNumber}`;
+  const metaR1 = `Tanggal : ${formatShortDate(order.deliveryDate)}`;
+  lines.push(metaL1 + " ".repeat(Math.max(2, W - metaL1.length - metaR1.length)) + metaR1);
 
   // Metadata Row 2
-  const metaLeft2 = `Kepada / Yth    : ${order.recipientName}`;
-  const metaRight2 = `PO / SPK: ${order.poNumber || "-"}`;
-  lines.push(metaLeft2 + " ".repeat(Math.max(2, W - metaLeft2.length - metaRight2.length)) + metaRight2);
+  const metaL2 = `Kepada / Yth    : ${order.recipientName}`;
+  const metaR2 = `PO / SPK: ${order.poNumber || "-"}`;
+  lines.push(metaL2 + " ".repeat(Math.max(2, W - metaL2.length - metaR2.length)) + metaR2);
 
   // Metadata Row 3
-  const metaLeft3 = `Alamat Tujuan   : ${order.destinationAddress}`;
-  const metaRight3 = `No Kend : ${order.vehicleNumber || "-"}`;
-  lines.push(metaLeft3 + " ".repeat(Math.max(2, W - metaLeft3.length - metaRight3.length)) + metaRight3);
+  const metaL3 = `Alamat Tujuan   : ${order.destinationAddress}`;
+  const metaR3 = `No Kend : ${order.vehicleNumber || "-"}`;
+  lines.push(metaL3 + " ".repeat(Math.max(2, W - metaL3.length - metaR3.length)) + metaR3);
 
-  lines.push("-".repeat(W));
+  // Divider
+  // Exact 80-character grid breakdown:
+  // |No |Artikel & Spesifikasi | 36| 37| 38| 39| 40| 41| 42| 43| 44| 45| Total Psg |
+  // 1+3 + 1+22                 + 10*(3+1)                              + 11+1 = 80
+  const dividerLine = "+---+----------------------+---+---+---+---+---+---+---+---+---+---+-----------+";
+  lines.push(dividerLine);
 
-  // Size Matrix Table Header
-  // Columns: No (3) | Artikel / Deskripsi (21) | 36|37|38|39|40|41|42|43|44|45 (10*4=40) | Total (8) | = 72 + borders = 80
-  let tableHeader = "+---+---------------------+";
-  STANDARD_SIZES.forEach((s) => (tableHeader += `${s}|`));
-  tableHeader += "  Total +";
-  lines.push(tableHeader);
-
-  let colTitles = "|No |Artikel & Warna      |";
-  STANDARD_SIZES.forEach((s) => (colTitles += `${padCenter(s.toString(), 3)}|`));
-  colTitles += " Pasang |";
-  lines.push(colTitles);
-  lines.push("+---+---------------------+---+---+---+---+---+---+---+---+---+---+---------+");
+  // Column Header Row (Single, no duplicates)
+  let headerRow = "|No |Artikel & Spesifikasi |";
+  STANDARD_SIZES.forEach((s) => {
+    headerRow += `${fit(s.toString(), 3, "center")}|`;
+  });
+  headerRow += " Total Psg |";
+  lines.push(headerRow);
+  lines.push(dividerLine);
 
   // Items Rows
   const items = order.items || [];
@@ -74,32 +76,37 @@ export function generateEscpMonospaceText(order: DeliveryOrder): string {
   items.forEach((item, index) => {
     grandTotalPairs += item.totalPairs;
     const sizes = item.sizes || {};
-    let itemRow = `|${padRight((index + 1).toString(), 3)}|${padRight(item.articleName, 21)}|`;
+    let itemRow = `|${fit((index + 1).toString(), 3, "center")}|${fit(item.articleName, 22, "left")}|`;
     STANDARD_SIZES.forEach((s) => {
       const q = sizes[s];
       const val = q && q > 0 ? q.toString() : "-";
-      itemRow += `${padCenter(val, 3)}|`;
+      itemRow += `${fit(val, 3, "center")}|`;
     });
-    itemRow += `${padLeft(item.totalPairs.toString() + " psg", 9)}|`;
+    itemRow += `${fit(item.totalPairs.toString() + " psg", 11, "right")}|`;
     lines.push(itemRow);
   });
 
-  // If empty or short, pad with empty rows for continuous paper consistency
   if (items.length === 0) {
-    let emptyRow = "| 1 |(Belum ada item)     |";
-    STANDARD_SIZES.forEach(() => (emptyRow += " - |"));
-    emptyRow += "   0 psg |";
+    let emptyRow = `| 1 |${fit("(Belum ada item)", 22, "left")}|`;
+    STANDARD_SIZES.forEach(() => {
+      emptyRow += " - |";
+    });
+    emptyRow += "      0 psg|";
     lines.push(emptyRow);
   }
 
-  lines.push("+---+---------------------+---+---+---+---+---+---+---+---+---+---+---------+");
+  lines.push(dividerLine);
 
-  // Summary Row
-  const totalRow = `| TOTAL PASANG DIKIRIM                                            |${padLeft(
-    grandTotalPairs.toString() + " psg",
-    9
-  )}|`;
-  lines.push(totalRow);
+  // Summary Row (Exact 80 columns)
+  // | TOTAL PASANG DIKIRIM                                      |  1500 psg |
+  // 1 + 65 + 1 + 11 + 1 = 79?
+  // Let's ensure exact 80 chars:
+  // prefix: "| TOTAL PASANG DIKIRIM" (22) + 44 spaces = 66
+  // value: fit(grandTotalPairs + " psg", 11, "right")
+  // 1 + 66 + 1 + 11 + 1 = 80
+  const totalLabel = fit(" TOTAL PASANG DIKIRIM", 66, "left");
+  const totalVal = fit(grandTotalPairs.toString() + " psg", 11, "right");
+  lines.push(`|${totalLabel}|${totalVal}|`);
   lines.push("=".repeat(W));
 
   // Terbilang / Total Amount & Notes
@@ -111,25 +118,25 @@ export function generateEscpMonospaceText(order: DeliveryOrder): string {
   }
   lines.push("");
 
-  // Signatures Triad
+  // Signatures Triad (Exact 80 width: 24 + 4 + 24 + 4 + 24 = 80)
   const sigW = 24;
   const sigGap = 4;
   const sigRow1 =
-    padCenter("Penerima / Customer", sigW) +
+    fit("Penerima / Customer", sigW, "center") +
     " ".repeat(sigGap) +
-    padCenter("Pengirim / Sopir", sigW) +
+    fit("Pengirim / Sopir", sigW, "center") +
     " ".repeat(sigGap) +
-    padCenter("Hormat Kami / Gudang", sigW);
+    fit("Hormat Kami / Gudang", sigW, "center");
   lines.push(sigRow1);
   lines.push("");
   lines.push("");
   lines.push("");
   const sigRow2 =
-    padCenter("(....................)", sigW) +
+    fit("(....................)", sigW, "center") +
     " ".repeat(sigGap) +
-    padCenter(`(${order.driverName || "...................."})`, sigW) +
+    fit(`(${order.driverName || "...................."})`, sigW, "center") +
     " ".repeat(sigGap) +
-    padCenter("(  Equator Insole  )", sigW);
+    fit("(  Equator Insole  )", sigW, "center");
   lines.push(sigRow2);
   lines.push("=".repeat(W));
 
