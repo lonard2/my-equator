@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown } from "@/types";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
+import { TouchSizePad } from "./TouchSizePad";
 import {
   Printer,
   FileDown,
@@ -11,16 +12,13 @@ import {
   Calendar,
   Building,
   MapPin,
-  FileText,
-  User,
-  Car,
-  Clock,
-  ArrowRight,
   Trash2,
   Edit3,
   Save,
   X,
   Plus,
+  Grid,
+  Touchpad,
 } from "lucide-react";
 
 interface OrderDetailProps {
@@ -55,6 +53,8 @@ export function OrderDetail({
   const isId = language === "id";
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
+  const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
 
   // Edit form states
   const [recipientName, setRecipientName] = useState(order.recipientName);
@@ -87,6 +87,7 @@ export function OrderDetail({
     }));
     setEditItems(mapped);
     setIsEditing(false);
+    setActiveItemIndex(0);
   }, [order]);
 
   const handleDownloadPrn = () => {
@@ -94,23 +95,24 @@ export function OrderDetail({
   };
 
   const handleAddItem = () => {
-    setEditItems([
-      ...editItems,
-      {
-        id: `item-${Date.now()}`,
-        articleCode: `EQ-ITEM-0${editItems.length + 1}`,
-        articleName: "Insole EVA Custom Moulded",
-        colorway: "Black",
-        unitPrice: 20000,
-        sizes: {},
-        notes: "",
-      },
-    ]);
+    const nextItem = {
+      id: `item-${Date.now()}`,
+      articleCode: `EQ-ITEM-0${editItems.length + 1}`,
+      articleName: "Insole EVA Custom Moulded",
+      colorway: "Black",
+      unitPrice: 20000,
+      sizes: {},
+      notes: "",
+    };
+    setEditItems([...editItems, nextItem]);
+    setActiveItemIndex(editItems.length);
   };
 
   const handleRemoveItem = (id: string) => {
     if (editItems.length <= 1) return;
-    setEditItems(editItems.filter((i) => i.id !== id));
+    const next = editItems.filter((i) => i.id !== id);
+    setEditItems(next);
+    setActiveItemIndex(Math.max(0, activeItemIndex - 1));
   };
 
   const handleSizeChange = (itemId: string, size: FootwearSize, value: string) => {
@@ -126,6 +128,12 @@ export function OrderDetail({
         }
         return { ...item, sizes: newSizes };
       })
+    );
+  };
+
+  const handleTouchPadChange = (newSizes: SizeBreakdown) => {
+    setEditItems(
+      editItems.map((item, idx) => (idx === activeItemIndex ? { ...item, sizes: newSizes } : item))
     );
   };
 
@@ -204,6 +212,7 @@ export function OrderDetail({
   };
 
   const nextAction = nextStatusMap[order.status];
+  const currentEditItem = editItems[activeItemIndex] || editItems[0];
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto">
@@ -427,7 +436,7 @@ export function OrderDetail({
 
         {/* Size Matrix Items Table (View or Interactive Edit) */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-sm text-gray-900 dark:text-white">
                 {isId ? "Rincian Matriks Ukuran Sepatu (EU 36–45)" : "Footwear Size Breakdown Matrix"}
@@ -440,7 +449,37 @@ export function OrderDetail({
                   : `${order.items?.length || 0} ${isId ? "artikel insole dipesan" : "insole articles ordered"}`}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-3">
+              {isEditing && (
+                <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setInputMode("GRID")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                      inputMode === "GRID"
+                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <Grid className="h-3.5 w-3.5" />
+                    <span>Grid</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode("TOUCH_PAD")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                      inputMode === "TOUCH_PAD"
+                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <Touchpad className="h-3.5 w-3.5" />
+                    <span>Touch Pad</span>
+                  </button>
+                </div>
+              )}
+
               {isEditing && (
                 <button
                   type="button"
@@ -451,6 +490,7 @@ export function OrderDetail({
                   <span>{isId ? "+ Tambah Baris" : "+ Add Row"}</span>
                 </button>
               )}
+
               <div className="text-right">
                 <span className="text-xs text-gray-500 uppercase font-semibold block">
                   {isId ? "Total Pasang" : "Total Pairs"}
@@ -544,8 +584,35 @@ export function OrderDetail({
                   </tr>
                 </tfoot>
               </table>
+            ) : inputMode === "TOUCH_PAD" ? (
+              /* Touch Pad Edit Mode */
+              <div className="p-4 space-y-4">
+                {/* Active Item Tabs */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {editItems.map((item, idx) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveItemIndex(idx)}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition ${
+                        activeItemIndex === idx
+                          ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {item.articleCode || `Item ${idx + 1}`}: {item.articleName}
+                    </button>
+                  ))}
+                </div>
+
+                <TouchSizePad
+                  sizes={currentEditItem?.sizes || {}}
+                  onChange={handleTouchPadChange}
+                  language={language}
+                />
+              </div>
             ) : (
-              /* Interactive Edit Mode Table */
+              /* Interactive Grid Table */
               <table className="w-full text-xs text-left">
                 <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
                   <tr>

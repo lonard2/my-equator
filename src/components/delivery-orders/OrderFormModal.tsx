@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import { FootwearSize, SizeBreakdown } from "@/types";
-import { X, Plus, Trash2, Save, Calculator } from "lucide-react";
+import { X, Plus, Trash2, Save, Calculator, Grid, Touchpad } from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
+import { TouchSizePad } from "./TouchSizePad";
 
 interface OrderFormModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export function OrderFormModal({
   );
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
 
   const [items, setItems] = useState<FormItem[]>([
     {
@@ -55,26 +57,29 @@ export function OrderFormModal({
     },
   ]);
 
+  const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
+
   if (!isOpen) return null;
 
   const handleAddItem = () => {
-    setItems([
-      ...items,
-      {
-        id: `item-${Date.now()}`,
-        articleCode: `EQ-ITEM-0${items.length + 1}`,
-        articleName: "Insole EVA Custom Moulded",
-        colorway: "Black",
-        unitPrice: 20000,
-        sizes: {},
-        notes: "",
-      },
-    ]);
+    const nextItem = {
+      id: `item-${Date.now()}`,
+      articleCode: `EQ-ITEM-0${items.length + 1}`,
+      articleName: "Insole EVA Custom Moulded",
+      colorway: "Black",
+      unitPrice: 20000,
+      sizes: {},
+      notes: "",
+    };
+    setItems([...items, nextItem]);
+    setActiveItemIndex(items.length);
   };
 
   const handleRemoveItem = (id: string) => {
     if (items.length <= 1) return;
-    setItems(items.filter((i) => i.id !== id));
+    const newItems = items.filter((i) => i.id !== id);
+    setItems(newItems);
+    setActiveItemIndex(Math.max(0, activeItemIndex - 1));
   };
 
   const handleSizeChange = (itemId: string, size: FootwearSize, value: string) => {
@@ -90,6 +95,14 @@ export function OrderFormModal({
         }
         return { ...item, sizes: newSizes };
       })
+    );
+  };
+
+  const handleTouchPadChange = (newSizes: SizeBreakdown) => {
+    const activeItem = items[activeItemIndex];
+    if (!activeItem) return;
+    setItems(
+      items.map((item, idx) => (idx === activeItemIndex ? { ...item, sizes: newSizes } : item))
     );
   };
 
@@ -147,9 +160,11 @@ export function OrderFormModal({
     }
   };
 
+  const currentItem = items[activeItemIndex] || items[0];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
           <div>
@@ -268,124 +283,231 @@ export function OrderFormModal({
 
           {/* Size Matrix Items Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                 <Calculator className="h-4 w-4 text-[#8B0000]" />
                 <span>{isId ? "Rincian Artikel & Matriks Ukuran Sepatu (EU 36–45)" : "Size Breakdown Matrix"}</span>
               </h4>
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#8B0000] dark:text-red-400 hover:underline"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>{isId ? "+ Tambah Baris Artikel" : "+ Add Item Row"}</span>
-              </button>
+
+              {/* View Switcher: Spreadsheet vs Touch Pad */}
+              <div className="flex items-center space-x-2">
+                <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setInputMode("GRID")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                      inputMode === "GRID"
+                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <Grid className="h-3.5 w-3.5" />
+                    <span>Grid Spreadsheet</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode("TOUCH_PAD")}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                      inputMode === "TOUCH_PAD"
+                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <Touchpad className="h-3.5 w-3.5" />
+                    <span>Touch Pad</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#8B0000] dark:text-red-400 hover:underline"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>{isId ? "+ Baris Baru" : "+ Add Row"}</span>
+                </button>
+              </div>
             </div>
 
-            <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto bg-gray-50/50 dark:bg-gray-800/30">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
-                  <tr>
-                    <th className="p-2.5 text-left w-36">{isId ? "Kode & Nama Artikel" : "Article"}</th>
-                    <th className="p-2.5 text-left w-24">{isId ? "Harga (IDR)" : "Price"}</th>
-                    {STANDARD_SIZES.map((size) => (
-                      <th key={size} className="p-2 text-center w-11 font-mono">
-                        {size}
-                      </th>
-                    ))}
-                    <th className="p-2.5 text-right w-20">{isId ? "Total Psg" : "Pairs"}</th>
-                    <th className="p-2.5 text-center w-10"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {items.map((item) => {
-                    let itemPairs = 0;
-                    Object.values(item.sizes).forEach((qty) => {
-                      if (typeof qty === "number" && qty > 0) itemPairs += qty;
-                    });
+            {/* If Touch Pad mode is active */}
+            {inputMode === "TOUCH_PAD" ? (
+              <div className="space-y-4">
+                {/* Active Item Selector Tab Bar */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                  {items.map((item, idx) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveItemIndex(idx)}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition ${
+                        activeItemIndex === idx
+                          ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {item.articleCode || `Item ${idx + 1}`}: {item.articleName}
+                    </button>
+                  ))}
+                </div>
 
-                    return (
-                      <tr key={item.id} className="bg-white dark:bg-gray-900">
-                        <td className="p-2.5 space-y-1">
-                          <input
-                            type="text"
-                            placeholder="Kode Art (e.g. EQ-01)"
-                            value={item.articleCode}
-                            onChange={(e) =>
-                              setItems(
-                                items.map((i) => (i.id === item.id ? { ...i, articleCode: e.target.value } : i))
-                              )
-                            }
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-[11px] font-mono"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Deskripsi Artikel"
-                            value={item.articleName}
-                            onChange={(e) =>
-                              setItems(
-                                items.map((i) => (i.id === item.id ? { ...i, articleName: e.target.value } : i))
-                              )
-                            }
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold"
-                          />
-                        </td>
-                        <td className="p-2.5">
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="Rp 0"
-                            value={item.unitPrice || ""}
-                            onChange={(e) =>
-                              setItems(
-                                items.map((i) =>
-                                  i.id === item.id ? { ...i, unitPrice: parseInt(e.target.value, 10) || 0 } : i
+                {/* Item Details Form */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Kode Artikel</label>
+                    <input
+                      type="text"
+                      value={currentItem.articleCode}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((it, i) => (i === activeItemIndex ? { ...it, articleCode: e.target.value } : it))
+                        )
+                      }
+                      className="w-full rounded border px-2 py-1 text-xs font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Nama Artikel</label>
+                    <input
+                      type="text"
+                      value={currentItem.articleName}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((it, i) => (i === activeItemIndex ? { ...it, articleName: e.target.value } : it))
+                        )
+                      }
+                      className="w-full rounded border px-2 py-1 text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Harga Satuan (IDR)</label>
+                    <input
+                      type="number"
+                      value={currentItem.unitPrice || ""}
+                      onChange={(e) =>
+                        setItems(
+                          items.map((it, i) =>
+                            i === activeItemIndex ? { ...it, unitPrice: parseInt(e.target.value, 10) || 0 } : it
+                          )
+                        )
+                      }
+                      className="w-full rounded border px-2 py-1 text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+
+                {/* Dedicated Touch Sizing Pad */}
+                <TouchSizePad
+                  sizes={currentItem.sizes}
+                  onChange={handleTouchPadChange}
+                  language={language}
+                />
+              </div>
+            ) : (
+              /* Spreadsheet Grid View */
+              <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto bg-gray-50/50 dark:bg-gray-800/30">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <th className="p-2.5 text-left w-36">{isId ? "Kode & Nama Artikel" : "Article"}</th>
+                      <th className="p-2.5 text-left w-24">{isId ? "Harga (IDR)" : "Price"}</th>
+                      {STANDARD_SIZES.map((size) => (
+                        <th key={size} className="p-2 text-center w-11 font-mono">
+                          {size}
+                        </th>
+                      ))}
+                      <th className="p-2.5 text-right w-20">{isId ? "Total Psg" : "Pairs"}</th>
+                      <th className="p-2.5 text-center w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {items.map((item) => {
+                      let itemPairs = 0;
+                      Object.values(item.sizes).forEach((qty) => {
+                        if (typeof qty === "number" && qty > 0) itemPairs += qty;
+                      });
+
+                      return (
+                        <tr key={item.id} className="bg-white dark:bg-gray-900">
+                          <td className="p-2.5 space-y-1">
+                            <input
+                              type="text"
+                              placeholder="Kode Art (e.g. EQ-01)"
+                              value={item.articleCode}
+                              onChange={(e) =>
+                                setItems(
+                                  items.map((i) => (i.id === item.id ? { ...i, articleCode: e.target.value } : i))
                                 )
-                              )
-                            }
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs"
-                          />
-                        </td>
-                        {STANDARD_SIZES.map((size) => {
-                          const val = item.sizes[size] || "";
-                          return (
-                            <td key={size} className="p-1">
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                placeholder="-"
-                                value={val}
-                                onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
-                                className={`w-full text-center rounded border px-1 py-1 text-xs font-mono font-bold transition ${
-                                  val && Number(val) > 0
-                                    ? "bg-red-50 dark:bg-red-950/60 border-[#8B0000] text-[#8B0000] dark:text-red-300"
-                                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-                                }`}
-                              />
-                            </td>
-                          );
-                        })}
-                        <td className="p-2.5 text-right font-extrabold text-xs text-[#8B0000] dark:text-red-400">
-                          {itemPairs} psg
-                        </td>
-                        <td className="p-2.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(item.id)}
-                            disabled={items.length <= 1}
-                            className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-30 transition"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                              }
+                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-[11px] font-mono"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Deskripsi Artikel"
+                              value={item.articleName}
+                              onChange={(e) =>
+                                setItems(
+                                  items.map((i) => (i.id === item.id ? { ...i, articleName: e.target.value } : i))
+                                )
+                              }
+                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold"
+                            />
+                          </td>
+                          <td className="p-2.5">
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="Rp 0"
+                              value={item.unitPrice || ""}
+                              onChange={(e) =>
+                                setItems(
+                                  items.map((i) =>
+                                    i.id === item.id ? { ...i, unitPrice: parseInt(e.target.value, 10) || 0 } : i
+                                  )
+                                )
+                              }
+                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs"
+                            />
+                          </td>
+                          {STANDARD_SIZES.map((size) => {
+                            const val = item.sizes[size] || "";
+                            return (
+                              <td key={size} className="p-1">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  placeholder="-"
+                                  value={val}
+                                  onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
+                                  className={`w-full text-center rounded border px-1 py-1 text-xs font-mono font-bold transition ${
+                                    val && Number(val) > 0
+                                      ? "bg-red-50 dark:bg-red-950/60 border-[#8B0000] text-[#8B0000] dark:text-red-300"
+                                      : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                                  }`}
+                                />
+                              </td>
+                            );
+                          })}
+                          <td className="p-2.5 text-right font-extrabold text-xs text-[#8B0000] dark:text-red-400">
+                            {itemPairs} psg
+                          </td>
+                          <td className="p-2.5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(item.id)}
+                              disabled={items.length <= 1}
+                              className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-30 transition"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Live Summary Bar */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40">
