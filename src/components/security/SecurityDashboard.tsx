@@ -18,6 +18,12 @@ import {
   Users,
   Search,
   ArrowRight,
+  UserPlus,
+  Edit2,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  LogOut,
 } from "lucide-react";
 import {
   FACTORY_DEMO_ACCOUNTS,
@@ -33,6 +39,7 @@ import { formatIndonesianDate } from "@/lib/utils/formatters";
 interface SecurityDashboardProps {
   currentUser: FactoryUser;
   onUserChange: (user: FactoryUser) => void;
+  onLogout?: () => void;
   language: "id" | "en";
 }
 
@@ -48,19 +55,42 @@ interface AuditLogItem {
   timestamp: string;
 }
 
+interface ManagedUser {
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarUrl?: string | null;
+  isActive: number;
+  lastLoginAt?: string | null;
+  createdAt: string;
+}
+
 export function SecurityDashboard({
   currentUser,
   onUserChange,
+  onLogout,
   language,
 }: SecurityDashboardProps) {
   const isId = language === "id";
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
+  const [userList, setUserList] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [logFilter, setLogFilter] = useState("");
   const [isSwitchingUser, setIsSwitchingUser] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // New User Form State
+  const [newUsername, setNewUsername] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("equator2026!");
+  const [newRole, setNewRole] = useState<UserRole>("SALES_OPERATOR");
+  const [creatingUser, setCreatingUser] = useState(false);
 
   const fetchLogs = async () => {
     try {
@@ -77,9 +107,93 @@ export function SecurityDashboard({
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/security/users");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setUserList(json.data);
+      }
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    }
+  };
+
   useEffect(() => {
     fetchLogs();
+    fetchUsers();
   }, []);
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUsername.trim() || !newName.trim() || !newEmail.trim() || !newPassword) {
+      alert("Mohon lengkapi semua bidang isian.");
+      return;
+    }
+
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/security/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: newUsername,
+          name: newName,
+          email: newEmail,
+          password: newPassword,
+          role: newRole,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setIsAddUserOpen(false);
+        setNewUsername("");
+        setNewName("");
+        setNewEmail("");
+        fetchUsers();
+        fetchLogs();
+      } else {
+        alert(json.error || "Gagal membuat user.");
+      }
+    } catch (err: any) {
+      alert("Gagal membuat user: " + err.message);
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    if (!confirm(`Hapus akun pengguna @${username}?`)) return;
+    try {
+      const res = await fetch(`/api/security/users/${userId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        fetchUsers();
+        fetchLogs();
+      } else {
+        alert(json.error || "Gagal menghapus user.");
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleToggleUserActive = async (user: ManagedUser) => {
+    try {
+      const res = await fetch(`/api/security/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: user.isActive === 1 ? 0 : 1 }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        fetchUsers();
+        fetchLogs();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleExportSnapshot = () => {
     window.location.href = "/api/security/snapshot-export";
@@ -118,6 +232,7 @@ export function SecurityDashboard({
             : `Successfully restored ${json.data.restoredCount} database records!`
         );
         fetchLogs();
+        fetchUsers();
       } else {
         alert(json.error || "Gagal memulihkan database.");
       }
@@ -141,8 +256,8 @@ export function SecurityDashboard({
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6">
-      {/* Header */}
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6 pb-24 md:pb-8">
+      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
@@ -157,25 +272,37 @@ export function SecurityDashboard({
             </h2>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Manajemen hak akses role pabrik, log aktivitas audit, dan snapshot backup offline 1-klik"
-                : "Role-based access control, persistent audit trail logs, and 1-click JSON snapshot backups"}
+                ? "Manajemen hak akses role pabrik, manajemen akun staf, log aktivitas audit, dan snapshot backup offline"
+                : "Role-based access control, user management, persistent audit logs, and 1-click JSON snapshot backups"}
             </p>
           </div>
         </div>
 
-        {/* User Switcher Quick Trigger */}
-        <button
-          onClick={() => setIsSwitchingUser(true)}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition"
-        >
-          <Users className="h-4 w-4" />
-          <span>{isId ? "Ganti Akun Demo / Switch User" : "Switch User Role"}</span>
-        </button>
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsSwitchingUser(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition"
+          >
+            <Users className="h-4 w-4" />
+            <span>{isId ? "Ganti Akun Demo" : "Switch Demo User"}</span>
+          </button>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-bold shadow-xs hover:bg-red-50 hover:text-red-700 active:scale-95 transition"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>{isId ? "Keluar" : "Log Out"}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Active User Profile & Permissions Card */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* User Card */}
+        {/* User Profile Card */}
         <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
           <div className="flex items-center gap-3.5">
             <img
@@ -251,6 +378,100 @@ export function SecurityDashboard({
         </div>
       </div>
 
+      {/* Factory Users Management CRUD (Super Admin & Managers) */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+              <Users className="h-4 w-4 text-[#8B0000]" />
+              <span>{isId ? "Manajemen Akun & Pengguna Pabrik" : "Factory User Management"}</span>
+            </h3>
+            <p className="text-xs text-gray-500">
+              {isId
+                ? "Daftar pengguna terdaftar di database SQLite dengan kata sandi terenkripsi PBKDF2"
+                : "Registered factory users stored in SQLite with salted PBKDF2 password hashes"}
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsAddUserOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] active:scale-95 transition"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            <span>{isId ? "+ Tambah Pengguna" : "+ Add User"}</span>
+          </button>
+        </div>
+
+        {/* User Management Table */}
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
+              <tr>
+                <th className="py-2.5 px-3">Pengguna</th>
+                <th className="py-2.5 px-3">Username & Email</th>
+                <th className="py-2.5 px-3">Peran / Role</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3">Login Terakhir</th>
+                <th className="py-2.5 px-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {userList.map((u) => {
+                const info = getRoleBadgeInfo(u.role, language);
+                return (
+                  <tr key={u.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={u.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+                          alt={u.name}
+                          className="w-7 h-7 rounded-lg object-cover border"
+                        />
+                        <span className="font-bold text-gray-900 dark:text-white">{u.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <p className="font-mono text-gray-700 dark:text-gray-300">@{u.username}</p>
+                      <p className="text-[10px] text-gray-400">{u.email}</p>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${info.badgeBg}`}>
+                        {info.label}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <button
+                        onClick={() => handleToggleUserActive(u)}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition ${
+                          u.isActive === 1
+                            ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
+                            : "bg-gray-200 dark:bg-gray-800 text-gray-500"
+                        }`}
+                      >
+                        {u.isActive === 1 ? "Aktif" : "Non-Aktif"}
+                      </button>
+                    </td>
+                    <td className="py-2.5 px-3 text-[11px] text-gray-500 font-mono">
+                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("id-ID") : "-"}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <button
+                        onClick={() => handleDeleteUser(u.id, u.username)}
+                        disabled={u.username === "superadmin"}
+                        className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-20 transition"
+                        title="Hapus Pengguna"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* 1-Click Offline Database Snapshot Export & Restore */}
       <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -261,13 +482,12 @@ export function SecurityDashboard({
             </h3>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Simpan seluruh relasi database pabrik (Surat Jalan, Stok, CAD, Pengguna) dalam satu file JSON terenkapsulasi"
+                ? "Simpan seluruh relasi database pabrik (Surat Jalan, Stok, CAD, Pengguna, Log Audit) dalam satu file JSON terenkapsulasi"
                 : "1-Click complete database bundle export & restore for zero-configuration factory resilience"}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Export Snapshot */}
             <button
               onClick={handleExportSnapshot}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition"
@@ -276,7 +496,6 @@ export function SecurityDashboard({
               <span>{isId ? "Unduh Backup Snapshot (.json)" : "Download Snapshot (.json)"}</span>
             </button>
 
-            {/* Restore Snapshot */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={restoring}
@@ -392,6 +611,103 @@ export function SecurityDashboard({
           </table>
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {isAddUserOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base">Tambah Akun Pengguna Pabrik</h3>
+                <p className="text-xs text-red-200">Buat kredensial staf baru dengan enkripsi PBKDF2</p>
+              </div>
+              <button onClick={() => setIsAddUserOpen(false)} className="p-1 rounded-lg hover:bg-white/10">✕</button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="p-4 space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Nama Lengkap *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Rian Anggara"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Username *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="rian"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-mono font-semibold text-gray-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="rian@equatorinsole.co.id"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Kata Sandi (Password) *</label>
+                <input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Peran / Role *</label>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as UserRole)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
+                >
+                  <option value="SUPER_ADMIN">Super Admin (Owner)</option>
+                  <option value="FACTORY_MANAGER">Manajer Pabrik</option>
+                  <option value="WAREHOUSE_STAFF">Staff Gudang</option>
+                  <option value="SALES_OPERATOR">Operator Penjualan</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserOpen(false)}
+                  className="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs disabled:opacity-50"
+                >
+                  {creatingUser ? "Menyimpan..." : "Simpan Pengguna"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Switch Demo User Account Modal */}
       {isSwitchingUser && (

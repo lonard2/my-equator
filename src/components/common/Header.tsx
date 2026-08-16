@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Compass, Moon, Sun, Globe, Sliders, Search, ShieldCheck } from "lucide-react";
+import { Compass, Moon, Sun, Globe, Sliders, Search, LogOut } from "lucide-react";
 import { ThemeMode, Language, UserRole } from "@/types";
 import { FactoryUser } from "@/lib/auth/types";
 import { getRoleBadgeInfo } from "@/lib/auth/rbac";
@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenCommandPalette?: () => void;
   currentUser?: FactoryUser;
   onOpenSecurity?: () => void;
+  onLogout?: () => void;
 }
 
 export function Header({
@@ -26,6 +27,7 @@ export function Header({
   onOpenCommandPalette,
   currentUser,
   onOpenSecurity,
+  onLogout,
 }: HeaderProps) {
   const roleInfo = currentUser ? getRoleBadgeInfo(currentUser.role, language) : null;
 
@@ -114,6 +116,17 @@ export function Header({
             <Sliders className="h-4 w-4" />
             <span className="hidden sm:inline">Settings</span>
           </button>
+
+          {/* Logout Button */}
+          {currentUser && onLogout && (
+            <button
+              onClick={onLogout}
+              className="rounded-lg bg-red-950/40 p-1.5 text-red-200 hover:text-white hover:bg-red-900/80 transition border border-red-800/60"
+              title={language === "id" ? "Keluar dari Sistem / Log Out" : "Log Out"}
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </header>

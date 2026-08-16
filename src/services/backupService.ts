@@ -8,7 +8,7 @@ import {
   users,
   auditLogs,
 } from "@/lib/db/schema";
-import { logAuditEvent } from "@/lib/auth/authService";
+import { logAuditEvent, ensureDemoUsersSeeded } from "@/lib/auth/authService";
 
 export interface DatabaseSnapshot {
   metadata: {
@@ -30,6 +30,8 @@ export interface DatabaseSnapshot {
 }
 
 export async function exportDatabaseSnapshot(): Promise<DatabaseSnapshot> {
+  await ensureDemoUsersSeeded();
+
   const [
     orders,
     orderItems,

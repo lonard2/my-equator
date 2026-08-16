@@ -16,6 +16,7 @@ import { SecurityDashboard } from "@/components/security/SecurityDashboard";
 import { CommandPalette } from "@/components/common/CommandPalette";
 import { KhatulistiwaAssistant } from "@/components/assistant/KhatulistiwaAssistant";
 import { SettingsModal } from "@/components/common/SettingsModal";
+import { LoginView } from "@/components/auth/LoginView";
 import { FACTORY_DEMO_ACCOUNTS, FactoryUser } from "@/lib/auth/types";
 import {
   FileText,
@@ -30,8 +31,6 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  TrendingUp,
-  Sliders,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -40,8 +39,9 @@ export default function HomePage() {
   const [selectedOrder, setSelectedOrder] = useState<DeliveryOrder | null>(null);
   const [currentTab, setCurrentTab] = useState<NavTab>("DELIVERY_ORDERS");
 
-  // Factory Authentication & Active User
-  const [currentUser, setCurrentUser] = useState<FactoryUser>(FACTORY_DEMO_ACCOUNTS[0]);
+  // Factory Authentication & Persistent User Session
+  const [currentUser, setCurrentUser] = useState<FactoryUser | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // UI Settings State (5-tier density)
   const [density, setDensity] = useState<DensityMode>("normal");
@@ -61,6 +61,42 @@ export default function HomePage() {
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Restore saved authentication session from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("myequator_session");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id) {
+          setCurrentUser(parsed);
+        }
+      } else {
+        // Default to Super Admin demo account if fresh
+        setCurrentUser(FACTORY_DEMO_ACCOUNTS[0]);
+        localStorage.setItem("myequator_session", JSON.stringify(FACTORY_DEMO_ACCOUNTS[0]));
+      }
+    } catch (e) {
+      setCurrentUser(FACTORY_DEMO_ACCOUNTS[0]);
+    } finally {
+      setAuthInitialized(true);
+    }
+  }, []);
+
+  const handleLoginSuccess = (user: FactoryUser) => {
+    setCurrentUser(user);
+    localStorage.setItem("myequator_session", JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("myequator_session");
+  };
+
+  const handleUserChange = (user: FactoryUser) => {
+    setCurrentUser(user);
+    localStorage.setItem("myequator_session", JSON.stringify(user));
+  };
 
   // Global Keyboard Listener for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -96,8 +132,10 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (currentUser) {
+      fetchOrders();
+    }
+  }, [currentUser]);
 
   const handleDensityChange = (d: DensityMode) => {
     setDensity(d);
@@ -165,6 +203,15 @@ export default function HomePage() {
     setIsFormOpen(true);
   };
 
+  if (!authInitialized) {
+    return null;
+  }
+
+  // If user is not logged in, render the factory login portal
+  if (!currentUser) {
+    return <LoginView onLoginSuccess={handleLoginSuccess} language={language} />;
+  }
+
   const isId = language === "id";
 
   // Summary Metrics
@@ -184,6 +231,7 @@ export default function HomePage() {
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         currentUser={currentUser}
         onOpenSecurity={() => setCurrentTab("SECURITY")}
+        onLogout={handleLogout}
       />
 
       {/* Main Workspace Layout Shell */}
@@ -391,7 +439,7 @@ export default function HomePage() {
 
                 {/* Right Rail (Detail Workspace) */}
                 <div className="hidden md:flex flex-1 flex-col h-full overflow-hidden relative">
-                  {/* Tablet/Desktop Expand / Collapse List Rail Button */}
+                  {/* Expand / Collapse List Rail Button */}
                   <div className="absolute top-4 left-4 z-20">
                     <button
                       onClick={() => setIsListRailCollapsed(!isListRailCollapsed)}
@@ -445,7 +493,8 @@ export default function HomePage() {
           ) : (
             <SecurityDashboard
               currentUser={currentUser}
-              onUserChange={setCurrentUser}
+              onUserChange={handleUserChange}
+              onLogout={handleLogout}
               language={language}
             />
           )}

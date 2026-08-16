@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Users, PieChart as PieIcon } from "lucide-react";
+import { Users, PieChart as PieIcon, Award } from "lucide-react";
 
 interface CustomerShareItem {
   customerName: string;
@@ -33,22 +33,23 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
 
   if (!data || data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-xs text-gray-400">
+      <div className="p-5 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 h-full flex flex-col items-center justify-center text-xs text-gray-400">
         {isId ? "Belum ada data pelanggan." : "No customer data available."}
       </div>
     );
   }
 
   // Calculate SVG Donut arcs
-  const radius = 60;
-  const strokeWidth = 24;
+  const radius = 58;
+  const strokeWidth = 22;
   const circumference = 2 * Math.PI * radius;
   let accumulatedPercent = 0;
 
-  const topCustomers = data.slice(0, 6);
+  const topCustomers = data.slice(0, 5);
+  const topBuyer = topCustomers[0];
 
   return (
-    <div className="p-4 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
+    <div className="p-5 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs flex flex-col justify-between h-full space-y-4">
       {/* Header */}
       <div>
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -61,7 +62,7 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
       </div>
 
       {/* Donut & Legend Container */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-5 my-auto">
         {/* SVG Donut */}
         <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
           <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
@@ -102,7 +103,7 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
         </div>
 
         {/* Legend List */}
-        <div className="flex-1 w-full space-y-1.5 overflow-y-auto max-h-40 text-xs">
+        <div className="flex-1 w-full space-y-1.5 text-xs">
           {topCustomers.map((cust, idx) => {
             const isHovered = hoveredIdx === idx;
             const color = COLORS[idx % COLORS.length];
@@ -112,8 +113,10 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
                 key={idx}
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
-                className={`p-1.5 px-2 rounded-xl flex items-center justify-between cursor-pointer transition ${
-                  isHovered ? "bg-gray-100 dark:bg-gray-800" : ""
+                className={`p-2 rounded-xl flex items-center justify-between cursor-pointer transition ${
+                  isHovered
+                    ? "bg-red-50/60 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40"
+                    : "bg-gray-50/50 dark:bg-gray-800/30 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent"
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -138,6 +141,21 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
           })}
         </div>
       </div>
+
+      {/* Bottom Insights Strip to Fill Card Height Naturally */}
+      {topBuyer && (
+        <div className="p-2.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <Award className="h-4 w-4 text-[#8B0000] dark:text-red-400 shrink-0" />
+            <span className="text-gray-600 dark:text-gray-300 text-[11px]">
+              {isId ? "Kontributor Utama:" : "Top Contributor:"} <strong className="text-gray-900 dark:text-white">{topBuyer.customerName}</strong>
+            </span>
+          </div>
+          <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-300">
+            {topBuyer.percentage}% {isId ? "Omzet" : "Share"}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
