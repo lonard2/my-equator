@@ -12,7 +12,7 @@
 - [x] **Phase 1: Core Foundation, Layout Shell & Delivery Orders MVP** (Completed)
 - [x] **Phase 2: Materials Inventory & Khatulistiwa AI Assistant** (Completed)
 - [x] **Phase 3: Insole CAD Studio & Generative Vector Design** (Completed)
-- [ ] **Phase 4: Visual Analytics Suite & Instant UI Preference Engine** (Pending)
+- [x] **Phase 4: Visual Analytics Suite & Instant UI Preference Engine** (Completed)
 - [ ] **Phase 5: Factory Security, RBAC Lockdown, Audit Trails & Offline Resiliency** (Pending)
 
 ---
@@ -73,12 +73,12 @@
 ---
 
 ### Phase 4: Visual Analytics Suite & Instant UI Preference Engine
-- [ ] Monthly Revenue & Volume Line/Area trend charts with IDR formatting.
-- [ ] Footwear Size Breakdown Bell Curve chart (EU 36–45 distribution).
-- [ ] Customer Market Share Donut chart.
-- [ ] Raw material burn-rate forecast and stock health heatmaps.
-- [ ] Global Command Palette (`⌘K` / `Ctrl+K`) for rapid navigation and actions.
-- [ ] Phase 4 test suite and educational walkthrough ([`docs/walkthroughs/phase-4-analytics-and-ui-engine.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-4-analytics-and-ui-engine.md)).
+- [x] Monthly Revenue & Volume Line/Area trend charts with IDR formatting.
+- [x] Footwear Size Breakdown Bell Curve chart (EU 36–45 distribution).
+- [x] Customer Market Share Donut chart.
+- [x] Raw material burn-rate forecast and stock health heatmaps.
+- [x] Global Command Palette (`⌘K` / `Ctrl+K`) for rapid navigation and actions.
+- [x] Phase 4 educational walkthrough ([`docs/walkthroughs/phase-4-analytics-and-ui-engine.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-4-analytics-and-ui-engine.md)).
 
 ---
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Compass, Moon, Sun, Globe, Sliders } from "lucide-react";
+import { Compass, Moon, Sun, Globe, Sliders, Search, Command } from "lucide-react";
 import { ThemeMode, Language } from "@/types";
 
 interface HeaderProps {
@@ -10,6 +10,7 @@ interface HeaderProps {
   language: Language;
   onLanguageToggle: () => void;
   onOpenSettings: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 export function Header({
@@ -18,6 +19,7 @@ export function Header({
   language,
   onLanguageToggle,
   onOpenSettings,
+  onOpenCommandPalette,
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-[#8B0000] text-white shadow-md transition-colors">
@@ -40,6 +42,21 @@ export function Header({
 
         {/* Action Controls */}
         <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Command Palette Trigger */}
+          {onOpenCommandPalette && (
+            <button
+              onClick={onOpenCommandPalette}
+              className="flex items-center gap-2 rounded-xl bg-red-950/50 px-3 py-1.5 text-xs font-semibold text-red-100 hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
+              title="Cari atau Buka Perintah (⌘K)"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Cari...</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded bg-red-900/80 px-1.5 py-0.2 text-[10px] font-mono text-red-200">
+                ⌘K
+              </kbd>
+            </button>
+          )}
+
           {/* Language Switcher */}
           <button
             onClick={onLanguageToggle}
