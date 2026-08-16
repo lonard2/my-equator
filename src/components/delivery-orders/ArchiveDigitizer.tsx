@@ -372,6 +372,28 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </div>
           );
         })}
+
+        {/* Mobile Sticky Bottom Batch Actions */}
+        <div className="pt-2 flex items-center gap-2">
+          <button
+            onClick={handleAddRow}
+            className="flex-1 py-3 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center justify-center gap-1.5 active:scale-95 transition shadow-xs"
+          >
+            <Plus className="h-4 w-4 text-[#8B0000]" />
+            <span>{isId ? "+ Tambah DO Baru" : "+ Add Another DO"}</span>
+          </button>
+
+          <button
+            onClick={handleSaveBatch}
+            disabled={loading}
+            className="flex-1 py-3 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition disabled:opacity-50"
+          >
+            <Upload className="h-4 w-4" />
+            <span>
+              {loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? `Simpan Batch (${totalBatchPairs} psg)` : `Commit Batch`}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* DESKTOP/TABLET SPREADSHEET TABLE VIEW (hidden md:block) */}
