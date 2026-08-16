@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   buildInsoleGeometry,
   calculateInsoleLength,
   calculateDefaultWidths,
+  convertSizing,
   INSOLE_PRESETS,
   InsoleParameters,
+  SizingSystem,
   ArchProfile,
   FootType,
   ToeShape,
@@ -19,18 +21,15 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Maximize2,
   Layers,
   Sparkles,
-  Sliders,
-  Check,
   FolderOpen,
-  Trash2,
   Share2,
-  Printer,
-  ChevronRight,
   Info,
+  Sliders,
+  Globe2,
 } from "lucide-react";
+import { CadAiModal } from "./CadAiModal";
 
 interface CadStudioProps {
   language: "id" | "en";
@@ -39,19 +38,23 @@ interface CadStudioProps {
 export function CadStudio({ language }: CadStudioProps) {
   const isId = language === "id";
 
-  // CAD State Parameters
-  const [shoeSize, setShoeSize] = useState<number>(41);
+  // Sizing System & Values
+  const [sizingSystem, setSizingSystem] = useState<SizingSystem>("EU");
+  const [rawSizeValue, setRawSizeValue] = useState<number>(41);
+  const [customLengthMm, setCustomLengthMm] = useState<number>(266.7);
+
+  // Geometry Parameters
   const [foot, setFoot] = useState<FootType>("RIGHT");
   const [archProfile, setArchProfile] = useState<ArchProfile>("MEDIUM");
   const [archFactor, setArchFactor] = useState<number>(1.0);
   const [toeShape, setToeShape] = useState<ToeShape>("ROUNDED");
   const [ballWidth, setBallWidth] = useState<number>(96);
-  const [heelWidth, setHeelWidth] = useState<number>(69.3);
+  const [heelWidth, setHeelWidth] = useState<number>(67);
   const [waistWidth, setWaistWidth] = useState<number>(58.7);
   const [forefootThickness, setForefootThickness] = useState<number>(3.0);
   const [heelThickness, setHeelThickness] = useState<number>(5.0);
-  const [materialType, setMaterialType] = useState<string>("High Density EVA");
-  const [blueprintName, setBlueprintName] = useState<string>("Insole Custom EU 41");
+  const [materialType, setMaterialType] = useState<string>("High Density EVA 65C");
+  const [blueprintName, setBlueprintName] = useState<string>("Anatomical Insole Model");
 
   // Layer Visibility Controls
   const [showOutline, setShowOutline] = useState(true);
@@ -67,25 +70,25 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Blueprints List State
+  // Modals & States
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [savedBlueprints, setSavedBlueprints] = useState<any[]>([]);
-  const [loadingBlueprints, setLoadingBlueprints] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
 
-  // Initialize and Sync with Shoe Size
+  // Recalculate derived dimensions when sizing changes
   useEffect(() => {
-    const len = calculateInsoleLength(shoeSize);
-    const defaults = calculateDefaultWidths(len);
+    const conversion = convertSizing(sizingSystem, rawSizeValue);
+    const targetLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
+    const defaults = calculateDefaultWidths(targetLength);
     setBallWidth(defaults.ballWidth);
     setHeelWidth(defaults.heelWidth);
     setWaistWidth(defaults.waistWidth);
-  }, [shoeSize]);
+  }, [sizingSystem, rawSizeValue, customLengthMm]);
 
   // Load Saved Blueprints
   const fetchBlueprints = async () => {
     try {
-      setLoadingBlueprints(true);
       const res = await fetch("/api/cad/blueprints");
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
@@ -93,8 +96,6 @@ export function CadStudio({ language }: CadStudioProps) {
       }
     } catch (err) {
       console.error("Failed to load blueprints:", err);
-    } finally {
-      setLoadingBlueprints(false);
     }
   };
 
@@ -102,11 +103,14 @@ export function CadStudio({ language }: CadStudioProps) {
     fetchBlueprints();
   }, []);
 
-  // Compute Current Insole Geometry
-  const currentLength = calculateInsoleLength(shoeSize);
+  // Compute Current Geometry
+  const conversion = convertSizing(sizingSystem, rawSizeValue);
+  const effectiveLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
+
   const geometry: InsoleGeometry = buildInsoleGeometry({
-    shoeSize,
-    baseLengthMm: currentLength,
+    sizingSystem,
+    rawSizeValue,
+    baseLengthMm: effectiveLength,
     ballWidthMm: ballWidth,
     heelWidthMm: heelWidth,
     waistWidthMm: waistWidth,
@@ -123,10 +127,23 @@ export function CadStudio({ language }: CadStudioProps) {
     setForefootThickness(preset.thicknessForefootMm);
     setHeelThickness(preset.thicknessHeelMm);
     setMaterialType(preset.materialType);
-    setBlueprintName(`${preset.name} EU ${shoeSize}`);
+    setBlueprintName(`${preset.name} ${geometry.sizingLabel}`);
   };
 
-  // Export DXF Stream
+  // Apply Generative AI Model
+  const handleApplyAiGenerated = (params: any) => {
+    setBlueprintName(params.name || "Generative AI Insole");
+    if (params.sizingSystem) setSizingSystem(params.sizingSystem);
+    if (params.rawSizeValue) setRawSizeValue(params.rawSizeValue);
+    if (params.archProfile) setArchProfile(params.archProfile);
+    if (params.archOffsetFactor) setArchFactor(params.archOffsetFactor);
+    if (params.toeShape) setToeShape(params.toeShape);
+    if (params.thicknessForefootMm) setForefootThickness(params.thicknessForefootMm);
+    if (params.thicknessHeelMm) setHeelThickness(params.thicknessHeelMm);
+    if (params.materialType) setMaterialType(params.materialType);
+  };
+
+  // Export DXF
   const handleExportDxf = async () => {
     setExporting("DXF");
     try {
@@ -134,8 +151,9 @@ export function CadStudio({ language }: CadStudioProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          shoeSize,
-          baseLengthMm: currentLength,
+          sizingSystem,
+          rawSizeValue,
+          baseLengthMm: effectiveLength,
           ballWidthMm: ballWidth,
           heelWidthMm: heelWidth,
           waistWidthMm: waistWidth,
@@ -150,7 +168,7 @@ export function CadStudio({ language }: CadStudioProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Equator_Insole_EU${shoeSize}_${foot}.dxf`;
+      a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}.dxf`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
@@ -161,7 +179,7 @@ export function CadStudio({ language }: CadStudioProps) {
     }
   };
 
-  // Export SVG Vector
+  // Export SVG
   const handleExportSvg = async () => {
     setExporting("SVG");
     try {
@@ -169,8 +187,9 @@ export function CadStudio({ language }: CadStudioProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          shoeSize,
-          baseLengthMm: currentLength,
+          sizingSystem,
+          rawSizeValue,
+          baseLengthMm: effectiveLength,
           ballWidthMm: ballWidth,
           heelWidthMm: heelWidth,
           waistWidthMm: waistWidth,
@@ -185,7 +204,7 @@ export function CadStudio({ language }: CadStudioProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Equator_Insole_EU${shoeSize}_${foot}.svg`;
+      a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}.svg`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
@@ -204,8 +223,8 @@ export function CadStudio({ language }: CadStudioProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: blueprintName,
-          shoeSize,
-          baseLengthMm: currentLength,
+          shoeSize: geometry.size,
+          baseLengthMm: effectiveLength,
           ballWidthMm: ballWidth,
           heelWidthMm: heelWidth,
           waistWidthMm: waistWidth,
@@ -231,7 +250,8 @@ export function CadStudio({ language }: CadStudioProps) {
   // Load Selected Blueprint
   const handleLoadBlueprint = (bp: any) => {
     setBlueprintName(bp.name);
-    setShoeSize(bp.shoeSize);
+    setSizingSystem("EU");
+    setRawSizeValue(bp.shoeSize);
     setBallWidth(bp.ballWidthMm);
     setHeelWidth(bp.heelWidthMm);
     setWaistWidth(bp.waistWidthMm);
@@ -258,11 +278,9 @@ export function CadStudio({ language }: CadStudioProps) {
     setIsPanning(false);
   };
 
-  // Viewbox Dimensions
   const vbW = geometry.bounds.width;
   const vbH = geometry.bounds.height;
 
-  // Active path strings based on Foot toggle
   const activeOutline = foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight;
   const activeArch = foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight;
   const activeHeel = foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight;
@@ -270,7 +288,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      {/* Top Header / Preset Control Bar */}
+      {/* Top Header & Generative AI Bar */}
       <div className="p-3.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
@@ -278,22 +296,31 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
           <div>
             <h2 className="font-extrabold text-sm sm:text-base tracking-wide flex items-center gap-2">
-              <span>{isId ? "Studio Insole CAD & Vector 2D" : "Insole CAD & Vector Studio"}</span>
+              <span>{isId ? "Studio Insole CAD & Generative Vector" : "Insole CAD & Generative Vector Studio"}</span>
               <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[10px] font-bold text-[#8B0000] dark:text-red-300">
-                AutoCAD R12 DXF Ready
+                CorelDRAW & AutoCAD R12 DXF
               </span>
             </h2>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Generator kontur parametrik sol sepatu dengan presisi milimeter (mm)"
-                : "Millimeter-accurate parametric insole profile generator"}
+                ? "Generator kontur sol anatomis presisi tinggi dengan konversi multi-standar (EU/US/UK/CM)"
+                : "Anatomical parametric insole generator with multi-standard international sizing"}
             </p>
           </div>
         </div>
 
-        {/* Quick Action & Preset Selector */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2">
-          {/* Preset Dropdown */}
+          {/* Generative AI Designer Trigger */}
+          <button
+            onClick={() => setIsAiModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-700 to-[#8B0000] hover:from-red-800 hover:to-[#A00000] text-white text-xs font-bold shadow-md hover:shadow-red-900/30 active:scale-95 transition"
+          >
+            <Sparkles className="h-4 w-4 animate-pulse text-amber-300" />
+            <span>{isId ? "Prompt AI Insole" : "AI Insole Generator"}</span>
+          </button>
+
+          {/* Preset Selector */}
           <select
             onChange={(e) => {
               const p = INSOLE_PRESETS.find((pr) => pr.id === e.target.value);
@@ -301,7 +328,7 @@ export function CadStudio({ language }: CadStudioProps) {
             }}
             className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-[#8B0000] focus:outline-none shadow-xs"
           >
-            <option value="">{isId ? "Pilih Preset Insole..." : "Choose Preset..."}</option>
+            <option value="">{isId ? "Pilih Preset Pabrik..." : "Preset Catalog..."}</option>
             {INSOLE_PRESETS.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} ({p.archProfile})
@@ -309,13 +336,13 @@ export function CadStudio({ language }: CadStudioProps) {
             ))}
           </select>
 
-          {/* Library Button */}
+          {/* Catalog Library */}
           <button
             onClick={() => setIsLibraryOpen(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
           >
             <FolderOpen className="h-4 w-4 text-[#8B0000]" />
-            <span className="hidden sm:inline">{isId ? "Katalog Blueprint" : "Library"}</span>
+            <span className="hidden sm:inline">{isId ? "Katalog" : "Library"}</span>
           </button>
 
           {/* Save Blueprint */}
@@ -335,7 +362,7 @@ export function CadStudio({ language }: CadStudioProps) {
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
-            <span>{exporting === "DXF" ? "Exporting..." : isId ? "Export DXF" : "Export DXF"}</span>
+            <span>{exporting === "DXF" ? "Exporting..." : "DXF (R12)"}</span>
           </button>
 
           {/* Export SVG */}
@@ -352,37 +379,102 @@ export function CadStudio({ language }: CadStudioProps) {
 
       {/* Main Multi-Pane Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Left Toolbar: Sizing & Contour Parameters */}
-        <div className="w-full md:w-80 lg:w-88 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-5 overflow-y-auto shrink-0 text-xs">
-          {/* Shoe Size Selector Pill */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px]">
-              {isId ? "Ukuran Sepatu (EU Standard)" : "Footwear Size (EU)"}
+        {/* Left Toolbar: Sizing System & Anatomical Parameters */}
+        <div className="w-full md:w-80 lg:w-92 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-5 overflow-y-auto shrink-0 text-xs">
+          {/* Multi-System Size Switcher */}
+          <div className="space-y-2">
+            <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Globe2 className="h-3.5 w-3.5 text-[#8B0000]" />
+                <span>{isId ? "Standar Ukuran Sepatu" : "Sizing System"}</span>
+              </span>
+              <span className="font-mono text-red-700 dark:text-red-400 font-extrabold text-xs">
+                {geometry.sizingLabel}
+              </span>
             </label>
-            <div className="grid grid-cols-6 gap-1.5">
-              {[36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46].map((sz) => (
+
+            {/* Sizing Standard Tabs */}
+            <div className="grid grid-cols-3 gap-1 rounded-2xl bg-gray-100 dark:bg-gray-800 p-1">
+              {[
+                { id: "EU", label: "EU" },
+                { id: "US_MEN", label: "US Men" },
+                { id: "US_WOMEN", label: "US Women" },
+                { id: "UK", label: "UK" },
+                { id: "MONDOPOINT_CM", label: "CM / Mondo" },
+                { id: "CUSTOM_MM", label: "Custom mm" },
+              ].map((sys) => (
                 <button
-                  key={sz}
-                  onClick={() => setShoeSize(sz)}
-                  className={`py-1.5 rounded-xl font-mono font-bold text-xs transition active:scale-95 ${
-                    shoeSize === sz
-                      ? "bg-[#8B0000] text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
+                  key={sys.id}
+                  onClick={() => setSizingSystem(sys.id as SizingSystem)}
+                  className={`py-1.5 rounded-xl font-bold text-[11px] transition active:scale-95 ${
+                    sizingSystem === sys.id
+                      ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
                   }`}
                 >
-                  {sz}
+                  {sys.label}
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-gray-500">
-              Panjang Standar: <strong>{currentLength} mm</strong>
-            </p>
+
+            {/* Size Stepper & Continuous Slider */}
+            {sizingSystem === "CUSTOM_MM" ? (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                  <span>Panjang Insole Custom:</span>
+                  <span className="font-mono font-bold text-gray-900 dark:text-white">{customLengthMm} mm</span>
+                </div>
+                <input
+                  type="range"
+                  min={210}
+                  max={330}
+                  step={0.5}
+                  value={customLengthMm}
+                  onChange={(e) => setCustomLengthMm(parseFloat(e.target.value))}
+                  className="w-full accent-[#8B0000]"
+                />
+              </div>
+            ) : (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => setRawSizeValue(Math.max(1, Math.round((rawSizeValue - 0.5) * 10) / 10))}
+                    className="p-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-3"
+                  >
+                    -
+                  </button>
+                  <div className="text-center flex-1">
+                    <span className="text-base font-extrabold text-gray-900 dark:text-white font-mono">
+                      {rawSizeValue}
+                    </span>
+                    <p className="text-[10px] text-gray-500 font-mono">
+                      (Equiv: EU {conversion.eu} • UK {conversion.uk} • US {conversion.usMen})
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setRawSizeValue(Math.round((rawSizeValue + 0.5) * 10) / 10)}
+                    className="p-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-3"
+                  >
+                    +
+                  </button>
+                </div>
+                <input
+                  type="range"
+                  min={sizingSystem === "MONDOPOINT_CM" ? 21 : sizingSystem.startsWith("US") || sizingSystem === "UK" ? 4 : 34}
+                  max={sizingSystem === "MONDOPOINT_CM" ? 33 : sizingSystem.startsWith("US") || sizingSystem === "UK" ? 15 : 48}
+                  step={0.5}
+                  value={rawSizeValue}
+                  onChange={(e) => setRawSizeValue(parseFloat(e.target.value))}
+                  className="w-full accent-[#8B0000]"
+                />
+              </div>
+            )}
           </div>
 
           {/* Foot Orientation Toggle */}
           <div className="space-y-1.5">
             <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px]">
-              {isId ? "Orientasi Kaki" : "Foot Orientation"}
+              {isId ? "Orientasi Kaki (Foot Bed)" : "Foot Orientation"}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -411,7 +503,7 @@ export function CadStudio({ language }: CadStudioProps) {
           {/* Arch Support Profile */}
           <div className="space-y-1.5">
             <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px]">
-              {isId ? "Tipe Lengkungan Arch" : "Arch Support Contour"}
+              {isId ? "Tipe Lengkungan Arch" : "Arch Contour Profile"}
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               {(["FLAT", "MEDIUM", "HIGH"] as ArchProfile[]).map((ap) => (
@@ -430,7 +522,7 @@ export function CadStudio({ language }: CadStudioProps) {
             </div>
           </div>
 
-          {/* Toe Shape Selector */}
+          {/* Toe Box Shape */}
           <div className="space-y-1.5">
             <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px]">
               {isId ? "Bentuk Ujung Jari (Toe Box)" : "Toe Box Shape"}
@@ -452,7 +544,7 @@ export function CadStudio({ language }: CadStudioProps) {
             </div>
           </div>
 
-          {/* Dimension Adjustment Sliders */}
+          {/* Fine Tuning Sliders */}
           <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800">
             <div>
               <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
@@ -462,7 +554,7 @@ export function CadStudio({ language }: CadStudioProps) {
               <input
                 type="range"
                 min={75}
-                max={120}
+                max={125}
                 step={0.5}
                 value={ballWidth}
                 onChange={(e) => setBallWidth(parseFloat(e.target.value))}
@@ -478,7 +570,7 @@ export function CadStudio({ language }: CadStudioProps) {
               <input
                 type="range"
                 min={50}
-                max={90}
+                max={95}
                 step={0.5}
                 value={heelWidth}
                 onChange={(e) => setHeelWidth(parseFloat(e.target.value))}
@@ -488,7 +580,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
             <div>
               <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                <span>{isId ? "Kedalaman Lengkungan Arch Factor:" : "Arch Depth Factor:"}</span>
+                <span>{isId ? "Faktor Kedalaman Arch:" : "Arch Depth Factor:"}</span>
                 <span className="font-mono font-bold text-gray-900 dark:text-white">{archFactor.toFixed(2)}x</span>
               </div>
               <input
@@ -526,7 +618,7 @@ export function CadStudio({ language }: CadStudioProps) {
           )}
 
           {/* Floating Viewport Overlay Toolbar */}
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/80 backdrop-blur-md border border-gray-700 shadow-xl text-white">
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white">
             <button
               onClick={() => setZoomScale(Math.min(2.5, zoomScale + 0.15))}
               className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
@@ -557,7 +649,7 @@ export function CadStudio({ language }: CadStudioProps) {
             </span>
           </div>
 
-          {/* Live SVG Render Container */}
+          {/* Live Authentic Insole SVG Vector Container */}
           <div
             className="transition-transform duration-75"
             style={{
@@ -568,15 +660,15 @@ export function CadStudio({ language }: CadStudioProps) {
               viewBox={`0 0 ${vbW} ${vbH}`}
               className="drop-shadow-2xl"
               style={{
-                width: `${vbW * 1.6}px`,
-                height: `${vbH * 1.6}px`,
+                width: `${vbW * 1.55}px`,
+                height: `${vbH * 1.55}px`,
               }}
             >
-              {/* Outer Cut Outline (White/Black knife) */}
+              {/* Outer Cut Outline (Anatomical Footwear Cut) */}
               {showOutline && (
                 <path
                   d={activeOutline}
-                  className="fill-gray-100/90 dark:fill-gray-800/90 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                  className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
                 />
               )}
 
@@ -604,15 +696,15 @@ export function CadStudio({ language }: CadStudioProps) {
                 />
               )}
 
-              {/* Dimension Reference Lines & Text Labels */}
+              {/* Dimension Reference Lines & Labels */}
               {showDimensions && (
                 <g className="text-gray-400 font-mono text-[6px]">
                   {/* Vertical Length Dimension Line */}
                   <line
                     x1={vbW - 15}
-                    y1={10}
+                    y1={15}
                     x2={vbW - 15}
-                    y2={vbH - 10}
+                    y2={vbH - 15}
                     stroke="#3b82f6"
                     strokeWidth="0.8"
                     strokeDasharray="2,2"
@@ -657,7 +749,7 @@ export function CadStudio({ language }: CadStudioProps) {
           <div className="absolute bottom-4 left-4 right-4 z-20 flex items-center justify-between p-2.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs">
             <div className="flex items-center gap-4 font-mono">
               <span>
-                EU <strong className="text-red-400">{shoeSize}</strong> ({foot})
+                <strong className="text-red-400">{geometry.sizingLabel}</strong> ({foot})
               </span>
               <span>
                 Pjg: <strong className="text-blue-400">{geometry.length} mm</strong>
@@ -670,7 +762,7 @@ export function CadStudio({ language }: CadStudioProps) {
               </span>
             </div>
             <span className="text-[10px] text-gray-400 font-semibold hidden sm:inline">
-              Equator Insole Parametric Engine v2.0
+              Equator Anatomical CAD Engine v3.0
             </span>
           </div>
         </div>
@@ -802,6 +894,14 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
         </div>
       </div>
+
+      {/* Generative AI Insole Modal */}
+      <CadAiModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onApplyGeneratedModel={handleApplyAiGenerated}
+        language={language}
+      />
 
       {/* Blueprint Library Drawer Modal */}
       {isLibraryOpen && (
