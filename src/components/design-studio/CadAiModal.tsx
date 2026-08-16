@@ -31,6 +31,13 @@ interface CadAiModalProps {
     thicknessForefootMm: number;
     thicknessHeelMm: number;
     materialType: string;
+    archPlateLengthFactor?: number;
+    archPlateWidthFactor?: number;
+    archPlateLateralWing?: boolean;
+    heelCupDepthProfile?: any;
+    heelCupRadiusFactor?: number;
+    metatarsalPadSizeFactor?: number;
+    metatarsalPadYPosition?: number;
   }) => void;
   language: "id" | "en";
 }
@@ -133,8 +140,13 @@ export function CadAiModal({
               : lower.includes("anatomis") || lower.includes("anatomic")
               ? "ANATOMIC"
               : "ROUNDED",
-            thicknessForefootMm: isFlat ? 4.5 : 3.0,
-            thicknessHeelMm: isHigh ? 6.5 : 5.0,
+            archPlateLengthFactor: isHigh ? 1.2 : isFlat ? 0.85 : 1.0,
+            archPlateWidthFactor: isHigh ? 1.25 : isFlat ? 0.9 : 1.0,
+            archPlateLateralWing: isHigh,
+            heelCupDepthProfile: isHigh ? "DEEP" : isFlat ? "SHALLOW" : "MEDIUM",
+            heelCupRadiusFactor: isHigh ? 1.15 : 1.0,
+            metatarsalPadSizeFactor: isHigh ? 1.15 : isFlat ? 0.8 : 1.0,
+            metatarsalPadYPosition: 0.65,
             materialType: lower.includes("pebax")
               ? "Supercritical PEBAX + Carbon Shank"
               : isHigh
@@ -143,8 +155,8 @@ export function CadAiModal({
               ? "Plastazote + Soft PU Cushion"
               : "High Density EVA + Natural Latex",
             rationale: isId
-              ? "Parameter kelengkungan arch dan distribusi ketebalan telah dioptimasi secara biomekanik untuk redaman maksimal dan efisiensi langkah."
-              : "Biomechanical curvature and thickness parameters optimized for maximum shock attenuation.",
+              ? "Parameter kelengkungan arch, plat bridge TPU, dan mangkuk tumit telah dioptimasi secara biomekanik."
+              : "Biomechanical curvature, TPU bridge span, and heel cup depth optimized for footbed stability.",
           });
         }
       }
@@ -161,8 +173,15 @@ export function CadAiModal({
         toeShape: "ANATOMIC",
         thicknessForefootMm: 3.5,
         thicknessHeelMm: 6.0,
+        archPlateLengthFactor: 1.15,
+        archPlateWidthFactor: 1.2,
+        archPlateLateralWing: true,
+        heelCupDepthProfile: "DEEP",
+        heelCupRadiusFactor: 1.1,
+        metatarsalPadSizeFactor: 1.1,
+        metatarsalPadYPosition: 0.65,
         materialType: "High Density EVA + TPU Arch Shank",
-        rationale: "Konfigurasi high-performance dengan kontur arch anatomis.",
+        rationale: "Konfigurasi high-performance dengan kontur arch anatomis dan deep heel cup.",
       });
     } finally {
       setLoading(false);
@@ -181,6 +200,13 @@ export function CadAiModal({
       thicknessForefootMm: generatedResult.thicknessForefootMm || 3.0,
       thicknessHeelMm: generatedResult.thicknessHeelMm || 5.0,
       materialType: generatedResult.materialType || "High Density EVA",
+      archPlateLengthFactor: generatedResult.archPlateLengthFactor || 1.0,
+      archPlateWidthFactor: generatedResult.archPlateWidthFactor || 1.0,
+      archPlateLateralWing: generatedResult.archPlateLateralWing || false,
+      heelCupDepthProfile: generatedResult.heelCupDepthProfile || "MEDIUM",
+      heelCupRadiusFactor: generatedResult.heelCupRadiusFactor || 1.0,
+      metatarsalPadSizeFactor: generatedResult.metatarsalPadSizeFactor || 1.0,
+      metatarsalPadYPosition: generatedResult.metatarsalPadYPosition || 0.65,
     });
     onClose();
   };
