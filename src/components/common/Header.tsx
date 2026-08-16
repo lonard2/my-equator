@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { Compass, Moon, Sun, Globe, Sliders, Search, Command } from "lucide-react";
-import { ThemeMode, Language } from "@/types";
+import { Compass, Moon, Sun, Globe, Sliders, Search, ShieldCheck } from "lucide-react";
+import { ThemeMode, Language, UserRole } from "@/types";
+import { FactoryUser } from "@/lib/auth/types";
+import { getRoleBadgeInfo } from "@/lib/auth/rbac";
 
 interface HeaderProps {
   theme: ThemeMode;
@@ -11,6 +13,8 @@ interface HeaderProps {
   onLanguageToggle: () => void;
   onOpenSettings: () => void;
   onOpenCommandPalette?: () => void;
+  currentUser?: FactoryUser;
+  onOpenSecurity?: () => void;
 }
 
 export function Header({
@@ -20,7 +24,11 @@ export function Header({
   onLanguageToggle,
   onOpenSettings,
   onOpenCommandPalette,
+  currentUser,
+  onOpenSecurity,
 }: HeaderProps) {
+  const roleInfo = currentUser ? getRoleBadgeInfo(currentUser.role, language) : null;
+
   return (
     <header className="sticky top-0 z-40 bg-[#8B0000] text-white shadow-md transition-colors">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -54,6 +62,27 @@ export function Header({
               <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded bg-red-900/80 px-1.5 py-0.2 text-[10px] font-mono text-red-200">
                 ⌘K
               </kbd>
+            </button>
+          )}
+
+          {/* User Profile & Role Trigger */}
+          {currentUser && (
+            <button
+              onClick={onOpenSecurity}
+              className="flex items-center gap-2 rounded-xl bg-red-950/50 p-1 pr-2.5 text-xs font-semibold text-white hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
+              title="Ganti Pengguna & Hak Akses (RBAC)"
+            >
+              <img
+                src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+                alt={currentUser.name}
+                className="w-6 h-6 rounded-lg object-cover border border-red-400"
+              />
+              <span className="hidden md:inline font-bold text-[11px] truncate max-w-[110px]">
+                {currentUser.name}
+              </span>
+              <span className="hidden sm:inline px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-white/20 uppercase">
+                {currentUser.role.split("_")[0]}
+              </span>
             </button>
           )}
 

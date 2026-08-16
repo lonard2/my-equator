@@ -94,9 +94,28 @@ export const auditLogs = sqliteTable("audit_logs", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),
   userName: text("user_name").notNull(),
-  action: text("action").notNull(), // CREATE, UPDATE, DELETE, DISPATCH, EXPORT_SNAPSHOT, RESTORE_SNAPSHOT
-  entityType: text("entity_type").notNull(), // DELIVERY_ORDER, INVENTORY, CAD_BLUEPRINT, SYSTEM
+  userRole: text("user_role").notNull().default("SALES_OPERATOR"),
+  action: text("action").notNull(), // USER_LOGIN, ORDER_CREATE, ORDER_UPDATE, ORDER_STATUS, STOCK_MOVE, CAD_SAVE, SNAPSHOT_EXPORT, SNAPSHOT_RESTORE
+  entityType: text("entity_type").notNull(), // AUTH, DELIVERY_ORDER, INVENTORY, CAD_BLUEPRINT, SYSTEM
   entityId: text("entity_id").notNull(),
   details: text("details"),
   timestamp: text("timestamp").notNull(),
+});
+
+// 7. Factory Users & Role-Based Authentication
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  salt: text("salt").notNull(),
+  role: text("role", {
+    enum: ["SUPER_ADMIN", "FACTORY_MANAGER", "WAREHOUSE_STAFF", "SALES_OPERATOR"],
+  }).notNull().default("SALES_OPERATOR"),
+  avatarUrl: text("avatar_url"),
+  isActive: integer("is_active").notNull().default(1),
+  lastLoginAt: text("last_login_at"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });
