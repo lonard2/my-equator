@@ -24,6 +24,9 @@ import {
   ToggleLeft,
   ToggleRight,
   LogOut,
+  ShieldAlert,
+  Sliders,
+  ChevronDown,
 } from "lucide-react";
 import {
   FACTORY_DEMO_ACCOUNTS,
@@ -33,6 +36,9 @@ import {
   ROLE_PERMISSIONS,
   hasPermission,
   getRoleBadgeInfo,
+  canManageUsers,
+  canRestoreDatabase,
+  canExportDatabase,
 } from "@/lib/auth/rbac";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -78,10 +84,12 @@ export function SecurityDashboard({
   const [userList, setUserList] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [logFilter, setLogFilter] = useState("");
+  const [userSearchTerm, setUserSearchTerm] = useState("");
   const [isSwitchingUser, setIsSwitchingUser] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New User Form State
@@ -91,6 +99,18 @@ export function SecurityDashboard({
   const [newPassword, setNewPassword] = useState("equator2026!");
   const [newRole, setNewRole] = useState<UserRole>("SALES_OPERATOR");
   const [creatingUser, setCreatingUser] = useState(false);
+
+  // RBAC Flags
+  const isAdmin = canManageUsers(currentUser.role);
+  const canExport = canExportDatabase(currentUser.role);
+  const canRestore = canRestoreDatabase(currentUser.role);
+
+  const getAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    "x-user-role": currentUser.role,
+    "x-user-id": currentUser.id,
+    "x-user-name": currentUser.name,
+  });
 
   const fetchLogs = async () => {
     try {
@@ -126,16 +146,28 @@ export function SecurityDashboard({
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akses ditolak: Hanya Super Admin yang dapat menambahkan pengguna baru." : "Access denied: Only Super Admin can add new users.",
+      });
+      return;
+    }
+
     if (!newUsername.trim() || !newName.trim() || !newEmail.trim() || !newPassword) {
-      alert("Mohon lengkapi semua bidang isian.");
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Mohon lengkapi semua bidang isian pengguna." : "Please fill in all required fields.",
+      });
       return;
     }
 
     setCreatingUser(true);
+    setActionFeedback(null);
     try {
       const res = await fetch("/api/security/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           username: newUsername,
           name: newName,
@@ -150,69 +182,196 @@ export function SecurityDashboard({
         setNewUsername("");
         setNewName("");
         setNewEmail("");
+        setActionFeedback({
+          type: "success",
+          message: isId ? `Pengguna @${newUsername} (${newRole}) berhasil ditambahkan.` : `User @${newUsername} (${newRole}) successfully created.`,
+        });
         fetchUsers();
         fetchLogs();
       } else {
-        alert(json.error || "Gagal membuat user.");
+        setActionFeedback({ type: "error", message: json.error || "Gagal membuat pengguna." });
       }
     } catch (err: any) {
-      alert("Gagal membuat user: " + err.message);
+      setActionFeedback({ type: "error", message: err.message || "Gagal membuat pengguna." });
     } finally {
       setCreatingUser(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string, username: string) => {
-    if (!confirm(`Hapus akun pengguna @${username}?`)) return;
+  const handleRoleChange = async (user: ManagedUser, newSelectedRole: UserRole) => {
+    if (!isAdmin) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akses ditolak: Hanya Super Admin yang berwenang mengubah peran pengguna." : "Access denied: Only Super Admin can change user roles.",
+      });
+      return;
+    }
+
+    if (user.username === "superadmin" && newSelectedRole !== "SUPER_ADMIN") {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Peran akun Super Admin utama tidak dapat diubah." : "Primary Super Admin role cannot be demoted.",
+      });
+      return;
+    }
+
+    setActionFeedback(null);
     try {
-      const res = await fetch(`/api/security/users/${userId}`, { method: "DELETE" });
+      const res = await fetch(`/api/security/users/${user.id}`, {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ role: newSelectedRole }),
+      });
       const json = await res.json();
       if (json.success) {
+        setActionFeedback({
+          type: "success",
+          message: isId
+            ? `Peran ${user.name} (@${user.username}) berhasil diubah menjadi ${newSelectedRole}.`
+            : `Role for ${user.name} (@${user.username}) updated to ${newSelectedRole}.`,
+        });
         fetchUsers();
         fetchLogs();
       } else {
-        alert(json.error || "Gagal menghapus user.");
+        setActionFeedback({ type: "error", message: json.error || "Gagal memperbarui peran pengguna." });
       }
     } catch (err: any) {
-      alert(err.message);
+      setActionFeedback({ type: "error", message: err.message });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    if (!isAdmin) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akses ditolak: Hanya Super Admin yang dapat menghapus akun pengguna." : "Access denied: Only Super Admin can delete users.",
+      });
+      return;
+    }
+
+    if (!confirm(isId ? `Apakah Anda yakin ingin menghapus akun pengguna @${username}?` : `Are you sure you want to delete user @${username}?`)) return;
+
+    setActionFeedback(null);
+    try {
+      const res = await fetch(`/api/security/users/${userId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setActionFeedback({
+          type: "success",
+          message: isId ? `Pengguna @${username} berhasil dihapus.` : `User @${username} deleted successfully.`,
+        });
+        fetchUsers();
+        fetchLogs();
+      } else {
+        setActionFeedback({ type: "error", message: json.error || "Gagal menghapus user." });
+      }
+    } catch (err: any) {
+      setActionFeedback({ type: "error", message: err.message });
     }
   };
 
   const handleToggleUserActive = async (user: ManagedUser) => {
+    if (!isAdmin) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akses ditolak: Hanya Super Admin yang dapat mengaktifkan/menonaktifkan akun." : "Access denied: Only Super Admin can toggle user status.",
+      });
+      return;
+    }
+
+    if (user.username === "superadmin" && user.isActive === 1) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akun Super Admin utama tidak dapat dinonaktifkan." : "Primary Super Admin account cannot be deactivated.",
+      });
+      return;
+    }
+
+    setActionFeedback(null);
     try {
+      const nextActive = user.isActive === 1 ? 0 : 1;
       const res = await fetch(`/api/security/users/${user.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: user.isActive === 1 ? 0 : 1 }),
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ isActive: nextActive }),
       });
       const json = await res.json();
       if (json.success) {
         fetchUsers();
         fetchLogs();
+      } else {
+        setActionFeedback({ type: "error", message: json.error || "Gagal memperbarui status pengguna." });
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setActionFeedback({ type: "error", message: err.message });
     }
   };
 
-  const handleExportSnapshot = () => {
-    window.location.href = "/api/security/snapshot-export";
+  const handleExportSnapshot = async () => {
+    if (!canExport) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akses ditolak: Izin Super Admin atau Manajer Pabrik diperlukan untuk mengunduh snapshot." : "Access denied: Super Admin or Factory Manager required.",
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/security/snapshot-export", {
+        headers: {
+          "x-user-role": currentUser.role,
+          "x-user-id": currentUser.id,
+          "x-user-name": currentUser.name,
+        },
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error || "Gagal mengunduh snapshot basis data.");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Equator_DB_Snapshot_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setActionFeedback({ type: "error", message: err.message });
+    }
   };
 
   const handleRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!canRestore) {
+      setActionFeedback({
+        type: "error",
+        message: isId ? "Akses ditolak: Hanya Super Admin yang berwenang memulihkan snapshot basis data." : "Access denied: Only Super Admin can restore database snapshot.",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     const confirmRestore = window.confirm(
       isId
-        ? "PERINGATAN: Memulihkan snapshot akan menggantikan database saat ini dengan data dari file backup. Lanjutkan?"
+        ? "PERINGATAN: Memulihkan snapshot akan memperbarui seluruh data sistem dengan isi file backup. Lanjutkan?"
         : "WARNING: Restoring snapshot will overwrite existing database records. Proceed?"
     );
 
-    if (!confirmRestore) return;
+    if (!confirmRestore) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     setRestoring(true);
     setRestoreMessage(null);
+    setActionFeedback(null);
 
     try {
       const text = await file.text();
@@ -220,7 +379,7 @@ export function SecurityDashboard({
 
       const res = await fetch("/api/security/snapshot-restore", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(jsonData),
       });
 
@@ -228,17 +387,20 @@ export function SecurityDashboard({
       if (json.success) {
         setRestoreMessage(
           isId
-            ? `Berhasil memulihkan ${json.data.restoredCount} rekaman data!`
+            ? `Berhasil memulihkan ${json.data.restoredCount} rekaman data sistem!`
             : `Successfully restored ${json.data.restoredCount} database records!`
         );
         fetchLogs();
         fetchUsers();
       } else {
-        alert(json.error || "Gagal memulihkan database.");
+        setActionFeedback({ type: "error", message: json.error || "Gagal memulihkan database." });
       }
     } catch (err: any) {
       console.error("Restore failed:", err);
-      alert(isId ? `Format file snapshot tidak valid: ${err.message}` : `Invalid snapshot: ${err.message}`);
+      setActionFeedback({
+        type: "error",
+        message: isId ? `Format file snapshot tidak valid: ${err.message}` : `Invalid snapshot format: ${err.message}`,
+      });
     } finally {
       setRestoring(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -248,6 +410,18 @@ export function SecurityDashboard({
   const currentRoleInfo = getRoleBadgeInfo(currentUser.role, language);
   const activePerms = ROLE_PERMISSIONS[currentUser.role] || [];
 
+  // Filtered Users
+  const filteredUsers = userList.filter((u) => {
+    const term = userSearchTerm.toLowerCase();
+    return (
+      u.name.toLowerCase().includes(term) ||
+      u.username.toLowerCase().includes(term) ||
+      u.email.toLowerCase().includes(term) ||
+      u.role.toLowerCase().includes(term)
+    );
+  });
+
+  // Filtered Logs
   const filteredLogs = logs.filter(
     (l) =>
       l.userName.toLowerCase().includes(logFilter.toLowerCase()) ||
@@ -256,7 +430,7 @@ export function SecurityDashboard({
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6 pb-24 md:pb-8">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -264,34 +438,30 @@ export function SecurityDashboard({
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg sm:text-xl text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
-              <span>{isId ? "Keamanan, Hak Akses (RBAC) & Audit Trail" : "Security, RBAC & Audit Trails"}</span>
-              <span className="px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[10px] font-bold text-[#8B0000] dark:text-red-300">
-                Tier-1 Resiliency
-              </span>
+            <h2 className="font-extrabold text-lg sm:text-xl text-gray-900 dark:text-white tracking-wide">
+              {isId ? "Otorisasi RBAC, Manajemen Akun & Keamanan Data" : "RBAC Security, User Directory & System Backups"}
             </h2>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Manajemen hak akses role pabrik, manajemen akun staf, log aktivitas audit, dan snapshot backup offline"
-                : "Role-based access control, user management, persistent audit logs, and 1-click JSON snapshot backups"}
+                ? "Kontrol hak akses 4 peran pabrik, otentikasi PBKDF2, log audit jejak operasional, dan snapshot JSON offline"
+                : "Role-based access matrix, PBKDF2 authentication, immutable audit logging, and JSON offline snapshot"}
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSwitchingUser(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 hover:border-[#8B0000] shadow-xs active:scale-95 transition"
           >
-            <Users className="h-4 w-4" />
-            <span>{isId ? "Ganti Akun Demo" : "Switch Demo User"}</span>
+            <UserCheck className="h-4 w-4 text-[#8B0000]" />
+            <span>{isId ? "Ganti Profil Demo" : "Switch Demo Profile"}</span>
           </button>
 
           {onLogout && (
             <button
               onClick={onLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-bold shadow-xs hover:bg-red-50 hover:text-red-700 active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs font-bold text-[#8B0000] dark:text-red-300 hover:bg-red-100 active:scale-95 transition"
             >
               <LogOut className="h-4 w-4" />
               <span>{isId ? "Keluar" : "Log Out"}</span>
@@ -300,112 +470,194 @@ export function SecurityDashboard({
         </div>
       </div>
 
-      {/* Active User Profile & Permissions Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* User Profile Card */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
-          <div className="flex items-center gap-3.5">
-            <img
-              src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-              alt={currentUser.name}
-              className="w-13 h-13 rounded-2xl object-cover border-2 border-[#8B0000] shadow-sm"
-            />
-            <div>
-              <h3 className="font-black text-base text-gray-900 dark:text-white leading-tight">
+      {/* Global Action Feedback Alert */}
+      {actionFeedback && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between text-xs font-semibold animate-in fade-in ${
+            actionFeedback.type === "success"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
+              : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900 text-red-800 dark:text-red-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {actionFeedback.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+            )}
+            <span>{actionFeedback.message}</span>
+          </div>
+          <button
+            onClick={() => setActionFeedback(null)}
+            className="text-xs opacity-60 hover:opacity-100 p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Active User Card & Privileges */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <img
+            src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop"}
+            alt={currentUser.name}
+            className="w-13 h-13 rounded-2xl object-cover border-2 border-red-700/20 shadow-xs"
+          />
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
                 {currentUser.name}
               </h3>
-              <p className="text-xs text-gray-500">{currentUser.email}</p>
-              <div className="mt-1">
-                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${currentRoleInfo.badgeBg}`}>
-                  {currentRoleInfo.label}
-                </span>
-              </div>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${currentRoleInfo.badgeBg}`}>
+                {currentRoleInfo.label}
+              </span>
             </div>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 text-xs space-y-1">
-            <p className="text-[11px] text-gray-500 font-semibold">{currentRoleInfo.description}</p>
-            <p className="text-[10px] text-gray-400 font-mono">
-              User ID: {currentUser.id} • Username: @{currentUser.username}
-            </p>
+            <p className="text-xs text-gray-500 font-mono">@{currentUser.username} • {currentUser.email}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{currentRoleInfo.description}</p>
           </div>
         </div>
 
-        {/* Active Permissions Matrix */}
-        <div className="lg:col-span-2 p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-extrabold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Lock className="h-4 w-4 text-[#8B0000]" />
-              <span>{isId ? "Matriks Izin & Otorisasi Aktif" : "Active Role Permissions Matrix"}</span>
+        <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700">
+          <span className="text-[10px] font-extrabold uppercase text-gray-400 mr-1 block sm:inline">
+            {isId ? "Izin Aktif:" : "Active Permissions:"}
+          </span>
+          {activePerms.slice(0, 4).map((p) => (
+            <span
+              key={p}
+              className="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[9px] font-mono font-bold text-gray-700 dark:text-gray-300"
+            >
+              {p}
             </span>
-            <span className="text-[11px] font-bold text-gray-500">
-              {activePerms.length} Izin Diberikan
+          ))}
+          {activePerms.length > 4 && (
+            <span className="px-1.5 py-0.5 text-[9px] font-bold text-gray-400">
+              +{activePerms.length - 4} {isId ? "lainnya" : "more"}
             </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            {[
-              { id: "ORDERS_CREATE", label: "Buat & Edit DO" },
-              { id: "ORDERS_DISPATCH", label: "Kirim & Ubah Status DO" },
-              { id: "ORDERS_PRINT", label: "Cetak Monospace ESC/P" },
-              { id: "INVENTORY_MUTATIONS", label: "Catat Mutasi Stok" },
-              { id: "CAD_EDIT", label: "Studio CAD & DXF" },
-              { id: "CAD_SAVE_BLUEPRINT", label: "Simpan Blueprint CAD" },
-              { id: "ANALYTICS_VIEW_FINANCIAL", label: "Lihat Omzet Finansial" },
-              { id: "SYSTEM_SNAPSHOT_BACKUP", label: "Ekspor Backup JSON" },
-              { id: "SYSTEM_SNAPSHOT_RESTORE", label: "Restore Snapshot DB" },
-            ].map((p) => {
-              const allowed = hasPermission(currentUser.role, p.id as any);
-              return (
-                <div
-                  key={p.id}
-                  className={`p-2 rounded-xl border flex items-center gap-2 ${
-                    allowed
-                      ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300"
-                      : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 text-gray-400 opacity-60"
-                  }`}
-                >
-                  {allowed ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  ) : (
-                    <Lock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                  )}
-                  <span className="font-semibold truncate text-[11px]">{p.label}</span>
-                </div>
-              );
-            })}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Factory Users Management CRUD (Super Admin & Managers) */}
+      {/* RBAC Role Matrix Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {(["SUPER_ADMIN", "FACTORY_MANAGER", "WAREHOUSE_STAFF", "SALES_OPERATOR"] as UserRole[]).map((role) => {
+          const info = getRoleBadgeInfo(role, language);
+          const isUserRole = currentUser.role === role;
+          const perms = ROLE_PERMISSIONS[role];
+
+          return (
+            <div
+              key={role}
+              className={`p-4 rounded-3xl border transition flex flex-col justify-between space-y-3 ${
+                isUserRole
+                  ? "bg-red-50/40 dark:bg-red-950/20 border-red-300 dark:border-red-900/60 shadow-xs"
+                  : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${info.badgeBg}`}>
+                    {info.label}
+                  </span>
+                  {isUserRole && (
+                    <span className="text-[9px] font-black uppercase text-[#8B0000] dark:text-red-400 bg-red-100 dark:bg-red-950 px-1.5 py-0.2 rounded">
+                      {isId ? "Peran Anda" : "Your Role"}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">{info.description}</p>
+              </div>
+
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-1">
+                <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider block">
+                  {perms.length} {isId ? "Hak Akses Diberikan" : "Granted Permissions"}
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {perms.slice(0, 3).map((pm) => (
+                    <span
+                      key={pm}
+                      className="px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-[8px] font-mono text-gray-600 dark:text-gray-400"
+                    >
+                      {pm}
+                    </span>
+                  ))}
+                  {perms.length > 3 && (
+                    <span className="text-[8px] text-gray-400">+{perms.length - 3}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Factory Users Management CRUD (Scrollable Directory & Role Assignment) */}
       <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
               <Users className="h-4 w-4 text-[#8B0000]" />
               <span>{isId ? "Manajemen Akun & Pengguna Pabrik" : "Factory User Management"}</span>
+              <span className="text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                {filteredUsers.length} / {userList.length} {isId ? "Pengguna" : "Users"}
+              </span>
             </h3>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Daftar pengguna terdaftar di database SQLite dengan kata sandi terenkripsi PBKDF2"
+                ? "Daftar pengguna terdaftar di basis data SQLite dengan kata sandi terenkripsi PBKDF2"
                 : "Registered factory users stored in SQLite with salted PBKDF2 password hashes"}
             </p>
           </div>
 
-          <button
-            onClick={() => setIsAddUserOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] active:scale-95 transition"
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            <span>{isId ? "+ Tambah Pengguna" : "+ Add User"}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Search filter for user directory */}
+            <div className="relative">
+              <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
+                placeholder={isId ? "Cari nama, email, username..." : "Search users..."}
+                className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+              />
+            </div>
+
+            {isAdmin ? (
+              <button
+                onClick={() => setIsAddUserOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] active:scale-95 transition"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span>{isId ? "+ Tambah Pengguna" : "+ Add User"}</span>
+              </button>
+            ) : (
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-[11px] font-semibold border border-gray-200 dark:border-gray-700 cursor-not-allowed"
+                title={isId ? "Hanya Super Admin yang berwenang menambah pengguna" : "Super Admin privileges required"}
+              >
+                <Lock className="h-3 w-3" />
+                <span>{isId ? "Izin Super Admin Diperlukan" : "Super Admin Required"}</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* User Management Table */}
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+        {/* Read-Only Notice for Non-Admins */}
+        {!isAdmin && (
+          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
+            <span>
+              {isId
+                ? "Anda sedang melihat daftar pengguna dalam mode Baca (Read-Only). Otorisasi penambahan akun, modifikasi status, dan penugasan peran dibatasi khusus untuk Super Admin."
+                : "Viewing user directory in Read-Only mode. Adding users, changing status, and assigning roles is restricted to Super Admin."}
+            </span>
+          </div>
+        )}
+
+        {/* User Management Scrollable Table Container */}
+        <div className="overflow-x-auto max-h-[440px] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
+            <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
               <tr>
                 <th className="py-2.5 px-3">Pengguna</th>
                 <th className="py-2.5 px-3">Username & Email</th>
@@ -416,57 +668,94 @@ export function SecurityDashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {userList.map((u) => {
-                const info = getRoleBadgeInfo(u.role, language);
-                return (
-                  <tr key={u.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={u.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-                          alt={u.name}
-                          className="w-7 h-7 rounded-lg object-cover border"
-                        />
-                        <span className="font-bold text-gray-900 dark:text-white">{u.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <p className="font-mono text-gray-700 dark:text-gray-300">@{u.username}</p>
-                      <p className="text-[10px] text-gray-400">{u.email}</p>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${info.badgeBg}`}>
-                        {info.label}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <button
-                        onClick={() => handleToggleUserActive(u)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition ${
-                          u.isActive === 1
-                            ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
-                            : "bg-gray-200 dark:bg-gray-800 text-gray-500"
-                        }`}
-                      >
-                        {u.isActive === 1 ? "Aktif" : "Non-Aktif"}
-                      </button>
-                    </td>
-                    <td className="py-2.5 px-3 text-[11px] text-gray-500 font-mono">
-                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("id-ID") : "-"}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <button
-                        onClick={() => handleDeleteUser(u.id, u.username)}
-                        disabled={u.username === "superadmin"}
-                        className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-20 transition"
-                        title="Hapus Pengguna"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-400">
+                    {isId ? "Tidak ada pengguna yang cocok dengan pencarian." : "No users match your search criteria."}
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => {
+                  const info = getRoleBadgeInfo(u.role, language);
+                  return (
+                    <tr key={u.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={u.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+                            alt={u.name}
+                            className="w-7 h-7 rounded-lg object-cover border shrink-0"
+                          />
+                          <div>
+                            <span className="font-bold text-gray-900 dark:text-white block">{u.name}</span>
+                            {u.username === currentUser.username && (
+                              <span className="text-[9px] font-bold text-[#8B0000] dark:text-red-400">
+                                ({isId ? "Sesi Aktif" : "Current Session"})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <p className="font-mono text-gray-700 dark:text-gray-300">@{u.username}</p>
+                        <p className="text-[10px] text-gray-400">{u.email}</p>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        {isAdmin && u.username !== "superadmin" ? (
+                          <div className="relative inline-block">
+                            <select
+                              value={u.role}
+                              onChange={(e) => handleRoleChange(u, e.target.value as UserRole)}
+                              className={`text-[10px] font-bold uppercase rounded-lg border py-1 pl-2 pr-6 appearance-none bg-white dark:bg-gray-800 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#8B0000] ${info.badgeBg}`}
+                            >
+                              <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                              <option value="FACTORY_MANAGER">FACTORY MANAGER</option>
+                              <option value="WAREHOUSE_STAFF">WAREHOUSE STAFF</option>
+                              <option value="SALES_OPERATOR">SALES OPERATOR</option>
+                            </select>
+                            <ChevronDown className="h-3 w-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
+                          </div>
+                        ) : (
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold ${info.badgeBg}`}>
+                            {info.label}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <button
+                          onClick={() => handleToggleUserActive(u)}
+                          disabled={!isAdmin || u.username === "superadmin"}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition disabled:opacity-50 ${
+                            u.isActive === 1
+                              ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200"
+                              : "bg-gray-200 dark:bg-gray-800 text-gray-500 hover:bg-gray-300"
+                          }`}
+                          title={!isAdmin ? (isId ? "Izin Super Admin Diperlukan" : "Super Admin Required") : ""}
+                        >
+                          {u.isActive === 1 ? (isId ? "Aktif" : "Active") : isId ? "Non-Aktif" : "Inactive"}
+                        </button>
+                      </td>
+                      <td className="py-2.5 px-3 text-[11px] text-gray-500 font-mono">
+                        {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("id-ID") : "-"}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        {isAdmin ? (
+                          <button
+                            onClick={() => handleDeleteUser(u.id, u.username)}
+                            disabled={u.username === "superadmin"}
+                            className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-20 transition"
+                            title={u.username === "superadmin" ? (isId ? "Akun Super Admin utama tidak dapat dihapus" : "Primary Super Admin cannot be deleted") : isId ? "Hapus Pengguna" : "Delete User"}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-gray-300 dark:text-gray-700">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -482,7 +771,7 @@ export function SecurityDashboard({
             </h3>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Simpan seluruh relasi database pabrik (Surat Jalan, Stok, CAD, Pengguna, Log Audit) dalam satu file JSON terenkapsulasi"
+                ? "Simpan seluruh relasi basis data pabrik (Surat Jalan, Stok, CAD, Pengguna, Log Audit) dalam satu file JSON terenkapsulasi"
                 : "1-Click complete database bundle export & restore for zero-configuration factory resilience"}
             </p>
           </div>
@@ -490,7 +779,9 @@ export function SecurityDashboard({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportSnapshot}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition"
+              disabled={!canExport}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition disabled:opacity-50"
+              title={!canExport ? (isId ? "Izin Super Admin / Manajer Diperlukan" : "Admin / Manager Required") : ""}
             >
               <Download className="h-4 w-4" />
               <span>{isId ? "Unduh Backup Snapshot (.json)" : "Download Snapshot (.json)"}</span>
@@ -498,11 +789,16 @@ export function SecurityDashboard({
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              disabled={restoring}
+              disabled={restoring || !canRestore}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs disabled:opacity-50"
+              title={!canRestore ? (isId ? "Izin Super Admin Diperlukan" : "Super Admin Required") : ""}
             >
               <Upload className="h-4 w-4 text-[#8B0000]" />
-              <span>{restoring ? (isId ? "Memulihkan..." : "Restoring...") : isId ? "Restore Snapshot (.json)" : "Restore Snapshot"}</span>
+              <span>
+                {restoring
+                  ? isId ? "Memulihkan..." : "Restoring..."
+                  : isId ? "Restore Snapshot (.json)" : "Restore Snapshot"}
+              </span>
             </button>
             <input
               ref={fileInputRef}
@@ -531,7 +827,9 @@ export function SecurityDashboard({
               <span>{isId ? "Log Audit Aktivitas & Jejak Operasional" : "Factory Audit Trail & Security Logs"}</span>
             </h3>
             <p className="text-xs text-gray-500">
-              {isId ? "Jejak audit permanen pencatatan login, mutasi, pembuatan DO, dan perubahan status" : "Immutable chronological record of user sessions and critical operational mutations"}
+              {isId
+                ? "Jejak audit permanen pencatatan login, mutasi inventaris, penerbitan surat jalan, dan perubahan status"
+                : "Immutable chronological record of user sessions and critical operational mutations"}
             </p>
           </div>
 
@@ -557,10 +855,10 @@ export function SecurityDashboard({
           </div>
         </div>
 
-        {/* Logs Table */}
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+        {/* Logs Scrollable Table */}
+        <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
+            <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
               <tr>
                 <th className="py-2.5 px-3">Waktu</th>
                 <th className="py-2.5 px-3">Pengguna</th>
@@ -598,10 +896,10 @@ export function SecurityDashboard({
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-2 px-3 font-semibold text-gray-600 dark:text-gray-400">
+                    <td className="py-2 px-3 font-semibold text-gray-600 dark:text-gray-300">
                       {log.entityType}
                     </td>
-                    <td className="py-2 px-3 text-gray-700 dark:text-gray-300">
+                    <td className="py-2 px-3 text-gray-600 dark:text-gray-400 font-medium">
                       {log.details || "-"}
                     </td>
                   </tr>
@@ -612,32 +910,41 @@ export function SecurityDashboard({
         </div>
       </div>
 
-      {/* Add User Modal */}
+      {/* Add New Factory User Modal */}
       {isAddUserOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-base">Tambah Akun Pengguna Pabrik</h3>
-                <p className="text-xs text-red-200">Buat kredensial staf baru dengan enkripsi PBKDF2</p>
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                <h3 className="font-bold text-sm">
+                  {isId ? "Tambah Pengguna Pabrik Baru" : "Add New Factory User"}
+                </h3>
               </div>
-              <button onClick={() => setIsAddUserOpen(false)} className="p-1 rounded-lg hover:bg-white/10">✕</button>
+              <button
+                onClick={() => setIsAddUserOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/10"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreateUser} className="p-4 space-y-3 text-xs">
-              <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Nama Lengkap *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Rian Anggara"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
-                />
-              </div>
-
+            <form onSubmit={handleCreateUser} className="p-5 space-y-3.5">
               <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                    {isId ? "Nama Lengkap *" : "Full Name *"}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Rian Gunawan"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+
                 <div>
                   <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Username *</label>
                   <input
@@ -649,22 +956,24 @@ export function SecurityDashboard({
                     className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-mono font-semibold text-gray-900 dark:text-white focus:outline-none"
                   />
                 </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="rian@equatorinsole.co.id"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white focus:outline-none"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Kata Sandi (Password) *</label>
+                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Email *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="rian@equatorinsole.co.id"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                  {isId ? "Kata Sandi (Password) *" : "Password *"}
+                </label>
                 <input
                   type="password"
                   required
@@ -675,16 +984,18 @@ export function SecurityDashboard({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Peran / Role *</label>
+                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                  {isId ? "Peran / Role Pabrik *" : "Factory Role *"}
+                </label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as UserRole)}
                   className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
                 >
                   <option value="SUPER_ADMIN">Super Admin (Owner)</option>
-                  <option value="FACTORY_MANAGER">Manajer Pabrik</option>
-                  <option value="WAREHOUSE_STAFF">Staff Gudang</option>
-                  <option value="SALES_OPERATOR">Operator Penjualan</option>
+                  <option value="FACTORY_MANAGER">Manajer Pabrik (Production Manager)</option>
+                  <option value="WAREHOUSE_STAFF">Staff Gudang (Warehouse Crew)</option>
+                  <option value="SALES_OPERATOR">Operator Penjualan (Sales Operator)</option>
                 </select>
               </div>
 
@@ -694,14 +1005,14 @@ export function SecurityDashboard({
                   onClick={() => setIsAddUserOpen(false)}
                   className="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
                 >
-                  Batal
+                  {isId ? "Batal" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={creatingUser}
                   className="px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs disabled:opacity-50"
                 >
-                  {creatingUser ? "Menyimpan..." : "Simpan Pengguna"}
+                  {creatingUser ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Pengguna" : "Create User"}
                 </button>
               </div>
             </form>
@@ -715,9 +1026,13 @@ export function SecurityDashboard({
           <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-base">Ganti Akun Demo Pabrik</h3>
+                <h3 className="font-bold text-base">
+                  {isId ? "Ganti Profil Peran Demo Pabrik" : "Switch Demo Factory Profile"}
+                </h3>
                 <p className="text-xs text-red-200">
-                  Uji coba hak akses otorisasi untuk 4 peran operasional pabrik
+                  {isId
+                    ? "Uji coba hak akses otorisasi untuk 4 peran operasional pabrik"
+                    : "Test RBAC authorization across 4 distinct factory operational roles"}
                 </p>
               </div>
               <button
@@ -774,7 +1089,7 @@ export function SecurityDashboard({
                     </div>
 
                     <button className="px-3 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs flex items-center gap-1">
-                      <span>Pilih</span>
+                      <span>{isId ? "Pilih" : "Select"}</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>

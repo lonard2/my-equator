@@ -129,3 +129,66 @@ export function getRoleBadgeInfo(role: UserRole, language: "id" | "en" = "id") {
       };
   }
 }
+
+export function canManageUsers(role?: string | null): boolean {
+  if (!role) return false;
+  return role === "SUPER_ADMIN";
+}
+
+export function canRestoreDatabase(role?: string | null): boolean {
+  if (!role) return false;
+  return role === "SUPER_ADMIN";
+}
+
+export function canExportDatabase(role?: string | null): boolean {
+  if (!role) return false;
+  return role === "SUPER_ADMIN" || role === "FACTORY_MANAGER";
+}
+
+export function extractRequesterRole(headers: Headers | Record<string, string>): {
+  role: UserRole;
+  userId: string;
+  userName: string;
+} {
+  let roleHeader: string | null = null;
+  let userIdHeader: string | null = null;
+  let userNameHeader: string | null = null;
+
+  if (typeof (headers as Headers).get === "function") {
+    const h = headers as Headers;
+    roleHeader = h.get("x-user-role");
+    userIdHeader = h.get("x-user-id");
+    userNameHeader = h.get("x-user-name");
+  } else {
+    const h = headers as Record<string, string>;
+    roleHeader = h["x-user-role"] || h["X-User-Role"] || null;
+    userIdHeader = h["x-user-id"] || h["X-User-Id"] || null;
+    userNameHeader = h["x-user-name"] || h["X-User-Name"] || null;
+  }
+
+  const validRoles: UserRole[] = ["SUPER_ADMIN", "FACTORY_MANAGER", "WAREHOUSE_STAFF", "SALES_OPERATOR"];
+  const role = validRoles.includes(roleHeader as UserRole) ? (roleHeader as UserRole) : "SALES_OPERATOR";
+  const userId = userIdHeader || "ANONYMOUS";
+  const userName = userNameHeader || "Operator";
+
+  return { role, userId, userName };
+}
+
+export function assertPermission(
+  headers: Headers | Record<string, string>,
+  permission: Permission
+): { authorized: boolean; role: UserRole; error?: string } {
+  const { role } = extractRequesterRole(headers);
+  const authorized = hasPermission(role, permission);
+
+  if (!authorized) {
+    return {
+      authorized: false,
+      role,
+      error: `Akses ditolak: Peran '${role}' tidak memiliki izin '${permission}'. Diperlukan hak akses administratif Super Admin.`,
+    };
+  }
+
+  return { authorized: true, role };
+}
+

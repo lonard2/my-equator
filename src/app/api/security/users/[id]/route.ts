@@ -3,12 +3,22 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword, generateSalt, logAuditEvent } from "@/lib/auth/authService";
+import { assertPermission, extractRequesterRole } from "@/lib/auth/rbac";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = assertPermission(req.headers, "SYSTEM_USER_MANAGEMENT");
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Akses ditolak: Hanya Super Admin yang berwenang memodifikasi akun dan peran pengguna." },
+        { status: 403 }
+      );
+    }
+
+    const requester = extractRequesterRole(req.headers);
     const { id } = await params;
     const body = await req.json();
     const { name, email, role, isActive, password } = body;
@@ -36,12 +46,13 @@ export async function PATCH(
     await db.update(users).set(updateData).where(eq(users.id, id));
 
     await logAuditEvent({
-      userId: "ADMIN",
-      userName: "Administrator",
+      userId: requester.userId,
+      userName: requester.userName,
+      userRole: requester.role,
       action: "USER_UPDATE",
       entityType: "AUTH",
       entityId: id,
-      details: `Memperbarui akun ${existing.name} (@${existing.username}).`,
+      details: `Memperbarui akun ${existing.name} (@${existing.username}) oleh ${requester.userName}.`,
     });
 
     return NextResponse.json({ success: true, data: { id, ...updateData } });
@@ -55,6 +66,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = assertPermission(req.headers, "SYSTEM_USER_MANAGEMENT");
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Akses ditolak: Hanya Super Admin yang berwenang menghapus pengguna." },
+        { status: 403 }
+      );
+    }
+
+    const requester = extractRequesterRole(req.headers);
     const { id } = await params;
     const [existing] = await db.select().from(users).where(eq(users.id, id)).limit(1);
     if (!existing) {
@@ -71,12 +91,13 @@ export async function DELETE(
     await db.delete(users).where(eq(users.id, id));
 
     await logAuditEvent({
-      userId: "ADMIN",
-      userName: "Administrator",
+      userId: requester.userId,
+      userName: requester.userName,
+      userRole: requester.role,
       action: "USER_DELETE",
       entityType: "AUTH",
       entityId: id,
-      details: `Menghapus akun ${existing.name} (@${existing.username}).`,
+      details: `Menghapus akun ${existing.name} (@${existing.username}) oleh ${requester.userName}.`,
     });
 
     return NextResponse.json({ success: true, message: "User berhasil dihapus." });
@@ -84,3 +105,4 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: error?.message }, { status: 500 });
   }
 }
+

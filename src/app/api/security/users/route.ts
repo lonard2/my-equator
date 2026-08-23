@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { hashPassword, generateSalt, logAuditEvent, ensureDemoUsersSeeded } from "@/lib/auth/authService";
+import { assertPermission, extractRequesterRole } from "@/lib/auth/rbac";
 import crypto from "crypto";
 
 export async function GET() {
@@ -28,6 +29,15 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const auth = assertPermission(req.headers, "SYSTEM_USER_MANAGEMENT");
+    if (!auth.authorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Akses ditolak: Hanya Super Admin yang berwenang menambah dan mengelola peran pengguna." },
+        { status: 403 }
+      );
+    }
+
+    const requester = extractRequesterRole(req.headers);
     const body = await req.json();
     const { username, name, email, password, role } = body;
 
