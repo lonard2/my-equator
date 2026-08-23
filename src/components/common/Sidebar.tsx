@@ -90,7 +90,7 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
 
       <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs space-y-1">
         <p className="font-bold text-gray-800 dark:text-gray-200">Equator Insole Bandung</p>
-        <p className="text-gray-500 dark:text-gray-400 text-[11px]">Khatulistiwa AI Copilot Ready</p>
+        <p className="text-gray-500 dark:text-gray-400 text-[11px]">{isId ? "Operasional Pabrik & CAD Terpadu" : "Integrated ERP & CAD Operations"}</p>
       </div>
     </aside>
   );

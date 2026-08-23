@@ -632,3 +632,6 @@ export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "
   </g>
 </svg>`;
 }
+
+export const generateDxfR12Stream = generateDxfContent;
+

@@ -38,20 +38,24 @@ export function generateEscpMonospaceText(order: DeliveryOrder): string {
   lines.push(fit("Jl. Industri Insole No. 88, Bandung, Jawa Barat | Telp: (022) 540-8899", W, "center"));
   lines.push("-".repeat(W));
 
+  // Helper for guaranteed 80-column 2-column header lines
+  const formatTwoCols = (leftText: string, rightText: string): string => {
+    const rightCol = rightText.trim();
+    const maxLeftWidth = W - rightCol.length - 2;
+    const leftCol = fit(leftText, Math.max(10, maxLeftWidth), "left");
+    const gap = Math.max(1, W - leftCol.length - rightCol.length);
+    const combined = leftCol + " ".repeat(gap) + rightCol;
+    return fit(combined, W, "left");
+  };
+
   // Metadata Row 1
-  const metaL1 = `No. Surat Jalan : ${order.orderNumber}`;
-  const metaR1 = `Tanggal : ${formatShortDate(order.deliveryDate)}`;
-  lines.push(metaL1 + " ".repeat(Math.max(2, W - metaL1.length - metaR1.length)) + metaR1);
+  lines.push(formatTwoCols(`No. Surat Jalan : ${order.orderNumber}`, `Tanggal : ${formatShortDate(order.deliveryDate)}`));
 
   // Metadata Row 2
-  const metaL2 = `Kepada / Yth    : ${order.recipientName}`;
-  const metaR2 = `PO / SPK: ${order.poNumber || "-"}`;
-  lines.push(metaL2 + " ".repeat(Math.max(2, W - metaL2.length - metaR2.length)) + metaR2);
+  lines.push(formatTwoCols(`Kepada / Yth    : ${order.recipientName}`, `PO / SPK: ${order.poNumber || "-"}`));
 
   // Metadata Row 3
-  const metaL3 = `Alamat Tujuan   : ${order.destinationAddress}`;
-  const metaR3 = `No Kend : ${order.vehicleNumber || "-"}`;
-  lines.push(metaL3 + " ".repeat(Math.max(2, W - metaL3.length - metaR3.length)) + metaR3);
+  lines.push(formatTwoCols(`Alamat Tujuan   : ${order.destinationAddress}`, `No Kend : ${order.vehicleNumber || "-"}`));
 
   // Divider
   // Exact 80-character grid breakdown:
@@ -98,23 +102,17 @@ export function generateEscpMonospaceText(order: DeliveryOrder): string {
   lines.push(dividerLine);
 
   // Summary Row (Exact 80 columns)
-  // | TOTAL PASANG DIKIRIM                                      |  1500 psg |
-  // 1 + 65 + 1 + 11 + 1 = 79?
-  // Let's ensure exact 80 chars:
-  // prefix: "| TOTAL PASANG DIKIRIM" (22) + 44 spaces = 66
-  // value: fit(grandTotalPairs + " psg", 11, "right")
-  // 1 + 66 + 1 + 11 + 1 = 80
   const totalLabel = fit(" TOTAL PASANG DIKIRIM", 66, "left");
   const totalVal = fit(grandTotalPairs.toString() + " psg", 11, "right");
   lines.push(`|${totalLabel}|${totalVal}|`);
   lines.push("=".repeat(W));
 
-  // Terbilang / Total Amount & Notes
+  // Terbilang / Total Amount & Notes (Guaranteed 80 columns)
   if (order.totalAmount && order.totalAmount > 0) {
-    lines.push(`Total Nilai : ${formatIDR(order.totalAmount)} (${terbilang(order.totalAmount)})`);
+    lines.push(fit(`Total Nilai : ${formatIDR(order.totalAmount)} (${terbilang(order.totalAmount)})`, W, "left"));
   }
   if (order.notes) {
-    lines.push(`Catatan     : ${order.notes}`);
+    lines.push(fit(`Catatan     : ${order.notes}`, W, "left"));
   }
   lines.push("");
 
@@ -146,7 +144,7 @@ export function generateEscpMonospaceText(order: DeliveryOrder): string {
 /**
  * Builds raw binary ESC/P byte stream for direct spooling to Epson LX-300 / LX-310 / LQ-310.
  */
-export function generateEscpBinary(order: DeliveryOrder): Uint8Array {
+export function generateEscpBinary(input: DeliveryOrder | string): Uint8Array {
   const bytes: number[] = [];
 
   // ESC @ : Initialize Printer
@@ -158,7 +156,7 @@ export function generateEscpBinary(order: DeliveryOrder): Uint8Array {
   // ESC M : Select 10 CPI Pitch (80 columns)
   bytes.push(0x1b, 0x4d);
 
-  const textContent = generateEscpMonospaceText(order);
+  const textContent = typeof input === "string" ? input : generateEscpMonospaceText(input);
   const encoder = new TextEncoder();
   const textBytes = encoder.encode(textContent);
   for (let i = 0; i < textBytes.length; i++) {
@@ -170,3 +168,7 @@ export function generateEscpBinary(order: DeliveryOrder): Uint8Array {
 
   return new Uint8Array(bytes);
 }
+
+export const generateEscpBinaryStream = generateEscpBinary;
+
+

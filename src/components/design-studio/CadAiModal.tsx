@@ -57,19 +57,19 @@ export function CadAiModal({
 
   const quickPrompts = [
     {
-      label: isId ? "🏃 Insole Running Marathon EU 42" : "🏃 Marathon Running EU 42",
+      label: isId ? "Insole Running Marathon EU 42" : "Marathon Running EU 42",
       text: "Buatkan desain insole running maraton ukuran EU 42 dengan high arch support, peredam tumit tebal, bentuk toe box anatomis, dan material supercritical PEBAX dengan carbon shank.",
     },
     {
-      label: isId ? "🦶 Koreksi Flatfoot US Men 9" : "🦶 Flatfoot Correction US Men 9",
+      label: isId ? "Koreksi Flatfoot US Men 9" : "Flatfoot Correction US Men 9",
       text: "Desain insole orthotik untuk koreksi flatfoot telapak rata ukuran US Men 9, medial arch support rigid ekstra kokoh, dan bantalan metatarsal tebal.",
     },
     {
-      label: isId ? "👟 Sneaker Santai Memory Foam UK 7" : "👟 Everyday Sneaker UK 7",
+      label: isId ? "Sneaker Memory Foam UK 7" : "Everyday Sneaker UK 7",
       text: "Insole santai untuk sneaker harian ukuran UK 7, arch medium netral, busa memori lateks alami lembut, dan toe box rounded.",
     },
     {
-      label: isId ? "🩺 Diabetic Pressure Relief US Women 8" : "🩺 Diabetic Relief US Women 8",
+      label: isId ? "Diabetic Relief US Women 8" : "Diabetic Relief US Women 8",
       text: "Insole medis diabetes ukuran US Women 8, arch rata fleksibel tanpa jahitan, toe box square lebar, dan busa Plastazote ramah kulit.",
     },
   ];

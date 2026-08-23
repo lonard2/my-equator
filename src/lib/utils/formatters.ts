@@ -39,7 +39,7 @@ export function terbilang(n: number): string {
     } else if (x < 2000) {
       temp = " Seribu" + bilang(x - 1000);
     } else if (x < 1000000) {
-      temp = bilang(Math.floor(x / 1000)) + " Ribu" + bilang(x % 100);
+      temp = bilang(Math.floor(x / 1000)) + " Ribu" + bilang(x % 1000);
     } else if (x < 1000000000) {
       temp = bilang(Math.floor(x / 1000000)) + " Juta" + bilang(x % 1000000);
     } else if (x < 1000000000000) {

@@ -59,25 +59,25 @@ export function KhatulistiwaAssistant({
 
   const quickPrompts = [
     {
-      label: isId ? "📦 Cek Saldo Stok Bahan" : "📦 Check Inventory",
+      label: isId ? "Status Saldo Stok Bahan" : "Check Material Inventory",
       prompt: isId
         ? "Tolong berikan status saldo stok bahan baku terkini di gudang, terutama yang berada di bawah safety threshold."
         : "Please give me the latest stock balance of raw materials in the warehouse, especially those below safety thresholds.",
     },
     {
-      label: isId ? "📄 Buat Draft Surat Jalan" : "📄 Draft Delivery Order",
+      label: isId ? "Draft Surat Jalan Baru" : "Draft Delivery Order",
       prompt: isId
         ? "Buatkan draft surat jalan untuk PT KMK GLOBAL SPORTS di Tangerang, 300 pasang insole sport (size 39: 60, 40: 80, 41: 80, 42: 80), PO-KMK-889, kirim besok."
         : "Draft a delivery order for PT KMK GLOBAL SPORTS in Tangerang, 300 pairs of sport insoles (size 39: 60, 40: 80, 41: 80, 42: 80), PO-KMK-889, shipping tomorrow.",
     },
     {
-      label: isId ? "📊 Hitung Kebutuhan Bahan (BOM)" : "📊 Calculate BOM",
+      label: isId ? "Kalkulasi Kebutuhan BOM" : "Calculate BOM Requirement",
       prompt: isId
         ? "Hitung estimasi kebutuhan lembaran EVA foam dan kain BK mesh untuk produksi 500 pasang insole model Ortho Sport."
         : "Calculate the estimated BOM of EVA foam sheets and BK mesh fabric for producing 500 pairs of Ortho Sport insoles.",
     },
     {
-      label: isId ? "📈 Ringkasan Bisnis & DO" : "📈 Business Summary",
+      label: isId ? "Ringkasan Operasional DO" : "Operations Summary",
       prompt: isId
         ? "Berikan ringkasan volume pasang surat jalan aktif dan nilai aset gudang bulan ini."
         : "Provide a summary of active delivery order pairs volume and total warehouse asset valuation this month.",

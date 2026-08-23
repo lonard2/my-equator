@@ -4,6 +4,28 @@ import { DeliveryOrder, DeliveryOrderItem, DeliveryOrderStatus, SizeBreakdown } 
 import { eq, desc, like } from "drizzle-orm";
 import crypto from "crypto";
 
+export function computeItemTotals(
+  sizes: Record<number | string, number> | undefined,
+  unitPrice: number = 0
+): { totalPairs: number; totalPrice: number } {
+  if (!sizes || typeof sizes !== "object") {
+    return { totalPairs: 0, totalPrice: 0 };
+  }
+
+  let totalPairs = 0;
+  for (const key of Object.keys(sizes)) {
+    const val = Number(sizes[key]);
+    if (!isNaN(val) && val > 0) {
+      totalPairs += Math.floor(val);
+    }
+  }
+
+  const cleanPrice = Math.max(0, isNaN(unitPrice) ? 0 : unitPrice);
+  const totalPrice = totalPairs * cleanPrice;
+
+  return { totalPairs, totalPrice };
+}
+
 export class OrderService {
   /**
    * Generates the next standard Surat Jalan number: SJ/EQ/YYYY/MM/XXXX
