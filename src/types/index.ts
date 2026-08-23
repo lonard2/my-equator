@@ -29,6 +29,7 @@ export interface DeliveryOrderItem {
   unitPrice?: number;
   totalPrice?: number;
   notes?: string;
+  createdAt?: string;
 }
 
 export interface DeliveryOrder {

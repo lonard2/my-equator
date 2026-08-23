@@ -162,12 +162,20 @@ export default function HomePage() {
     setLanguage(nextLang);
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: DeliveryOrderStatus) => {
+  const handleStatusChange = async (orderId: string, newStatus: DeliveryOrderStatus, reason?: string) => {
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (currentUser) {
+        headers["x-user-role"] = currentUser.role;
+        headers["x-user-id"] = currentUser.id;
+        headers["x-user-name"] = currentUser.name;
+      }
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        headers,
+        body: JSON.stringify({ status: newStatus, reason }),
       });
       const json = await res.json();
       if (json.success) {
@@ -175,9 +183,12 @@ export default function HomePage() {
           setSelectedOrder(json.data);
         }
         fetchOrders();
+      } else {
+        alert(json.error || "Gagal memperbarui status surat jalan.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update status:", err);
+      alert(err.message);
     }
   };
 

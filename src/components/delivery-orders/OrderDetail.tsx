@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown } from "@/types";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
+import { getAvailableStatusRollbacks } from "@/lib/orders/status";
 import { TouchSizePad } from "./TouchSizePad";
 import {
   Printer,
@@ -19,11 +20,15 @@ import {
   Plus,
   Grid,
   Touchpad,
+  RotateCcw,
+  Undo2,
+  AlertTriangle,
+  Ban,
 } from "lucide-react";
 
 interface OrderDetailProps {
   order: DeliveryOrder;
-  onStatusChange: (id: string, newStatus: DeliveryOrderStatus) => void;
+  onStatusChange: (id: string, newStatus: DeliveryOrderStatus, reason?: string) => void;
   onOpenPrint: (order: DeliveryOrder) => void;
   onDeleteOrder: (id: string) => void;
   onOrderUpdated: () => void;
@@ -55,6 +60,12 @@ export function OrderDetail({
   const [saving, setSaving] = useState(false);
   const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
   const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
+
+  // Status Rollback / Cancellation Modal States
+  const [isRollbackModalOpen, setIsRollbackModalOpen] = useState(false);
+  const [rollbackTarget, setRollbackTarget] = useState<DeliveryOrderStatus>("DRAFT");
+  const [rollbackReason, setRollbackReason] = useState("");
+  const [rollbackSubmitting, setRollbackSubmitting] = useState(false);
 
   // Edit form states
   const [recipientName, setRecipientName] = useState(order.recipientName);
@@ -174,6 +185,23 @@ export function OrderDetail({
     }
   };
 
+  const handleExecuteRollback = async () => {
+    if (!rollbackReason.trim()) {
+      alert(isId ? "Wajib mengisi alasan rollback atau pembatalan status." : "Rollback reason is required.");
+      return;
+    }
+    setRollbackSubmitting(true);
+    try {
+      await onStatusChange(order.id, rollbackTarget as DeliveryOrderStatus, rollbackReason);
+      setIsRollbackModalOpen(false);
+      setRollbackReason("");
+    } finally {
+      setRollbackSubmitting(false);
+    }
+  };
+
+  const availableRollbacks = getAvailableStatusRollbacks(order.status);
+
   // Calculation for Edit Mode
   let editGrandTotalPairs = 0;
   let editGrandTotalAmount = 0;
@@ -224,7 +252,13 @@ export function OrderDetail({
               <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
                 {order.orderNumber}
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/60 text-[#8B0000] dark:text-red-300">
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                order.status === "DELIVERED"
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  : order.status === "CANCELLED"
+                  ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                  : "bg-red-100 dark:bg-red-900/60 text-[#8B0000] dark:text-red-300"
+              }`}>
                 {order.status}
               </span>
               {isEditing && (
@@ -250,13 +284,48 @@ export function OrderDetail({
                   <span>{isId ? "Edit Surat Jalan" : "Edit Order"}</span>
                 </button>
 
-                {nextAction && (
+                {nextAction && order.status !== "CANCELLED" && (
                   <button
                     onClick={() => onStatusChange(order.id, nextAction.next)}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition"
                   >
                     <nextAction.icon className="h-3.5 w-3.5" />
                     <span>{nextAction.label}</span>
+                  </button>
+                )}
+
+                {/* Rollback / Status Reversal Button */}
+                {order.status !== "DRAFT" && (
+                  <button
+                    onClick={() => {
+                      const rollbacks = getAvailableStatusRollbacks(order.status);
+                      if (rollbacks.length > 0) {
+                        setRollbackTarget(rollbacks[0]);
+                      } else {
+                        setRollbackTarget("DRAFT");
+                      }
+                      setIsRollbackModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition shadow-xs"
+                    title={isId ? "Kembalikan/Koreksi status jika salah input" : "Rollback or revert status"}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>{isId ? "Rollback Status" : "Revert Status"}</span>
+                  </button>
+                )}
+
+                {/* Direct Cancellation Button */}
+                {order.status !== "CANCELLED" && (
+                  <button
+                    onClick={() => {
+                      setRollbackTarget("CANCELLED");
+                      setIsRollbackModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20 px-3 py-2 text-xs font-bold text-red-700 dark:text-red-300 hover:bg-red-100 transition shadow-xs"
+                    title={isId ? "Batalkan pesanan surat jalan" : "Cancel delivery order"}
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                    <span>{isId ? "Batalkan DO" : "Cancel DO"}</span>
                   </button>
                 )}
 
@@ -311,6 +380,34 @@ export function OrderDetail({
           </div>
         </div>
       </div>
+
+      {/* Cancelled Banner */}
+      {order.status === "CANCELLED" && (
+        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Ban className="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+              <p className="font-extrabold text-xs text-red-900 dark:text-red-300">
+                {isId ? "Surat Jalan Ini Berstatus Dibatalkan (CANCELLED)" : "This Delivery Order is CANCELLED"}
+              </p>
+              <p className="text-[11px] text-red-700 dark:text-red-400">
+                {isId
+                  ? "Dokumen ini tidak aktif untuk pengiriman. Anda dapat membukanya kembali menjadi Draft jika diperlukan koreksi."
+                  : "This order is inactive. You can re-open it to Draft status if revisions are needed."}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setRollbackTarget("DRAFT");
+              setIsRollbackModalOpen(true);
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-red-300 text-xs font-bold text-red-700 dark:text-red-300 shadow-xs hover:bg-red-50"
+          >
+            {isId ? "Buka Kembali Menjadi Draft" : "Re-open as Draft"}
+          </button>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="p-4 sm:p-6 space-y-6 max-w-6xl">
@@ -758,6 +855,117 @@ export function OrderDetail({
           </div>
         )}
       </div>
+
+      {/* Status Rollback & Cancellation Modal */}
+      {isRollbackModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-5 w-5" />
+                <h3 className="font-bold text-sm">
+                  {rollbackTarget === "CANCELLED"
+                    ? isId ? "Batalkan Surat Jalan" : "Cancel Delivery Order"
+                    : isId ? "Koreksi / Rollback Status Surat Jalan" : "Revert Delivery Order Status"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsRollbackModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/10"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-900 dark:text-amber-300 space-y-0.5">
+                  <p className="font-bold">
+                    {isId ? "Status Saat Ini: " : "Current Status: "}
+                    <span className="underline font-mono">{order.status}</span>
+                  </p>
+                  <p className="text-[11px] text-amber-800 dark:text-amber-400">
+                    {isId
+                      ? "Tindakan ini akan mengembalikan status dokumen dan mencatat alasan pembatalan/koreksi ke jejak audit keamanan."
+                      : "This action will reverse the document lifecycle and record the operational reason in the audit log."}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold uppercase text-gray-500 block mb-1.5">
+                  {isId ? "Pilih Status Target:" : "Select Target Status:"}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["DRAFT", "CONFIRMED", "PRINTED", "DISPATCHED", "CANCELLED"] as DeliveryOrderStatus[]).map((st) => {
+                    const isAvailable =
+                      st === "CANCELLED" ||
+                      availableRollbacks.includes(st) ||
+                      (order.status === "CANCELLED" && st === "DRAFT");
+
+                    if (!isAvailable) return null;
+
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setRollbackTarget(st)}
+                        className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between ${
+                          rollbackTarget === st
+                            ? "border-[#8B0000] bg-red-50 dark:bg-red-950/50 text-[#8B0000] dark:text-red-300"
+                            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        <span>{st}</span>
+                        {rollbackTarget === st && <CheckCircle2 className="h-4 w-4 text-[#8B0000] dark:text-red-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold uppercase text-gray-500 block mb-1">
+                  {isId ? "Alasan Rollback / Pembatalan (Wajib Diisi) *" : "Reason for Status Reversal (Required) *"}
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder={
+                    isId
+                      ? "Contoh: Koreksi jumlah size matrix oleh QC / Customer meminta penundaan pengiriman..."
+                      : "e.g., Size matrix quantity correction by QC / Delivery reschedule requested by customer..."
+                  }
+                  value={rollbackReason}
+                  onChange={(e) => setRollbackReason(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRollbackModalOpen(false)}
+                  className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
+                >
+                  {isId ? "Batal" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteRollback}
+                  disabled={rollbackSubmitting || !rollbackReason.trim()}
+                  className="px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] disabled:opacity-50 transition"
+                >
+                  {rollbackSubmitting
+                    ? isId ? "Memproses..." : "Processing..."
+                    : isId ? "Konfirmasi Perubahan Status" : "Confirm Status Change"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

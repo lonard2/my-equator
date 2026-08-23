@@ -1,11 +1,19 @@
 import { db } from "@/lib/db";
-import { deliveryOrders, deliveryOrderItems } from "@/lib/db/schema";
+import { deliveryOrders, deliveryOrderItems, auditLogs } from "@/lib/db/schema";
 import { DeliveryOrder, DeliveryOrderItem, DeliveryOrderStatus, SizeBreakdown } from "@/types";
 import { eq, desc, like } from "drizzle-orm";
 import crypto from "crypto";
 
+export {
+  VALID_STATUS_TRANSITIONS,
+  STATUS_ROLLBACK_TARGETS,
+  canTransitionStatus,
+  getAvailableStatusRollbacks,
+} from "@/lib/orders/status";
+import { STATUS_ROLLBACK_TARGETS } from "@/lib/orders/status";
+
 export function computeItemTotals(
-  sizes: Record<number | string, number> | undefined,
+  sizes: Record<number | string, number | undefined | null> | SizeBreakdown | undefined,
   unitPrice: number = 0
 ): { totalPairs: number; totalPrice: number } {
   if (!sizes || typeof sizes !== "object") {
@@ -14,7 +22,7 @@ export function computeItemTotals(
 
   let totalPairs = 0;
   for (const key of Object.keys(sizes)) {
-    const val = Number(sizes[key]);
+    const val = Number((sizes as Record<string, any>)[key]);
     if (!isNaN(val) && val > 0) {
       totalPairs += Math.floor(val);
     }
@@ -60,74 +68,88 @@ export class OrderService {
    */
   static async getAllOrders(): Promise<DeliveryOrder[]> {
     const orders = await db.select().from(deliveryOrders).orderBy(desc(deliveryOrders.createdAt));
+    const items = await db.select().from(deliveryOrderItems);
 
-    const result: DeliveryOrder[] = [];
-    for (const order of orders) {
-      const items = await db
-        .select()
-        .from(deliveryOrderItems)
-        .where(eq(deliveryOrderItems.deliveryOrderId, order.id));
+    const itemsByOrder: Record<string, DeliveryOrderItem[]> = {};
+    items.forEach((item) => {
+      if (!itemsByOrder[item.deliveryOrderId]) {
+        itemsByOrder[item.deliveryOrderId] = [];
+      }
+      let parsedSizes: SizeBreakdown = {};
+      try {
+        parsedSizes = JSON.parse(item.sizeBreakdown);
+      } catch (e) {
+        parsedSizes = {};
+      }
 
-      const parsedItems: DeliveryOrderItem[] = items.map((item) => ({
+      itemsByOrder[item.deliveryOrderId].push({
         id: item.id,
         deliveryOrderId: item.deliveryOrderId,
         articleCode: item.articleCode,
         articleName: item.articleName,
         colorway: item.colorway || undefined,
-        sizes: JSON.parse(item.sizeBreakdown) as SizeBreakdown,
+        sizes: parsedSizes,
         totalPairs: item.totalPairs,
-        unitPrice: item.unitPrice || 0,
-        totalPrice: item.totalPrice || 0,
+        unitPrice: item.unitPrice ?? undefined,
+        totalPrice: item.totalPrice ?? undefined,
         notes: item.notes || undefined,
-      }));
-
-      result.push({
-        id: order.id,
-        orderNumber: order.orderNumber,
-        recipientName: order.recipientName,
-        destinationAddress: order.destinationAddress,
-        poNumber: order.poNumber || undefined,
-        vehicleNumber: order.vehicleNumber || undefined,
-        driverName: order.driverName || undefined,
-        status: order.status as DeliveryOrderStatus,
-        deliveryDate: order.deliveryDate,
-        notes: order.notes || undefined,
-        totalQuantity: order.totalQuantity,
-        totalAmount: order.totalAmount || 0,
-        items: parsedItems,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
+        createdAt: item.createdAt,
       });
-    }
+    });
 
-    return result;
+    return orders.map((order) => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      recipientName: order.recipientName,
+      destinationAddress: order.destinationAddress,
+      poNumber: order.poNumber || undefined,
+      vehicleNumber: order.vehicleNumber || undefined,
+      driverName: order.driverName || undefined,
+      deliveryDate: order.deliveryDate,
+      notes: order.notes || undefined,
+      status: order.status as DeliveryOrderStatus,
+      items: itemsByOrder[order.id] || [],
+      totalQuantity: order.totalQuantity,
+      totalAmount: order.totalAmount ?? undefined,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    }));
   }
 
   /**
-   * Retrieves single order by ID
+   * Retrieves a single delivery order by ID with line items
    */
   static async getOrderById(id: string): Promise<DeliveryOrder | null> {
-    const orders = await db.select().from(deliveryOrders).where(eq(deliveryOrders.id, id)).limit(1);
-    if (orders.length === 0) return null;
+    const [order] = await db.select().from(deliveryOrders).where(eq(deliveryOrders.id, id)).limit(1);
+    if (!order) return null;
 
-    const order = orders[0];
     const items = await db
       .select()
       .from(deliveryOrderItems)
-      .where(eq(deliveryOrderItems.deliveryOrderId, order.id));
+      .where(eq(deliveryOrderItems.deliveryOrderId, id));
 
-    const parsedItems: DeliveryOrderItem[] = items.map((item) => ({
-      id: item.id,
-      deliveryOrderId: item.deliveryOrderId,
-      articleCode: item.articleCode,
-      articleName: item.articleName,
-      colorway: item.colorway || undefined,
-      sizes: JSON.parse(item.sizeBreakdown) as SizeBreakdown,
-      totalPairs: item.totalPairs,
-      unitPrice: item.unitPrice || 0,
-      totalPrice: item.totalPrice || 0,
-      notes: item.notes || undefined,
-    }));
+    const formattedItems: DeliveryOrderItem[] = items.map((item) => {
+      let parsedSizes: SizeBreakdown = {};
+      try {
+        parsedSizes = JSON.parse(item.sizeBreakdown);
+      } catch (e) {
+        parsedSizes = {};
+      }
+
+      return {
+        id: item.id,
+        deliveryOrderId: item.deliveryOrderId,
+        articleCode: item.articleCode,
+        articleName: item.articleName,
+        colorway: item.colorway || undefined,
+        sizes: parsedSizes,
+        totalPairs: item.totalPairs,
+        unitPrice: item.unitPrice ?? undefined,
+        totalPrice: item.totalPrice ?? undefined,
+        notes: item.notes || undefined,
+        createdAt: item.createdAt,
+      };
+    });
 
     return {
       id: order.id,
@@ -137,12 +159,12 @@ export class OrderService {
       poNumber: order.poNumber || undefined,
       vehicleNumber: order.vehicleNumber || undefined,
       driverName: order.driverName || undefined,
-      status: order.status as DeliveryOrderStatus,
       deliveryDate: order.deliveryDate,
       notes: order.notes || undefined,
+      status: order.status as DeliveryOrderStatus,
+      items: formattedItems,
       totalQuantity: order.totalQuantity,
-      totalAmount: order.totalAmount || 0,
-      items: parsedItems,
+      totalAmount: order.totalAmount ?? undefined,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
@@ -158,7 +180,7 @@ export class OrderService {
     poNumber?: string;
     vehicleNumber?: string;
     driverName?: string;
-    deliveryDate: string;
+    deliveryDate?: string;
     notes?: string;
     status?: DeliveryOrderStatus;
     items: Array<{
@@ -170,53 +192,45 @@ export class OrderService {
       notes?: string;
     }>;
   }): Promise<DeliveryOrder> {
-    const orderId = crypto.randomUUID();
-    const now = new Date().toISOString();
+    const id = `do-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`;
     const orderNumber = data.orderNumber || (await this.generateNextOrderNumber());
+    const now = new Date().toISOString();
+    const deliveryDate = data.deliveryDate || now.split("T")[0];
 
     let grandTotalPairs = 0;
     let grandTotalAmount = 0;
 
     const itemRows = data.items.map((item) => {
-      let itemPairs = 0;
-      Object.values(item.sizes).forEach((qty) => {
-        if (typeof qty === "number" && qty > 0) {
-          itemPairs += qty;
-        }
-      });
-
-      const unitPrice = item.unitPrice || 0;
-      const totalPrice = itemPairs * unitPrice;
-
-      grandTotalPairs += itemPairs;
-      grandTotalAmount += totalPrice;
+      const itemTotals = computeItemTotals(item.sizes, item.unitPrice || 0);
+      grandTotalPairs += itemTotals.totalPairs;
+      grandTotalAmount += itemTotals.totalPrice;
 
       return {
-        id: crypto.randomUUID(),
-        deliveryOrderId: orderId,
+        id: `item-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`,
+        deliveryOrderId: id,
         articleCode: item.articleCode,
         articleName: item.articleName,
         colorway: item.colorway || null,
         sizeBreakdown: JSON.stringify(item.sizes),
-        totalPairs: itemPairs,
-        unitPrice: unitPrice,
-        totalPrice: totalPrice,
+        totalPairs: itemTotals.totalPairs,
+        unitPrice: item.unitPrice || 0,
+        totalPrice: itemTotals.totalPrice,
         notes: item.notes || null,
         createdAt: now,
       };
     });
 
     await db.insert(deliveryOrders).values({
-      id: orderId,
+      id,
       orderNumber,
       recipientName: data.recipientName,
       destinationAddress: data.destinationAddress,
       poNumber: data.poNumber || null,
       vehicleNumber: data.vehicleNumber || null,
       driverName: data.driverName || null,
-      status: data.status || "DRAFT",
-      deliveryDate: data.deliveryDate,
+      deliveryDate,
       notes: data.notes || null,
+      status: data.status || "DRAFT",
       totalQuantity: grandTotalPairs,
       totalAmount: grandTotalAmount,
       createdAt: now,
@@ -227,12 +241,13 @@ export class OrderService {
       await db.insert(deliveryOrderItems).values(itemRows);
     }
 
-    const created = await this.getOrderById(orderId);
-    return created!;
+    const created = await this.getOrderById(id);
+    if (!created) throw new Error("Failed to retrieve created order");
+    return created;
   }
 
   /**
-   * Updates an existing delivery order and its line items
+   * Updates an existing delivery order and replaces its items
    */
   static async updateOrder(
     id: string,
@@ -260,38 +275,30 @@ export class OrderService {
     if (!existing) return null;
 
     const now = new Date().toISOString();
-
     let grandTotalPairs = existing.totalQuantity;
     let grandTotalAmount = existing.totalAmount || 0;
 
     if (data.items) {
+      await db.delete(deliveryOrderItems).where(eq(deliveryOrderItems.deliveryOrderId, id));
+
       grandTotalPairs = 0;
       grandTotalAmount = 0;
 
-      // Replace items
-      await db.delete(deliveryOrderItems).where(eq(deliveryOrderItems.deliveryOrderId, id));
-
       const newRows = data.items.map((item) => {
-        let itemPairs = 0;
-        Object.values(item.sizes).forEach((qty) => {
-          if (typeof qty === "number" && qty > 0) itemPairs += qty;
-        });
-
-        const unitPrice = item.unitPrice || 0;
-        const totalPrice = itemPairs * unitPrice;
-        grandTotalPairs += itemPairs;
-        grandTotalAmount += totalPrice;
+        const itemTotals = computeItemTotals(item.sizes, item.unitPrice || 0);
+        grandTotalPairs += itemTotals.totalPairs;
+        grandTotalAmount += itemTotals.totalPrice;
 
         return {
-          id: item.id || crypto.randomUUID(),
+          id: item.id || `item-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`,
           deliveryOrderId: id,
           articleCode: item.articleCode,
           articleName: item.articleName,
           colorway: item.colorway || null,
           sizeBreakdown: JSON.stringify(item.sizes),
-          totalPairs: itemPairs,
-          unitPrice: unitPrice,
-          totalPrice: totalPrice,
+          totalPairs: itemTotals.totalPairs,
+          unitPrice: item.unitPrice || 0,
+          totalPrice: itemTotals.totalPrice,
           notes: item.notes || null,
           createdAt: now,
         };
@@ -323,14 +330,46 @@ export class OrderService {
   }
 
   /**
-   * Updates delivery order status
+   * Updates delivery order status with optional rollback reason and audit trail
    */
-  static async updateOrderStatus(id: string, status: DeliveryOrderStatus): Promise<DeliveryOrder | null> {
+  static async updateOrderStatus(
+    id: string,
+    status: DeliveryOrderStatus,
+    reason?: string,
+    actor?: { userId: string; userName: string; role?: string; userRole?: string }
+  ): Promise<DeliveryOrder | null> {
+    const existing = await this.getOrderById(id);
+    if (!existing) return null;
+
     const now = new Date().toISOString();
     await db
       .update(deliveryOrders)
       .set({ status, updatedAt: now })
       .where(eq(deliveryOrders.id, id));
+
+    if (actor) {
+      const isRollback = STATUS_ROLLBACK_TARGETS[existing.status]?.includes(status);
+      const isCancel = status === "CANCELLED";
+      const actionType = isCancel ? "DO_CANCEL" : isRollback ? "DO_STATUS_ROLLBACK" : "DO_STATUS_UPDATE";
+      const effectiveRole = actor.userRole || actor.role || "SUPER_ADMIN";
+
+      const details = reason
+        ? `Ubah status DO ${existing.orderNumber} dari ${existing.status} ➔ ${status}. Alasan: ${reason}`
+        : `Ubah status DO ${existing.orderNumber} dari ${existing.status} ➔ ${status}`;
+
+      await db.insert(auditLogs).values({
+        id: `log-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`,
+        userId: actor.userId,
+        userName: actor.userName,
+        userRole: effectiveRole,
+        action: actionType,
+        entityType: "DELIVERY_ORDER",
+        entityId: id,
+        details,
+        timestamp: now,
+      });
+    }
+
     return this.getOrderById(id);
   }
 

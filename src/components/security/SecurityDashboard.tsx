@@ -27,18 +27,28 @@ import {
   ShieldAlert,
   Sliders,
   ChevronDown,
+  Info,
+  Sparkles,
+  Check,
+  RotateCcw,
 } from "lucide-react";
 import {
   FACTORY_DEMO_ACCOUNTS,
   FactoryUser,
 } from "@/lib/auth/types";
 import {
+  ALL_PERMISSIONS,
+  PERMISSION_METADATA,
+  Permission,
   ROLE_PERMISSIONS,
   hasPermission,
   getRoleBadgeInfo,
   canManageUsers,
   canRestoreDatabase,
   canExportDatabase,
+  getEffectiveRolePermissions,
+  setCustomRolePermissions,
+  resetRolePermissions,
 } from "@/lib/auth/rbac";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -73,6 +83,38 @@ interface ManagedUser {
   createdAt: string;
 }
 
+const PERMISSION_GROUPS: {
+  category: string;
+  label: { id: string; en: string };
+  perms: Permission[];
+}[] = [
+  {
+    category: "DELIVERY_ORDERS",
+    label: { id: "Surat Jalan & Logistik", en: "Delivery Orders & Logistics" },
+    perms: ["ORDERS_VIEW", "ORDERS_CREATE", "ORDERS_EDIT", "ORDERS_DELETE", "ORDERS_DISPATCH", "ORDERS_PRINT"],
+  },
+  {
+    category: "INVENTORY",
+    label: { id: "Inventori & Bahan Baku", en: "Materials & Stock Inventory" },
+    perms: ["INVENTORY_VIEW", "INVENTORY_MANAGE_STOCK", "INVENTORY_MUTATIONS"],
+  },
+  {
+    category: "CAD_STUDIO",
+    label: { id: "CAD Insole & Desain Vektor", en: "Insole CAD & Vector Studio" },
+    perms: ["CAD_VIEW", "CAD_EDIT", "CAD_EXPORT", "CAD_SAVE_BLUEPRINT"],
+  },
+  {
+    category: "ANALYTICS",
+    label: { id: "Analisis Bisnis & Finansial", en: "Business & Financial Analytics" },
+    perms: ["ANALYTICS_VIEW_FINANCIAL", "ANALYTICS_VIEW_OPERATIONAL", "ANALYTICS_EXPORT"],
+  },
+  {
+    category: "SECURITY",
+    label: { id: "Keamanan Sistem & Basis Data", en: "System Security & Database" },
+    perms: ["SYSTEM_SNAPSHOT_BACKUP", "SYSTEM_SNAPSHOT_RESTORE", "SYSTEM_USER_MANAGEMENT", "SYSTEM_AUDIT_LOGS"],
+  },
+];
+
 export function SecurityDashboard({
   currentUser,
   onUserChange,
@@ -99,6 +141,52 @@ export function SecurityDashboard({
   const [newPassword, setNewPassword] = useState("equator2026!");
   const [newRole, setNewRole] = useState<UserRole>("SALES_OPERATOR");
   const [creatingUser, setCreatingUser] = useState(false);
+
+  // Dynamic Role Permissions & Permission Inspector
+  const [inspectedPermission, setInspectedPermission] = useState<Permission | null>(null);
+  const [selectedCustomRole, setSelectedCustomRole] = useState<UserRole>("FACTORY_MANAGER");
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [rolePermsState, setRolePermsState] = useState<Record<UserRole, Permission[]>>({
+    SUPER_ADMIN: getEffectiveRolePermissions("SUPER_ADMIN"),
+    FACTORY_MANAGER: getEffectiveRolePermissions("FACTORY_MANAGER"),
+    WAREHOUSE_STAFF: getEffectiveRolePermissions("WAREHOUSE_STAFF"),
+    SALES_OPERATOR: getEffectiveRolePermissions("SALES_OPERATOR"),
+  });
+
+  const handleTogglePermission = (role: UserRole, perm: Permission) => {
+    const current = rolePermsState[role] || [];
+    const hasIt = current.includes(perm);
+    const updated = hasIt ? current.filter((p) => p !== perm) : [...current, perm];
+    setRolePermsState((prev) => ({
+      ...prev,
+      [role]: updated,
+    }));
+  };
+
+  const handleSaveCustomRolePermissions = () => {
+    const updatedPerms = rolePermsState[selectedCustomRole] || [];
+    setCustomRolePermissions(selectedCustomRole, updatedPerms);
+    setActionFeedback({
+      type: "success",
+      message: isId
+        ? `Hak akses untuk peran ${getRoleBadgeInfo(selectedCustomRole, language).label} berhasil diperbarui.`
+        : `Permissions for role ${getRoleBadgeInfo(selectedCustomRole, language).label} updated successfully.`,
+    });
+  };
+
+  const handleResetCustomRolePermissions = () => {
+    resetRolePermissions(selectedCustomRole);
+    setRolePermsState((prev) => ({
+      ...prev,
+      [selectedCustomRole]: getEffectiveRolePermissions(selectedCustomRole),
+    }));
+    setActionFeedback({
+      type: "success",
+      message: isId
+        ? `Hak akses untuk peran ${getRoleBadgeInfo(selectedCustomRole, language).label} dikembalikan ke pengaturan default pabrik.`
+        : `Permissions for role ${getRoleBadgeInfo(selectedCustomRole, language).label} reset to factory defaults.`,
+    });
+  };
 
   // RBAC Flags
   const isAdmin = canManageUsers(currentUser.role);
@@ -520,22 +608,56 @@ export function SecurityDashboard({
 
         <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700">
           <span className="text-[10px] font-extrabold uppercase text-gray-400 mr-1 block sm:inline">
-            {isId ? "Izin Aktif:" : "Active Permissions:"}
+            {isId ? "Izin Aktif (Klik untuk detail):" : "Active Permissions (Click for info):"}
           </span>
-          {activePerms.slice(0, 4).map((p) => (
-            <span
+          {activePerms.slice(0, 5).map((p) => (
+            <button
               key={p}
-              className="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[9px] font-mono font-bold text-gray-700 dark:text-gray-300"
+              type="button"
+              onClick={() => setInspectedPermission(p as Permission)}
+              className="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[9px] font-mono font-bold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] transition flex items-center gap-1 shadow-2xs cursor-pointer"
+              title={isId ? "Klik untuk melihat detail hak akses" : "Click to view permission details"}
             >
-              {p}
-            </span>
+              <span>{p}</span>
+              <Info className="h-2.5 w-2.5 opacity-60" />
+            </button>
           ))}
-          {activePerms.length > 4 && (
+          {activePerms.length > 5 && (
             <span className="px-1.5 py-0.5 text-[9px] font-bold text-gray-400">
-              +{activePerms.length - 4} {isId ? "lainnya" : "more"}
+              +{activePerms.length - 5} {isId ? "lainnya" : "more"}
             </span>
           )}
         </div>
+      </div>
+
+      {/* RBAC Header & Customizer Toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+        <div>
+          <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-[#8B0000]" />
+            <span>{isId ? "Matriks Hak Akses Peran Pabrik" : "Factory Role Permission Matrix"}</span>
+          </h3>
+          <p className="text-xs text-gray-500">
+            {isId
+              ? "Klik tag izin manapun untuk melihat detail (apa, siapa, dampak operasional, tingkat risiko)"
+              : "Click any permission tag to view its details (what, who, operational impact, risk tier)"}
+          </p>
+        </div>
+
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setIsCustomizerOpen(!isCustomizerOpen)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
+              isCustomizerOpen
+                ? "bg-[#8B0000] text-white"
+                : "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <Sliders className="h-3.5 w-3.5" />
+            <span>{isId ? "Kustomisasi Hak Akses Peran" : "Customize Role Permissions"}</span>
+          </button>
+        )}
       </div>
 
       {/* RBAC Role Matrix Cards */}
@@ -543,7 +665,7 @@ export function SecurityDashboard({
         {(["SUPER_ADMIN", "FACTORY_MANAGER", "WAREHOUSE_STAFF", "SALES_OPERATOR"] as UserRole[]).map((role) => {
           const info = getRoleBadgeInfo(role, language);
           const isUserRole = currentUser.role === role;
-          const perms = ROLE_PERMISSIONS[role];
+          const perms = rolePermsState[role] || [];
 
           return (
             <div
@@ -568,21 +690,47 @@ export function SecurityDashboard({
                 <p className="text-[11px] text-gray-500 font-medium leading-relaxed">{info.description}</p>
               </div>
 
-              <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-1">
-                <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider block">
-                  {perms.length} {isId ? "Hak Akses Diberikan" : "Granted Permissions"}
-                </span>
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider block">
+                    {perms.length} {isId ? "Hak Akses Aktif" : "Active Permissions"}
+                  </span>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomRole(role);
+                        setIsCustomizerOpen(true);
+                      }}
+                      className="text-[9px] font-bold text-[#8B0000] dark:text-red-400 hover:underline"
+                    >
+                      {isId ? "Ubah" : "Edit"}
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-1">
-                  {perms.slice(0, 3).map((pm) => (
-                    <span
+                  {perms.slice(0, 4).map((pm) => (
+                    <button
                       key={pm}
-                      className="px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-[8px] font-mono text-gray-600 dark:text-gray-400"
+                      type="button"
+                      onClick={() => setInspectedPermission(pm as Permission)}
+                      className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-950 text-[8px] font-mono text-gray-600 dark:text-gray-400 hover:text-[#8B0000] transition cursor-pointer"
+                      title={isId ? "Klik untuk melihat detail hak akses" : "Click to inspect permission"}
                     >
                       {pm}
-                    </span>
+                    </button>
                   ))}
-                  {perms.length > 3 && (
-                    <span className="text-[8px] text-gray-400">+{perms.length - 3}</span>
+                  {perms.length > 4 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCustomRole(role);
+                        setIsCustomizerOpen(true);
+                      }}
+                      className="text-[8px] font-bold text-gray-400 hover:text-gray-600"
+                    >
+                      +{perms.length - 4}
+                    </button>
                   )}
                 </div>
               </div>
@@ -590,6 +738,144 @@ export function SecurityDashboard({
           );
         })}
       </div>
+
+      {/* Role Permission Customizer Panel (Super Admin Exclusive) */}
+      {isCustomizerOpen && isAdmin && (
+        <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border-2 border-[#8B0000]/30 shadow-md space-y-5 animate-in fade-in-50 duration-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+                <Sliders className="h-4 w-4" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                  {isId ? "Kustomisasi Hak Akses & Wewenang Peran" : "Customize Role Permissions & Authority"}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  {isId
+                    ? "Pilih peran dan centang hak akses yang diizinkan untuk operasional pabrik"
+                    : "Select a role and toggle granted actions for factory operations"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleResetCustomRolePermissions}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>{isId ? "Reset ke Standar" : "Reset to Default"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCustomRolePermissions}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000]"
+              >
+                <Check className="h-3.5 w-3.5" />
+                <span>{isId ? "Simpan Hak Akses" : "Save Permissions"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Role Tab Selector */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(["SUPER_ADMIN", "FACTORY_MANAGER", "WAREHOUSE_STAFF", "SALES_OPERATOR"] as UserRole[]).map((role) => {
+              const info = getRoleBadgeInfo(role, language);
+              const isSelected = selectedCustomRole === role;
+              const permsCount = (rolePermsState[role] || []).length;
+
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setSelectedCustomRole(role)}
+                  className={`px-3.5 py-2 rounded-2xl text-xs font-extrabold transition flex items-center gap-2 ${
+                    isSelected
+                      ? "bg-[#8B0000] text-white shadow-xs"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <span>{info.label}</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isSelected ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                  }`}>
+                    {permsCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Categorized Permission Checkbox Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+            {PERMISSION_GROUPS.map((group) => {
+              const activeCountInGroup = group.perms.filter((p) =>
+                (rolePermsState[selectedCustomRole] || []).includes(p)
+              ).length;
+
+              return (
+                <div
+                  key={group.category}
+                  className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-3.5 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <h5 className="font-extrabold text-xs text-gray-900 dark:text-white">
+                      {isId ? group.label.id : group.label.en}
+                    </h5>
+                    <span className="text-[10px] font-bold text-gray-400 font-mono">
+                      {activeCountInGroup}/{group.perms.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {group.perms.map((perm) => {
+                      const meta = PERMISSION_METADATA[perm];
+                      const isChecked = (rolePermsState[selectedCustomRole] || []).includes(perm);
+
+                      return (
+                        <div
+                          key={perm}
+                          className={`p-2 rounded-xl border transition flex items-start justify-between gap-2 ${
+                            isChecked
+                              ? "bg-white dark:bg-gray-900 border-red-200 dark:border-red-950"
+                              : "bg-gray-100/60 dark:bg-gray-800/40 border-transparent opacity-60"
+                          }`}
+                        >
+                          <label className="flex items-start gap-2 cursor-pointer flex-1 select-none">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleTogglePermission(selectedCustomRole, perm)}
+                              className="mt-0.5 h-3.5 w-3.5 rounded text-[#8B0000] focus:ring-[#8B0000]"
+                            />
+                            <div>
+                              <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
+                                {isId ? meta.nameId : meta.nameEn}
+                              </p>
+                              <p className="text-[10px] font-mono text-gray-400 mt-0.5">{perm}</p>
+                            </div>
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => setInspectedPermission(perm)}
+                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-[#8B0000] transition shrink-0"
+                            title={isId ? "Lihat detail izin" : "Inspect permission"}
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Factory Users Management CRUD (Scrollable Directory & Role Assignment) */}
       <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
@@ -1095,6 +1381,114 @@ export function SecurityDashboard({
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permission Detail Inspector Pop-up Modal */}
+      {inspectedPermission && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-white/10 text-white">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm leading-tight">
+                    {isId
+                      ? PERMISSION_METADATA[inspectedPermission].nameId
+                      : PERMISSION_METADATA[inspectedPermission].nameEn}
+                  </h3>
+                  <p className="text-[10px] font-mono text-red-200">{inspectedPermission}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInspectedPermission(null)}
+                className="p-1 rounded-lg hover:bg-white/10 text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              {/* Badges Bar */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+                  PERMISSION_METADATA[inspectedPermission].securityTier === "CRITICAL"
+                    ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border-red-300"
+                    : PERMISSION_METADATA[inspectedPermission].securityTier === "RESTRICTED"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300"
+                    : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-300"
+                }`}>
+                  {isId ? "Tingkat Keamanan: " : "Security Tier: "}
+                  {PERMISSION_METADATA[inspectedPermission].securityTier}
+                </span>
+
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                  {isId
+                    ? PERMISSION_METADATA[inspectedPermission].categoryLabelId
+                    : PERMISSION_METADATA[inspectedPermission].categoryLabelEn}
+                </span>
+              </div>
+
+              {/* Detail 1: What it does */}
+              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B0000] dark:text-red-400">
+                  {isId ? "1. Apa yang Dilakukan (Fungsi & Hak Akses)" : "1. What It Does (Function & Scope)"}
+                </p>
+                <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
+                  {isId
+                    ? PERMISSION_METADATA[inspectedPermission].descriptionId
+                    : PERMISSION_METADATA[inspectedPermission].descriptionEn}
+                </p>
+              </div>
+
+              {/* Detail 2: Who can do it */}
+              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B0000] dark:text-red-400">
+                  {isId ? "2. Peran Standar Berwenang (Default Roles)" : "2. Authorized Roles (Default Configuration)"}
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {PERMISSION_METADATA[inspectedPermission].defaultRoles.map((r) => {
+                    const badge = getRoleBadgeInfo(r, language);
+                    return (
+                      <span
+                        key={r}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${badge.badgeBg}`}
+                      >
+                        {badge.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detail 3: Operational Effect */}
+              <div className="p-3.5 rounded-2xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 space-y-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-900 dark:text-red-300">
+                  {isId ? "3. Dampak Operasional Pabrik" : "3. Factory Operational Impact"}
+                </p>
+                <p className="text-xs text-red-950 dark:text-red-200 leading-relaxed">
+                  {isId
+                    ? PERMISSION_METADATA[inspectedPermission].effectId
+                    : PERMISSION_METADATA[inspectedPermission].effectEn}
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-200 dark:border-gray-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setInspectedPermission(null)}
+                className="px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] transition"
+              >
+                {isId ? "Tutup Inspector" : "Close Inspector"}
+              </button>
             </div>
           </div>
         </div>
