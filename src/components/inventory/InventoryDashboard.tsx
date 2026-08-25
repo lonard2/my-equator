@@ -328,7 +328,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+          <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400 shrink-0">
             <Boxes className="h-6 w-6" />
           </div>
           <div>
@@ -346,7 +346,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 <Keyboard className="h-3.5 w-3.5" />
               </button>
             </div>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-gray-500 mt-0.5">
               {isId
                 ? "Manajemen stok EVA, latex roll, PU, TPU shank, kain laminasi & pisau pond"
                 : "Tracking of EVA foam sheets, latex rolls, PU chemicals, TPU shanks, fabrics & cutting dies"}
@@ -354,12 +354,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap sm:flex-nowrap gap-2">
           {/* BOM Calculator Drawer Trigger (Pak Hendra Persona) */}
           <button
             type="button"
             onClick={() => setShowBomDrawer(!showBomDrawer)}
-            className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl border text-xs font-bold transition active:scale-95 shadow-xs ${
+            className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl border text-xs font-bold transition active:scale-95 shadow-xs ${
               showBomDrawer
                 ? "bg-[#8B0000] text-white border-[#8B0000]"
                 : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -374,7 +374,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <button
             type="button"
             onClick={() => handleOpenMovement()}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
             title={isId ? "Catat Transaksi Mutasi (Alt+M)" : "Record Stock Movement (Alt+M)"}
           >
             <ArrowDownRight className="h-4 w-4" />
@@ -388,7 +388,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               setMaterialToEdit(null);
               setIsMaterialModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
             title={isId ? "Tambah SKU Bahan Baru (Alt+N)" : "Add New SKU (Alt+N)"}
           >
             <Plus className="h-4 w-4" />
@@ -575,39 +575,39 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Item SKU" : "Total SKUs"}
           </span>
-          <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white font-mono tabular-nums">
+          <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white font-mono tabular-nums leading-none">
             {materials.length} <span className="text-xs font-normal text-gray-500">SKU</span>
           </p>
         </div>
 
-        <div className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
+        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Valuasi Stok Gudang" : "Valuation"}
           </span>
-          <p className="text-base sm:text-xl font-black text-[#8B0000] dark:text-red-400 font-mono truncate tabular-nums">
+          <p className="text-base sm:text-xl font-black text-[#8B0000] dark:text-red-400 font-mono truncate tabular-nums leading-none">
             {formatIDR(totalValuation)}
           </p>
         </div>
 
-        <div className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
+        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Stok Kritis / Minim" : "Low Stock Alert"}
           </span>
-          <p className="text-lg sm:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+          <p className="text-lg sm:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono tabular-nums leading-none">
             {lowStockTotal} <span className="text-xs font-normal text-gray-500">item</span>
           </p>
         </div>
 
-        <div className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
+        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Mutasi Log" : "Total Movements"}
           </span>
-          <p className="text-lg sm:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tabular-nums">
+          <p className="text-lg sm:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tabular-nums leading-none">
             {movements.length} <span className="text-xs font-normal text-gray-500">log</span>
           </p>
         </div>
@@ -631,7 +631,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <button
             type="button"
             onClick={() => handleOpenMovement(criticalItems[0]?.id)}
-            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs active:scale-95 transition shrink-0"
           >
             <ArrowDownRight className="h-3.5 w-3.5" />
             <span>{isId ? "Restock Pembelian" : "Restock Purchase"}</span>
@@ -699,12 +699,18 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         {/* Category & Low Stock Filter Pills with Scroll Mask */}
         {activeTab === "MATERIALS" && (
           <div className="relative border-b border-gray-100 dark:border-gray-800">
-            <div className="p-2.5 sm:p-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            <div
+              className="p-2.5 sm:p-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none"
+              style={{
+                WebkitMaskImage: "linear-gradient(to right, black calc(100% - 32px), transparent 100%)",
+                maskImage: "linear-gradient(to right, black calc(100% - 32px), transparent 100%)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setCategoryFilter("ALL")}
                 aria-pressed={categoryFilter === "ALL"}
-                className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
                   categoryFilter === "ALL"
                     ? "bg-[#8B0000] text-white shadow-xs"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -718,7 +724,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 type="button"
                 onClick={() => setOnlyLowStock(!onlyLowStock)}
                 aria-pressed={onlyLowStock}
-                className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1 shrink-0 ${
                   onlyLowStock
                     ? "bg-amber-500 text-white shadow-xs"
                     : "bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
@@ -740,7 +746,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     type="button"
                     onClick={() => setCategoryFilter(cat)}
                     aria-pressed={isSelected}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
                       isSelected
                         ? "bg-[#8B0000] text-white shadow-xs"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -758,7 +764,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         {activeTab === "MATERIALS" ? (
           <div>
             {/* MOBILE TOUCH CARD FEED (md:hidden) */}
-            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-3">
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
               {sortedAndFilteredMaterials.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 text-xs">
                   {isId ? "Tidak ada bahan baku ditemukan." : "No materials found."}
@@ -855,15 +861,15 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               )}
             </div>
 
-            {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) WITH DYNAMIC SORTING */}
-            <div className="hidden md:block overflow-x-auto">
+            {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) WITH STICKY HEADER & DYNAMIC SORTING */}
+            <div className="hidden md:block overflow-x-auto max-h-[68vh]">
               <table className="w-full text-xs text-left">
-                <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none">
+                <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>
-                    <th className="p-3 w-10 text-center">No</th>
+                    <th className="p-3.5 w-10 text-center">No</th>
                     <th
                       onClick={() => handleSort("name")}
-                      className="p-3 min-w-[200px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 min-w-[220px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center gap-1">
                         <span>{isId ? "SKU & Nama Bahan" : "SKU & Description"}</span>
@@ -872,7 +878,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("category")}
-                      className="p-3 w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center gap-1">
                         <span>{isId ? "Kategori" : "Category"}</span>
@@ -881,7 +887,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("stock")}
-                      className="p-3 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-end gap-1">
                         <span>{isId ? "Stok Aktual" : "Current Stock"}</span>
@@ -890,7 +896,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("health")}
-                      className="p-3 text-center w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 text-center w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-center gap-1">
                         <span>{isId ? "Status Kesehatan" : "Stock Health"}</span>
@@ -899,7 +905,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("unitCost")}
-                      className="p-3 text-right w-28 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 text-right w-28 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-end gap-1">
                         <span>{isId ? "Harga Satuan" : "Unit Cost"}</span>
@@ -908,7 +914,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("valuation")}
-                      className="p-3 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-end gap-1">
                         <span>{isId ? "Total Nilai" : "Total Valuation"}</span>
@@ -917,14 +923,14 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("location")}
-                      className="p-3 min-w-[140px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      className="p-3.5 min-w-[130px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center gap-1">
                         <span>{isId ? "Lokasi Gudang" : "Location"}</span>
                         {renderSortIndicator("location")}
                       </div>
                     </th>
-                    <th className="p-3 text-center w-28">{isId ? "Aksi" : "Actions"}</th>
+                    <th className="p-3.5 text-center w-28">{isId ? "Aksi" : "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
@@ -941,24 +947,24 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       const totalVal = m.currentStock * m.unitCost;
                       return (
                         <tr key={m.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
-                          <td className="p-3 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
-                          <td className="p-3">
+                          <td className="p-3.5 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
+                          <td className="p-3.5">
                             <p className="font-bold text-gray-900 dark:text-white">{m.name}</p>
                             <p className="text-[11px] font-mono text-[#8B0000] dark:text-red-400 font-bold">{m.sku}</p>
                             {m.notes && <p className="text-[10px] text-gray-400 mt-0.5">{m.notes}</p>}
                           </td>
-                          <td className="p-3">
+                          <td className="p-3.5">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                               {isId ? CATEGORY_NAMES[m.category]?.id || m.category : m.category}
                             </span>
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="p-3.5 text-right">
                             <span className="font-mono font-extrabold text-sm text-gray-900 dark:text-white tabular-nums">
                               {m.currentStock.toLocaleString("id-ID")}
                             </span>{" "}
                             <span className="text-[11px] text-gray-500 font-semibold">{m.unit}</span>
                           </td>
-                          <td className="p-3 text-center">
+                          <td className="p-3.5 text-center">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${badge.className}`}>
                               {badge.label}
                             </span>
@@ -966,16 +972,16 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                               Safety: {m.safetyThreshold} {m.unit}
                             </p>
                           </td>
-                          <td className="p-3 text-right text-gray-700 dark:text-gray-300 font-mono tabular-nums">
+                          <td className="p-3.5 text-right text-gray-700 dark:text-gray-300 font-mono tabular-nums">
                             {formatIDR(m.unitCost)}
                           </td>
-                          <td className="p-3 text-right font-extrabold text-gray-900 dark:text-white font-mono tabular-nums">
+                          <td className="p-3.5 text-right font-extrabold text-gray-900 dark:text-white font-mono tabular-nums">
                             {formatIDR(totalVal)}
                           </td>
-                          <td className="p-3 text-gray-600 dark:text-gray-400">
+                          <td className="p-3.5 text-gray-600 dark:text-gray-400">
                             {m.location || "-"}
                           </td>
-                          <td className="p-3 text-center">
+                          <td className="p-3.5 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 type="button"
@@ -1015,10 +1021,10 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
           </div>
         ) : (
-          /* TAB 2: MOVEMENT LOGS VIEW WITH 1-CLICK CORRECTION */
+          /* TAB 2: MOVEMENT LOGS VIEW WITH STICKY HEADER & 1-CLICK CORRECTION */
           <div>
             {/* Mobile History Card Feed */}
-            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-2.5">
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-2.5">
               {movements.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 text-xs">
                   {isId ? "Belum ada riwayat mutasi stok." : "No movement logs found."}
@@ -1027,7 +1033,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 movements.map((mov) => (
                   <div
                     key={mov.id}
-                    className="p-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-2 text-xs"
+                    className="p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-gray-900 dark:text-white">
@@ -1054,7 +1060,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-gray-800">
                       <p className="text-[10px] text-gray-400 font-mono">
                         Ref: {mov.referenceNumber || "-"} • Op: {mov.operatorName}
                       </p>
@@ -1073,20 +1079,20 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               )}
             </div>
 
-            {/* Desktop History Table with 1-Click Koreksi */}
-            <div className="hidden md:block overflow-x-auto">
+            {/* Desktop History Table with Sticky Header & 1-Click Koreksi */}
+            <div className="hidden md:block overflow-x-auto max-h-[68vh]">
               <table className="w-full text-xs text-left">
-                <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>
-                    <th className="p-3 w-10 text-center">No</th>
-                    <th className="p-3 w-36">{isId ? "Waktu & Tanggal" : "Timestamp"}</th>
-                    <th className="p-3 min-w-[180px]">{isId ? "Nama Bahan Baku" : "Material"}</th>
-                    <th className="p-3 w-36">{isId ? "Jenis Mutasi" : "Type"}</th>
-                    <th className="p-3 text-right w-28">{isId ? "Jumlah Mutasi" : "Quantity"}</th>
-                    <th className="p-3 w-36">{isId ? "No. Referensi" : "Reference"}</th>
-                    <th className="p-3 w-32">{isId ? "Operator" : "Operator"}</th>
-                    <th className="p-3">{isId ? "Catatan" : "Notes"}</th>
-                    <th className="p-3 text-center w-24">{isId ? "Aksi" : "Action"}</th>
+                    <th className="p-3.5 w-10 text-center">No</th>
+                    <th className="p-3.5 w-36">{isId ? "Waktu & Tanggal" : "Timestamp"}</th>
+                    <th className="p-3.5 min-w-[200px]">{isId ? "Nama Bahan Baku" : "Material"}</th>
+                    <th className="p-3.5 w-36">{isId ? "Jenis Mutasi" : "Type"}</th>
+                    <th className="p-3.5 text-right w-28">{isId ? "Jumlah Mutasi" : "Quantity"}</th>
+                    <th className="p-3.5 w-36">{isId ? "No. Referensi" : "Reference"}</th>
+                    <th className="p-3.5 w-32">{isId ? "Operator" : "Operator"}</th>
+                    <th className="p-3.5">{isId ? "Catatan" : "Notes"}</th>
+                    <th className="p-3.5 text-center w-24">{isId ? "Aksi" : "Action"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
@@ -1100,14 +1106,14 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                   ) : (
                     movements.map((mov, idx) => (
                       <tr key={mov.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
-                        <td className="p-3 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
-                        <td className="p-3 text-gray-500 font-mono text-[11px] tabular-nums">
+                        <td className="p-3.5 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
+                        <td className="p-3.5 text-gray-500 font-mono text-[11px] tabular-nums">
                           {formatIndonesianDate(mov.createdAt)}
                         </td>
-                        <td className="p-3 font-bold text-gray-900 dark:text-white">
+                        <td className="p-3.5 font-bold text-gray-900 dark:text-white">
                           {mov.materialName}
                         </td>
-                        <td className="p-3">
+                        <td className="p-3.5">
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               mov.type.startsWith("IN")
@@ -1120,20 +1126,20 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                             {mov.type}
                           </span>
                         </td>
-                        <td className="p-3 text-right font-extrabold font-mono text-sm text-gray-900 dark:text-white tabular-nums">
+                        <td className="p-3.5 text-right font-extrabold font-mono text-sm text-gray-900 dark:text-white tabular-nums">
                           {mov.type.startsWith("IN") ? "+" : mov.type.startsWith("OUT") ? "-" : ""}
                           {mov.quantity.toLocaleString("id-ID")}
                         </td>
-                        <td className="p-3 font-mono text-gray-600 dark:text-gray-400">
+                        <td className="p-3.5 font-mono text-gray-600 dark:text-gray-400">
                           {mov.referenceNumber || "-"}
                         </td>
-                        <td className="p-3 text-gray-700 dark:text-gray-300">
+                        <td className="p-3.5 text-gray-700 dark:text-gray-300">
                           {mov.operatorName}
                         </td>
-                        <td className="p-3 text-gray-500">
+                        <td className="p-3.5 text-gray-500">
                           {mov.notes || "-"}
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-3.5 text-center">
                           <button
                             type="button"
                             onClick={() => handleCorrection(mov)}
