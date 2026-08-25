@@ -136,12 +136,13 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
-                <label className="text-[11px] font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">
+                <label htmlFor="login-username" className="text-[11px] font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">
                   {isId ? "Username / Email" : "Username or Email"}
                 </label>
                 <div className="relative">
                   <User className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
+                    id="login-username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -152,12 +153,13 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">
+                <label htmlFor="login-password" className="text-[11px] font-bold uppercase text-gray-500 dark:text-gray-400 block mb-1">
                   {isId ? "Kata Sandi (Password)" : "Password"}
                 </label>
                 <div className="relative">
                   <Lock className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
+                    id="login-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -167,7 +169,8 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? (isId ? "Sembunyikan kata sandi" : "Hide password") : (isId ? "Tampilkan kata sandi" : "Show password")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
