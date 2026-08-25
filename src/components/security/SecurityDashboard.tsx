@@ -1352,10 +1352,11 @@ export function SecurityDashboard({
             <form onSubmit={handleCreateUser} className="p-5 space-y-3.5">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                  <label htmlFor="new-user-fullname" className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
                     {isId ? "Nama Lengkap *" : "Full Name *"}
                   </label>
                   <input
+                    id="new-user-fullname"
                     type="text"
                     required
                     placeholder="Rian Gunawan"
@@ -1366,8 +1367,9 @@ export function SecurityDashboard({
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Username *</label>
+                  <label htmlFor="new-user-username" className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Username *</label>
                   <input
+                    id="new-user-username"
                     type="text"
                     required
                     placeholder="rian"
@@ -1379,8 +1381,9 @@ export function SecurityDashboard({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Email *</label>
+                <label htmlFor="new-user-email" className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Email *</label>
                 <input
+                  id="new-user-email"
                   type="email"
                   required
                   placeholder="rian@equatorinsole.co.id"
@@ -1391,10 +1394,11 @@ export function SecurityDashboard({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                <label htmlFor="new-user-password" className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
                   {isId ? "Kata Sandi (Password) *" : "Password *"}
                 </label>
                 <input
+                  id="new-user-password"
                   type="password"
                   required
                   value={newPassword}
@@ -1404,10 +1408,11 @@ export function SecurityDashboard({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                <label htmlFor="new-user-role" className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
                   {isId ? "Peran / Role Pabrik *" : "Factory Role *"}
                 </label>
                 <select
+                  id="new-user-role"
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as UserRole)}
                   className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs font-semibold text-gray-900 dark:text-white focus:outline-none"
