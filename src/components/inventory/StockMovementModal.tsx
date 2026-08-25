@@ -11,6 +11,10 @@ interface StockMovementModalProps {
   onSuccess: () => void;
   materials: MaterialItem[];
   preselectedMaterialId?: string | null;
+  initialMovementType?: MovementType;
+  initialQuantity?: number;
+  initialReferenceNumber?: string;
+  initialNotes?: string;
   language: "id" | "en";
 }
 
@@ -70,6 +74,10 @@ export function StockMovementModal({
   onSuccess,
   materials,
   preselectedMaterialId,
+  initialMovementType,
+  initialQuantity,
+  initialReferenceNumber,
+  initialNotes,
   language,
 }: StockMovementModalProps) {
   const isId = language === "id";
@@ -89,7 +97,11 @@ export function StockMovementModal({
     } else if (materials.length > 0 && !materialId) {
       setMaterialId(materials[0].id);
     }
-  }, [preselectedMaterialId, materials, isOpen]);
+    if (initialMovementType) setMovementType(initialMovementType);
+    if (initialQuantity !== undefined) setQuantity(initialQuantity);
+    if (initialReferenceNumber !== undefined) setReferenceNumber(initialReferenceNumber);
+    if (initialNotes !== undefined) setNotes(initialNotes);
+  }, [preselectedMaterialId, initialMovementType, initialQuantity, initialReferenceNumber, initialNotes, materials, isOpen]);
 
   if (!isOpen) return null;
 
@@ -248,7 +260,7 @@ export function StockMovementModal({
                   >
                     <div>
                       <p className="text-[11px] leading-tight">{isId ? t.labelId : t.labelEn}</p>
-                      <p className="text-[9px] text-gray-400 mt-0.5">{t.descriptionId}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{t.descriptionId}</p>
                     </div>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
                       t.direction === "IN" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" :

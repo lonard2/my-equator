@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { MaterialItem, MaterialCategory, StockMovement, StockHealthStatus } from "@/types";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { MaterialItem, MaterialCategory, StockMovement, StockHealthStatus, MovementType } from "@/types";
 import { formatIDR, formatIndonesianDate } from "@/lib/utils/formatters";
 import { calculateInsoleBom, INSOLE_BOM_PRESETS } from "@/lib/inventory/bom";
 import { MaterialFormModal } from "./MaterialFormModal";
@@ -26,11 +26,19 @@ import {
   Sparkles,
   AlertCircle,
   SlidersHorizontal,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+  Keyboard,
+  HelpCircle,
 } from "lucide-react";
 
 interface InventoryDashboardProps {
   language: "id" | "en";
 }
+
+type SortColumn = "name" | "sku" | "category" | "stock" | "health" | "unitCost" | "valuation" | "location";
 
 const CATEGORY_NAMES: Record<MaterialCategory, { id: string; en: string }> = {
   EVA_SHEET: { id: "EVA Foam Sheet", en: "EVA Foam Sheet" },
@@ -54,6 +62,11 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [onlyLowStock, setOnlyLowStock] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamic Column Sorting
+  const [sortColumn, setSortColumn] = useState<SortColumn>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // BOM Estimator State (For Pak Hendra / Production Staging)
   const [showBomDrawer, setShowBomDrawer] = useState(false);
@@ -65,8 +78,16 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   const [materialToEdit, setMaterialToEdit] = useState<MaterialItem | null>(null);
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [selectedMaterialForMovement, setSelectedMaterialForMovement] = useState<string | null>(null);
+  const [movementCorrection, setMovementCorrection] = useState<{
+    materialId?: string;
+    type?: MovementType;
+    quantity?: number;
+    referenceNumber?: string;
+    notes?: string;
+  } | null>(null);
   const [materialToDelete, setMaterialToDelete] = useState<MaterialItem | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -96,6 +117,60 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
     fetchInventory();
   }, []);
 
+  // Global Keyboard Accelerators (Alex / Power User Persona)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput =
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA" ||
+        document.activeElement?.tagName === "SELECT";
+
+      if (e.key === "Escape") {
+        if (isShortcutsModalOpen) {
+          setIsShortcutsModalOpen(false);
+          return;
+        }
+        if (showBomDrawer) {
+          setShowBomDrawer(false);
+          return;
+        }
+        if (searchTerm) {
+          setSearchTerm("");
+          return;
+        }
+      }
+
+      if (!isInput && e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if (!isInput && (e.key === "?" || (e.shiftKey && e.key === "?"))) {
+        e.preventDefault();
+        setIsShortcutsModalOpen((prev) => !prev);
+        return;
+      }
+
+      if (e.altKey && (e.key === "n" || e.key === "N")) {
+        e.preventDefault();
+        setMaterialToEdit(null);
+        setIsMaterialModalOpen(true);
+      } else if (e.altKey && (e.key === "m" || e.key === "M")) {
+        e.preventDefault();
+        setMovementCorrection(null);
+        setSelectedMaterialForMovement(null);
+        setIsMovementModalOpen(true);
+      } else if (e.altKey && (e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        setShowBomDrawer((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isShortcutsModalOpen, showBomDrawer, searchTerm]);
+
   const confirmDeleteMaterial = async () => {
     if (!materialToDelete) return;
     try {
@@ -113,12 +188,42 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   };
 
   const handleOpenMovement = (matId?: string) => {
+    setMovementCorrection(null);
     setSelectedMaterialForMovement(matId || null);
     setIsMovementModalOpen(true);
   };
 
-  const filteredMaterials = useMemo(() => {
-    return materials.filter((m) => {
+  // 1-Click Transaction Correction / Offset Handler
+  const handleCorrection = (mov: StockMovement) => {
+    let offsetType: MovementType = "ADJUSTMENT";
+    if (mov.type === "IN_PURCHASE") offsetType = "OUT_WASTAGE";
+    else if (mov.type === "OUT_PRODUCTION") offsetType = "IN_RETURN";
+    else if (mov.type === "OUT_WASTAGE") offsetType = "IN_RETURN";
+    else if (mov.type === "IN_RETURN") offsetType = "OUT_PRODUCTION";
+
+    setMovementCorrection({
+      materialId: mov.materialId,
+      type: offsetType,
+      quantity: mov.quantity,
+      referenceNumber: `KOR/${mov.referenceNumber || mov.id.slice(0, 8)}`,
+      notes: `Koreksi atas transaksi [${mov.type}] Ref: ${mov.referenceNumber || mov.id.slice(0, 8)}`,
+    });
+    setSelectedMaterialForMovement(mov.materialId);
+    setIsMovementModalOpen(true);
+  };
+
+  // Sort Toggle Handler
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedAndFilteredMaterials = useMemo(() => {
+    const filtered = materials.filter((m) => {
       const q = searchTerm.trim().toLowerCase();
       const matchesSearch =
         !q ||
@@ -131,7 +236,41 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
       return matchesSearch && matchesCategory && matchesLowStock;
     });
-  }, [materials, searchTerm, categoryFilter, onlyLowStock]);
+
+    return [...filtered].sort((a, b) => {
+      let valA: string | number = a.name;
+      let valB: string | number = b.name;
+
+      if (sortColumn === "sku") {
+        valA = a.sku;
+        valB = b.sku;
+      } else if (sortColumn === "category") {
+        valA = a.category;
+        valB = b.category;
+      } else if (sortColumn === "stock") {
+        valA = a.currentStock;
+        valB = b.currentStock;
+      } else if (sortColumn === "health") {
+        const healthOrder: Record<StockHealthStatus, number> = { CRITICAL: 0, WARNING: 1, HEALTHY: 2 };
+        valA = healthOrder[a.healthStatus || "HEALTHY"];
+        valB = healthOrder[b.healthStatus || "HEALTHY"];
+      } else if (sortColumn === "unitCost") {
+        valA = a.unitCost;
+        valB = b.unitCost;
+      } else if (sortColumn === "valuation") {
+        valA = a.currentStock * a.unitCost;
+        valB = b.currentStock * b.unitCost;
+      } else if (sortColumn === "location") {
+        valA = a.location || "";
+        valB = b.location || "";
+      }
+
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sortDirection === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      return sortDirection === "asc" ? (valA as number) - (valB as number) : (valB as number) - (valA as number);
+    });
+  }, [materials, searchTerm, categoryFilter, onlyLowStock, sortColumn, sortDirection]);
 
   // Calculate KPIs
   const totalValuation = materials.reduce((sum, m) => sum + m.currentStock * m.unitCost, 0);
@@ -165,6 +304,17 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
     }
   };
 
+  const renderSortIndicator = (col: SortColumn) => {
+    if (sortColumn !== col) {
+      return <ArrowUpDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition inline ml-1 opacity-60" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-3 w-3 text-[#8B0000] dark:text-red-400 inline ml-1" />
+    ) : (
+      <ArrowDown className="h-3 w-3 text-[#8B0000] dark:text-red-400 inline ml-1" />
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
       {/* Toast Notification */}
@@ -182,9 +332,20 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             <Boxes className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-tight">
-              {isId ? "Inventori Bahan Baku & Mutasi Stok" : "Raw Materials & Stock Inventory"}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-tight">
+                {isId ? "Inventori Bahan Baku & Mutasi Stok" : "Raw Materials & Stock Inventory"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsShortcutsModalOpen(true)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                title={isId ? "Panduan Shortcut Keyboard (?)" : "Keyboard Shortcuts (?)"}
+                aria-label="Keyboard Shortcuts"
+              >
+                <Keyboard className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <p className="text-[11px] text-gray-500">
               {isId
                 ? "Manajemen stok EVA, latex roll, PU, TPU shank, kain laminasi & pisau pond"
@@ -203,19 +364,22 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 ? "bg-[#8B0000] text-white border-[#8B0000]"
                 : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
-            title={isId ? "Kalkulator Kebutuhan Bahan (BOM)" : "Bill of Materials Calculator"}
+            title={isId ? "Kalkulator Kebutuhan Bahan (BOM) (Alt+B)" : "Bill of Materials Calculator (Alt+B)"}
           >
             <Calculator className="h-4 w-4" />
             <span className="hidden sm:inline">{isId ? "Estimasi BOM Insole" : "BOM Calculator"}</span>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-[9px] font-mono">Alt+B</kbd>
           </button>
 
           <button
             type="button"
             onClick={() => handleOpenMovement()}
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            title={isId ? "Catat Transaksi Mutasi (Alt+M)" : "Record Stock Movement (Alt+M)"}
           >
             <ArrowDownRight className="h-4 w-4" />
             <span>{isId ? "Catat Mutasi" : "Stock IN/OUT"}</span>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/20 text-[9px] font-mono">Alt+M</kbd>
           </button>
 
           <button
@@ -225,9 +389,11 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               setIsMaterialModalOpen(true);
             }}
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            title={isId ? "Tambah SKU Bahan Baru (Alt+N)" : "Add New SKU (Alt+N)"}
           >
             <Plus className="h-4 w-4" />
             <span>{isId ? "Tambah SKU" : "Add SKU"}</span>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/20 text-[9px] font-mono">Alt+N</kbd>
           </button>
         </div>
       </div>
@@ -266,6 +432,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 type="button"
                 onClick={() => setShowBomDrawer(false)}
                 className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                aria-label="Close BOM Drawer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -507,66 +674,83 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder={isId ? "Cari SKU, Nama, Lokasi..." : "Search SKU, Name..."}
+                aria-label={isId ? "Cari SKU, nama bahan baku, atau lokasi rak" : "Search SKU, material name, or shelf location"}
+                placeholder={isId ? "Cari SKU, Nama, Lokasi... (Tekan /)" : "Search SKU, Name... (Press /)"}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-8 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  aria-label="Clear Search"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Category & Low Stock Filter Pills */}
+        {/* Category & Low Stock Filter Pills with Scroll Mask */}
         {activeTab === "MATERIALS" && (
-          <div className="p-2.5 sm:p-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            <button
-              type="button"
-              onClick={() => setCategoryFilter("ALL")}
-              className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
-                categoryFilter === "ALL"
-                  ? "bg-[#8B0000] text-white shadow-xs"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-              }`}
-            >
-              {isId ? "Semua" : "All"} ({materials.length})
-            </button>
+          <div className="relative border-b border-gray-100 dark:border-gray-800">
+            <div className="p-2.5 sm:p-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setCategoryFilter("ALL")}
+                aria-pressed={categoryFilter === "ALL"}
+                className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
+                  categoryFilter === "ALL"
+                    ? "bg-[#8B0000] text-white shadow-xs"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                {isId ? "Semua" : "All"} ({materials.length})
+              </button>
 
-            {/* Quick Low Stock Toggle Filter */}
-            <button
-              type="button"
-              onClick={() => setOnlyLowStock(!onlyLowStock)}
-              className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1 ${
-                onlyLowStock
-                  ? "bg-amber-500 text-white shadow-xs"
-                  : "bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
-              }`}
-            >
-              <AlertTriangle className="h-3 w-3" />
-              <span>{isId ? "Stok Kritis / Reorder" : "Low Stock Only"}</span>
-              <span className="ml-0.5 px-1 rounded-full text-[10px] bg-white/30 text-white font-mono">
-                {lowStockTotal}
-              </span>
-            </button>
+              {/* Quick Low Stock Toggle Filter */}
+              <button
+                type="button"
+                onClick={() => setOnlyLowStock(!onlyLowStock)}
+                aria-pressed={onlyLowStock}
+                className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1 ${
+                  onlyLowStock
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
+                }`}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                <span>{isId ? "Stok Kritis / Reorder" : "Low Stock Only"}</span>
+                <span className="ml-0.5 px-1 rounded-full text-[10px] bg-white/30 text-white font-mono">
+                  {lowStockTotal}
+                </span>
+              </button>
 
-            {(Object.keys(CATEGORY_NAMES) as MaterialCategory[]).map((cat) => {
-              const isSelected = categoryFilter === cat;
-              const count = materials.filter((m) => m.category === cat).length;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategoryFilter(cat)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
-                    isSelected
-                      ? "bg-[#8B0000] text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  {isId ? CATEGORY_NAMES[cat].id : CATEGORY_NAMES[cat].en} ({count})
-                </button>
-              );
-            })}
+              {(Object.keys(CATEGORY_NAMES) as MaterialCategory[]).map((cat) => {
+                const isSelected = categoryFilter === cat;
+                const count = materials.filter((m) => m.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat)}
+                    aria-pressed={isSelected}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 ${
+                      isSelected
+                        ? "bg-[#8B0000] text-white shadow-xs"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {isId ? CATEGORY_NAMES[cat].id : CATEGORY_NAMES[cat].en} ({count})
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -575,12 +759,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <div>
             {/* MOBILE TOUCH CARD FEED (md:hidden) */}
             <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-3">
-              {filteredMaterials.length === 0 ? (
+              {sortedAndFilteredMaterials.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 text-xs">
                   {isId ? "Tidak ada bahan baku ditemukan." : "No materials found."}
                 </div>
               ) : (
-                filteredMaterials.map((m) => {
+                sortedAndFilteredMaterials.map((m) => {
                   const badge = getHealthBadge(m.healthStatus);
                   const totalVal = m.currentStock * m.unitCost;
 
@@ -671,24 +855,80 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               )}
             </div>
 
-            {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) */}
+            {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) WITH DYNAMIC SORTING */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none">
                   <tr>
                     <th className="p-3 w-10 text-center">No</th>
-                    <th className="p-3 min-w-[200px]">{isId ? "SKU & Nama Bahan" : "SKU & Description"}</th>
-                    <th className="p-3 w-32">{isId ? "Kategori" : "Category"}</th>
-                    <th className="p-3 text-right w-32">{isId ? "Stok Aktual" : "Current Stock"}</th>
-                    <th className="p-3 text-center w-36">{isId ? "Status Kesehatan" : "Stock Health"}</th>
-                    <th className="p-3 text-right w-28">{isId ? "Harga Satuan" : "Unit Cost"}</th>
-                    <th className="p-3 text-right w-32">{isId ? "Total Nilai" : "Total Valuation"}</th>
-                    <th className="p-3 min-w-[140px]">{isId ? "Lokasi Gudang" : "Location"}</th>
+                    <th
+                      onClick={() => handleSort("name")}
+                      className="p-3 min-w-[200px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{isId ? "SKU & Nama Bahan" : "SKU & Description"}</span>
+                        {renderSortIndicator("name")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("category")}
+                      className="p-3 w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{isId ? "Kategori" : "Category"}</span>
+                        {renderSortIndicator("category")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("stock")}
+                      className="p-3 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>{isId ? "Stok Aktual" : "Current Stock"}</span>
+                        {renderSortIndicator("stock")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("health")}
+                      className="p-3 text-center w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{isId ? "Status Kesehatan" : "Stock Health"}</span>
+                        {renderSortIndicator("health")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("unitCost")}
+                      className="p-3 text-right w-28 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>{isId ? "Harga Satuan" : "Unit Cost"}</span>
+                        {renderSortIndicator("unitCost")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("valuation")}
+                      className="p-3 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>{isId ? "Total Nilai" : "Total Valuation"}</span>
+                        {renderSortIndicator("valuation")}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("location")}
+                      className="p-3 min-w-[140px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>{isId ? "Lokasi Gudang" : "Location"}</span>
+                        {renderSortIndicator("location")}
+                      </div>
+                    </th>
                     <th className="p-3 text-center w-28">{isId ? "Aksi" : "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
-                  {filteredMaterials.length === 0 ? (
+                  {sortedAndFilteredMaterials.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="p-8 text-center text-gray-400">
                         <Boxes className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
@@ -696,7 +936,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       </td>
                     </tr>
                   ) : (
-                    filteredMaterials.map((m, idx) => {
+                    sortedAndFilteredMaterials.map((m, idx) => {
                       const badge = getHealthBadge(m.healthStatus);
                       const totalVal = m.currentStock * m.unitCost;
                       return (
@@ -775,7 +1015,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
           </div>
         ) : (
-          /* TAB 2: MOVEMENT LOGS VIEW */
+          /* TAB 2: MOVEMENT LOGS VIEW WITH 1-CLICK CORRECTION */
           <div>
             {/* Mobile History Card Feed */}
             <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-2.5">
@@ -787,7 +1027,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 movements.map((mov) => (
                   <div
                     key={mov.id}
-                    className="p-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-1.5 text-xs"
+                    className="p-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-gray-900 dark:text-white">
@@ -814,15 +1054,26 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       </span>
                     </div>
 
-                    <p className="text-[10px] text-gray-400 font-mono">
-                      Ref: {mov.referenceNumber || "-"} • Operator: {mov.operatorName}
-                    </p>
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
+                      <p className="text-[10px] text-gray-400 font-mono">
+                        Ref: {mov.referenceNumber || "-"} • Op: {mov.operatorName}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleCorrection(mov)}
+                        className="px-2.5 py-1 min-h-[36px] rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[11px] flex items-center gap-1 active:scale-95 transition"
+                        title={isId ? "Buat Koreksi / Offset Mutasi Ini" : "Create Offset Correction"}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        <span>Koreksi</span>
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Desktop History Table */}
+            {/* Desktop History Table with 1-Click Koreksi */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
@@ -835,12 +1086,13 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     <th className="p-3 w-36">{isId ? "No. Referensi" : "Reference"}</th>
                     <th className="p-3 w-32">{isId ? "Operator" : "Operator"}</th>
                     <th className="p-3">{isId ? "Catatan" : "Notes"}</th>
+                    <th className="p-3 text-center w-24">{isId ? "Aksi" : "Action"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
                   {movements.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-gray-400">
+                      <td colSpan={9} className="p-8 text-center text-gray-400">
                         <History className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
                         <p>{isId ? "Belum ada riwayat mutasi stok" : "No movement logs recorded yet"}</p>
                       </td>
@@ -881,6 +1133,17 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                         <td className="p-3 text-gray-500">
                           {mov.notes || "-"}
                         </td>
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleCorrection(mov)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 font-bold text-[10px] active:scale-95 transition shadow-2xs"
+                            title={isId ? "Koreksi / Offset Mutasi Ini" : "Offset / Correct Movement"}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            <span>{isId ? "Koreksi" : "Offset"}</span>
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -890,6 +1153,103 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </div>
         )}
       </div>
+
+      {/* Keyboard Shortcuts Cheatsheet Modal */}
+      {isShortcutsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <span className="p-2 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+                  <Keyboard className="h-5 w-5" />
+                </span>
+                <div>
+                  <h4 className="font-extrabold text-base leading-tight">
+                    {isId ? "Pintasan Keyboard Inventori" : "Inventory Keyboard Shortcuts"}
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    {isId ? "Akselerator cepat untuk efisiensi staf gudang" : "Fast accelerators for warehouse staff"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShortcutsModalOpen(false)}
+                className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                aria-label="Close Shortcuts"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  {isId ? "Tambah SKU Bahan Baru" : "Add New Material SKU"}
+                </span>
+                <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 font-mono font-bold text-[11px]">
+                  Alt + N
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  {isId ? "Catat Mutasi Stok (IN / OUT)" : "Record Stock Movement"}
+                </span>
+                <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 font-mono font-bold text-[11px]">
+                  Alt + M
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  {isId ? "Buka / Tutup Kalkulator BOM" : "Toggle Insole BOM Estimator"}
+                </span>
+                <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 font-mono font-bold text-[11px]">
+                  Alt + B
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  {isId ? "Fokus Kolom Pencarian" : "Focus Search Input"}
+                </span>
+                <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 font-mono font-bold text-[11px]">
+                  /
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  {isId ? "Buka Panduan Pintasan Ini" : "Show Keyboard Shortcuts"}
+                </span>
+                <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 font-mono font-bold text-[11px]">
+                  ?
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  {isId ? "Tutup Modal / Bersihkan Search" : "Close Drawer / Clear Search"}
+                </span>
+                <kbd className="px-2 py-1 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 font-mono font-bold text-[11px]">
+                  Esc
+                </kbd>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setIsShortcutsModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+              >
+                {isId ? "Mengerti" : "Got it"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* In-App Delete Confirmation Modal */}
       {materialToDelete && (
@@ -945,16 +1305,23 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         language={language}
       />
 
-      {/* Stock Movement Modal */}
+      {/* Stock Movement Modal with Correction Support */}
       <StockMovementModal
         isOpen={isMovementModalOpen}
-        onClose={() => setIsMovementModalOpen(false)}
+        onClose={() => {
+          setIsMovementModalOpen(false);
+          setMovementCorrection(null);
+        }}
         onSuccess={() => {
           showToast(isId ? "Transaksi mutasi stok berhasil dicatat" : "Stock movement successfully recorded");
           fetchInventory();
         }}
         materials={materials}
         preselectedMaterialId={selectedMaterialForMovement}
+        initialMovementType={movementCorrection?.type}
+        initialQuantity={movementCorrection?.quantity}
+        initialReferenceNumber={movementCorrection?.referenceNumber}
+        initialNotes={movementCorrection?.notes}
         language={language}
       />
     </div>
