@@ -246,7 +246,7 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
           <div>
             <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white font-mono">
               {kpis?.totalVolumePairs.toLocaleString("id-ID")}{" "}
-              <span className="text-xs font-normal text-gray-500">pasang</span>
+              <span className="text-xs font-normal text-gray-500">{isId ? "pasang" : "pairs"}</span>
             </p>
             <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-0.5">
               <ArrowUpRight className="h-3.5 w-3.5" />
@@ -270,7 +270,7 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
               {kpis?.averageOrderValueFormatted}
             </p>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              {kpis?.totalOrdersCount} Surat Jalan aktif
+              {kpis?.totalOrdersCount} {isId ? "Surat Jalan aktif" : "active orders"}
             </p>
           </div>
         </div>
@@ -293,7 +293,9 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
               %
             </p>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              {kpis?.deliveredOrdersCount} dari {kpis?.totalOrdersCount} DO selesai
+              {isId
+                ? `${kpis?.deliveredOrdersCount} dari ${kpis?.totalOrdersCount} DO selesai`
+                : `${kpis?.deliveredOrdersCount} of ${kpis?.totalOrdersCount} DOs fulfilled`}
             </p>
           </div>
         </div>
