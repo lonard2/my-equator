@@ -1,43 +1,79 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-25T13:12:30Z",
+  "generatedAt": "2026-08-25T20:37:25Z",
   "title": "Design System: MyEquator",
   "extensions": {
     "colorMeta": {
       "primary": {
         "role": "primary",
         "displayName": "Equator Crimson",
-        "canonical": "#8B0000",
-        "tonalRamp": ["#4A0000", "#680000", "#8B0000", "#A00000", "#C41E1E", "#E54848", "#F87171", "#FEE2E2"]
+        "canonical": "oklch(40% 0.18 25)",
+        "tonalRamp": [
+          "#3a0000",
+          "#550000",
+          "#700000",
+          "#8B0000",
+          "#A81818",
+          "#C83232",
+          "#E55050",
+          "#FEE2E2"
+        ]
       },
       "surface": {
         "role": "neutral",
         "displayName": "Pure Surface",
-        "canonical": "#FFFFFF",
-        "tonalRamp": ["#111827", "#1F2937", "#374151", "#6B7280", "#9CA3AF", "#E5E7EB", "#F3F4F6", "#FFFFFF"]
+        "canonical": "oklch(100% 0 0)",
+        "tonalRamp": [
+          "#030712",
+          "#111827",
+          "#1F2937",
+          "#374151",
+          "#6B7280",
+          "#9CA3AF",
+          "#E5E7EB",
+          "#FFFFFF"
+        ]
       },
-      "terminal-text": {
-        "role": "accent",
-        "displayName": "CRT Phosphor Green",
-        "canonical": "#34d399",
-        "tonalRamp": ["#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"]
+      "cad-outline": {
+        "role": "cad",
+        "displayName": "Cut Outline (ACI 7)",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#FFFFFF", "#F1F5F9", "#E2E8F0", "#CBD5E1", "#94A3B8", "#64748B", "#334155", "#0F172A"]
+      },
+      "cad-arch": {
+        "role": "cad",
+        "displayName": "TPU Arch Bridge (ACI 1)",
+        "canonical": "#EF4444",
+        "tonalRamp": ["#450A0A", "#7F1D1D", "#991B1B", "#DC2626", "#EF4444", "#F87171", "#FCA5A5", "#FEE2E2"]
+      },
+      "cad-heel": {
+        "role": "cad",
+        "displayName": "Heel Cup Profile (ACI 3)",
+        "canonical": "#10B981",
+        "tonalRamp": ["#022C22", "#064E3B", "#065F46", "#047857", "#10B981", "#34D399", "#6EE7B7", "#D1FAE5"]
+      },
+      "cad-meta": {
+        "role": "cad",
+        "displayName": "Metatarsal Cushion (ACI 4)",
+        "canonical": "#06B6D4",
+        "tonalRamp": ["#083344", "#164E63", "#155E75", "#0E7490", "#06B6D4", "#22D3EE", "#67E8F9", "#CFFAFE"]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display ExtraBold", "purpose": "Module headers, IDR revenue KPI numbers, and billboard totals." },
-      "headline": { "displayName": "Headline Bold", "purpose": "Section titles, drawer headers, and modal titles." },
-      "title": { "displayName": "Title Medium", "purpose": "Card titles, table headers, and form labels." },
-      "body": { "displayName": "Body Regular", "purpose": "Form field inputs, customer addresses, notes, dialog explanations." },
-      "label": { "displayName": "Monospace Data", "purpose": "Footwear size numbers (EU 36-48), order codes (SJ/EQ/...), pair counts (psg), currency amounts." }
+      "display": { "displayName": "Display 28px", "purpose": "Module titles, executive IDR revenue figures." },
+      "headline": { "displayName": "Headline 20px", "purpose": "Section headers, modal titles." },
+      "title": { "displayName": "Title 14px", "purpose": "Card headers, customer names." },
+      "body": { "displayName": "Body 12px", "purpose": "Form fields, addresses, notes." },
+      "label": { "displayName": "Label / Data 11px", "purpose": "Tabular footwear sizes, pairs, dates, calipers." },
+      "terminal": { "displayName": "Terminal 13px", "purpose": "ESC/P dot-matrix 80-column monospace emulator." }
     },
     "shadows": [
-      { "name": "shadow-xs", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Base card perimeters and filter chips." },
-      { "name": "shadow-md", "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1)", "purpose": "Primary CTA buttons and active floating drawers." },
-      { "name": "shadow-2xl", "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "purpose": "Modals, print preview sheets, and command palette." }
+      { "name": "subtle-surface", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Base card perimeters." },
+      { "name": "active-lift", "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1)", "purpose": "Primary CTAs and action drawers." },
+      { "name": "modal-overlay", "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "purpose": "Dialog popovers and print sheets." }
     ],
     "motion": [
-      { "name": "ease-out-fast", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Micro-interactions and modal transitions." },
-      { "name": "scale-active", "value": "scale(0.95)", "purpose": "Tactile touch feedback on button click." }
+      { "name": "ease-spring", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Button presses and drawer transitions." }
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" },
@@ -51,55 +87,70 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "High-conviction primary CTA button in Equator Crimson (#8B0000).",
-      "html": "<button class=\"ds-btn-primary\">BUAT SURAT JALAN</button>",
-      "css": ".ds-btn-primary { background: #8B0000; color: #FFFFFF; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 12px; border: none; cursor: pointer; transition: background 0.15s, transform 0.1s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); } .ds-btn-primary:hover { background: #A00000; } .ds-btn-primary:active { transform: scale(0.95); }"
+      "description": "Authoritative primary action button in Equator Crimson.",
+      "html": "<button class=\"ds-btn-primary\">SIMPAN PERUBAHAN</button>",
+      "css": ".ds-btn-primary { background: #8B0000; color: #ffffff; padding: 8px 16px; font-weight: 700; font-size: 12px; border-radius: 12px; border: none; cursor: pointer; transition: background 0.15s, transform 0.15s; } .ds-btn-primary:hover { background: #A00000; } .ds-btn-primary:active { transform: scale(0.95); }"
     },
     {
       "name": "Status Badge",
       "kind": "chip",
-      "refersTo": "status-badge",
-      "description": "Matched-hue status tag with static status dot indicator.",
-      "html": "<span class=\"ds-badge-confirmed\"><span class=\"ds-dot\"></span>Terkonfirmasi</span>",
-      "css": ".ds-badge-confirmed { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #DBEAFE; } .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: #1D4ED8; }"
+      "refersTo": "status-delivered",
+      "description": "Matched-hue pill badge for operational state tracking.",
+      "html": "<span class=\"ds-status-badge\"><span class=\"ds-dot\"></span>Terkirim (Delivered)</span>",
+      "css": ".ds-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #ecfdf5; color: #047857; font-size: 11px; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2); } .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: #10b981; }"
     },
     {
-      "name": "Size Cell Input",
+      "name": "Caliper Numeric Input",
       "kind": "input",
-      "refersTo": "input-size-cell",
-      "description": "Footwear size matrix numeric input with active crimson highlight and tabular numerals.",
-      "html": "<input type=\"text\" class=\"ds-size-input\" value=\"150\" />",
-      "css": ".ds-size-input { width: 48px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 800; padding: 6px 4px; border-radius: 10px; border: 1px solid #8B0000; background: #FEF2F2; color: #8B0000; outline: none; font-feature-settings: 'tnum' 1; }"
+      "refersTo": "input-field",
+      "description": "Direct millimeter numeric entry synchronized with CAD sliders.",
+      "html": "<div class=\"ds-caliper-box\"><input type=\"number\" value=\"96.5\" step=\"0.1\" class=\"ds-caliper-input\" /><span class=\"ds-unit\">mm</span></div>",
+      "css": ".ds-caliper-box { display: inline-flex; align-items: center; gap: 4px; } .ds-caliper-input { width: 64px; padding: 2px 6px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: #f59e0b; font-family: monospace; font-weight: 700; font-size: 12px; text-align: right; } .ds-unit { font-size: 10px; color: #9ca3af; font-weight: 600; }"
     },
     {
-      "name": "CRT Terminal Print Frame",
-      "kind": "custom",
-      "refersTo": "terminal-preview",
-      "description": "80-column ESC/P dot-matrix phosphor green terminal emulator.",
-      "html": "<div class=\"ds-terminal\">================================================================================<br/>EQUATOR INSOLE - SURAT JALAN #SJ/EQ/2026/08/0001<br/>================================================================================</div>",
-      "css": ".ds-terminal { background: #091510; color: #34d399; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 16px; border-radius: 16px; border: 1px solid #064e3b; overflow-x: auto; }"
+      "name": "CNC Pre-Flight Modal",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "High-assurance pre-flight modal for verifying laser and knife die toolpaths.",
+      "html": "<div class=\"ds-modal-card\"><div class=\"ds-modal-header\">✓ 100% Manifold Closed Loop</div><div class=\"ds-modal-body\">Total Cut Perimeter: 742.8 mm</div></div>",
+      "css": ".ds-modal-card { background: #111827; border: 1px solid #374151; border-radius: 24px; padding: 20px; color: #f9fafb; font-size: 12px; } .ds-modal-header { font-weight: 800; color: #10b981; margin-bottom: 8px; } .ds-modal-body { font-family: monospace; color: #38bdf8; }"
     }
   ],
   "narrative": {
     "northStar": "The Precision Vulcanizer",
-    "overview": "MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson (#8B0000), structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, and crisp mechanical affordances.",
+    "overview": "MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson (#8B0000), structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, precision millimeter-scale CAD drafting grids, and crisp mechanical affordances.",
     "keyCharacteristics": [
-      "Crimson Brand Dominance: Dark Red (#8B0000) reserved for high-conviction actions and active indicators.",
-      "Physical Matrix Ergonomics: Tabular footwear size grids (EU 36-48) with auto-summed row/column totals.",
-      "Industrial Terminal Evocation: High-contrast 80-column CRT phosphor green previews simulating LX-310 continuous tractor-feed forms.",
-      "High-Assurance Safety: Non-blocking in-app confirmation dialogs and isDirty unsaved changes tracking."
+      "Crimson Brand Dominance: Dark Red (#8B0000) is the singular primary accent.",
+      "Physical Matrix Ergonomics: Sizing matrices (EU 36–48) are structured tabular grids.",
+      "CAD & CNC Vector Precision: Parametric insole splines with millimeter caliper controls and AutoCAD R12 DXF layer streaming.",
+      "Industrial Terminal Evocation: Continuous form printing features authentic CRT phosphor green previews."
     ],
     "rules": [
-      { "name": "The Singular Accent Rule", "body": "Deep crimson (#8B0000) is used on <=10% of any view. Its rarity is what gives it authority.", "section": "colors" },
-      { "name": "The Matched Hue Rule", "body": "Status badges always pair text and background from the same color family.", "section": "colors" },
-      { "name": "The Tabular Numerals Rule", "body": "All dynamic numbers, footwear sizes, currency amounts, and order codes must specify tabular-nums or font-mono with OpenType tnum enabled.", "section": "typography" },
-      { "name": "The Inset Indicator Rule", "body": "Active list items use an inset indicator bar rather than a thick left border, completely preventing box-sizing displacement.", "section": "elevation" },
-      { "name": "The Density Scale Rule", "body": "The UI supports 5 granular font-size scaling tiers (xs: 12.5px to xl: 20.5px) controlled at :root for cross-operator visual comfort.", "section": "typography" }
+      {
+        "name": "The Singular Accent Rule",
+        "body": "Deep crimson (#8B0000) is used on ≤10% of any view. Its rarity guarantees immediate visual hierarchy for primary CTAs and active states.",
+        "section": "colors"
+      },
+      {
+        "name": "The Matched Hue Rule",
+        "body": "Status badges and alerts always pair text and background from the same color family (e.g., text-blue-700 on bg-blue-50).",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Numerals Rule",
+        "body": "All dynamic numbers, footwear sizes, currency amounts, and order codes must specify tabular-nums or font-mono with OpenType tnum enabled.",
+        "section": "typography"
+      },
+      {
+        "name": "The Inset Indicator Rule",
+        "body": "Active list items and selected tabs use an inset indicator bar rather than a thick left border, completely preventing box-sizing displacement.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "Do format all currency in Indonesian Rupiah with thousand-separator dots: Rp 1.250.000.",
       "Do include Indonesian Terbilang spelled-out text on printable Delivery Orders and Invoices.",
-      "Do use tabular-nums on all footwear quantities, sizes, prices, and dates.",
+      "Do use tabular-nums on all footwear quantities, sizes, prices, dates, and caliper dimensions.",
       "Do ensure all mobile action buttons satisfy minimum 44px touch targets.",
       "Do guard multi-field forms against accidental loss with isDirty discard confirmations."
     ],

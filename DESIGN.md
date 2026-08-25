@@ -13,6 +13,11 @@ colors:
   text-muted: "#6B7280"
   terminal-bg: "#091510"
   terminal-text: "#34d399"
+  cad-bg: "#030712"
+  cad-outline: "#FFFFFF"
+  cad-arch: "#EF4444"
+  cad-heel: "#10B981"
+  cad-meta: "#06B6D4"
   status-draft: "#6B7280"
   status-confirmed: "#1D4ED8"
   status-printed: "#B45309"
@@ -111,13 +116,14 @@ components:
 
 **Creative North Star: "The Precision Vulcanizer"**
 
-MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson (`#8B0000`), structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, and crisp mechanical affordances.
+MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson (`#8B0000`), structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, precision millimeter-scale CAD drafting grids, and crisp mechanical affordances.
 
-The system is designed for high-throughput daily operations under real factory floor conditions: dust, overhead fluorescent lighting, warehouse gloves, and split-second verification needs. Every element earns its place through utility, clarity, and ergonomic safety.
+The system is designed for high-throughput daily operations under real factory floor conditions: dust, overhead fluorescent lighting, warehouse gloves, digital calipers, and split-second verification needs. Every element earns its place through utility, clarity, and ergonomic safety.
 
 **Key Characteristics:**
 - **Crimson Brand Dominance:** Dark Red (`#8B0000`) is the singular primary accent, reserved for high-conviction actions and active indicators.
 - **Physical Matrix Ergonomics:** Sizing matrices (EU 36–48) are structured tabular grids with auto-summed row/column footers and tablet touch pads.
+- **CAD & CNC Vector Precision:** Parametric insole splines with millimeter digital caliper controls, AutoCAD R12 DXF layer streaming, and pre-flight die verification.
 - **Industrial Terminal Evocation:** Continuous form printing features authentic CRT phosphor green (`#34d399` on `#091510`) 80-column monospace previews.
 - **High-Assurance State Design:** Non-blocking in-app confirmation dialogs, unsaved changes tracking (`isDirty`), and audited rollback paths.
 
@@ -125,7 +131,7 @@ The system is designed for high-throughput daily operations under real factory f
 
 ## Colors
 
-The palette is anchored by Equator Insole's signature crimson red, supported by neutral slate surfaces, high-contrast text tokens, and semantic lifecycle status colors.
+The palette is anchored by Equator Insole's signature crimson red, supported by neutral slate surfaces, high-contrast text tokens, AutoCAD ACI layer standards, and semantic lifecycle status colors.
 
 ### Primary
 - **Equator Crimson** (`#8B0000`): The authoritative brand accent. Used for primary CTAs, active indicator bars, key metrics, and brand emblems.
@@ -140,6 +146,13 @@ The palette is anchored by Equator Insole's signature crimson red, supported by 
 - **Structural Border** (`#E5E7EB` in light, `#374151` in dark): Crisp 1px perimeter definition for all cards and table cells.
 - **Primary Ink** (`#111827` in light, `#F9FAFB` in dark): High-contrast foreground for titles, quantities, and customer names.
 - **Muted Steel** (`#6B7280` in light, `#9CA3AF` in dark): Metadata, timestamps, helper captions, and table column headers.
+
+### CAD & Vector Drafting Colors (ACI Standard)
+- **CAD Dark Slate Canvas** (`#030712` / `#111827`): Deep neutral drafting bed with subtle 20px grid.
+- **Cut Outline (ACI Color 7 White)** (`#FFFFFF`): Perimeter knife / laser cut toolpath.
+- **Arch Support Plate (ACI Color 1 Red)** (`#EF4444`): TPU arch bridge shank boundary.
+- **Heel Cup (ACI Color 3 Green)** (`#10B981`): Heel cupping stabilization boundary.
+- **Metatarsal Pad (ACI Color 4 Cyan)** (`#06B6D4`): Forefoot dome cushion boundary.
 
 ### Terminal Phosphor
 - **CRT Obsidian** (`#091510`): Authentic deep terminal frame for the ESC/P dot-matrix 80-column monospace printer preview.
@@ -164,14 +177,14 @@ The palette is anchored by Equator Insole's signature crimson red, supported by 
 **Display & Body Font:** Plus Jakarta Sans (`var(--font-sans)`, fallback `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`)  
 **Tabular & Terminal Font:** JetBrains Mono (`var(--font-mono)`, fallback `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`)
 
-**Character:** Utilitarian, crisp, and ergonomically dense. High optical legibility across complex footwear sizing grids and production orders. Numerical data (order numbers, quantities, prices, dates) always enables tabular numerals (`tabular-nums`, `font-feature-settings: "tnum" 1, "zero" 1`) to eliminate horizontal layout jitter.
+**Character:** Utilitarian, crisp, and ergonomically dense. High optical legibility across complex footwear sizing grids, digital caliper dimensions, and production orders. Numerical data (order numbers, quantities, prices, dates, mm dimensions) always enables tabular numerals (`tabular-nums`, `font-feature-settings: "tnum" 1, "zero" 1`) to eliminate horizontal layout jitter.
 
 ### Hierarchy
 - **Display** (Font Weight: 900, Size: 1.75rem / 28px, Line Height: 1.2, Tracking: -0.025em): Module titles, executive IDR revenue figures.
 - **Headline** (Font Weight: 800, Size: 1.25rem / 20px, Line Height: 1.3, Tracking: -0.02em): Section headers, modal sheet titles.
 - **Title** (Font Weight: 700, Size: 0.875rem / 14px, Line Height: 1.4, Tracking: -0.01em): Card headers, customer names, table column groups.
 - **Body** (Font Weight: 500, Size: 0.75rem / 12px, Line Height: 1.5): Form inputs, order addresses, notes, dialog explanations.
-- **Label / Data** (Font Weight: 700, Size: 0.6875rem / 11px, Monospace, `tabular-nums`): Footwear sizes, pairs (`psg`), order numbers (`SJ/EQ/...`), dates.
+- **Label / Data** (Font Weight: 700, Size: 0.6875rem / 11px, Monospace, `tabular-nums`): Footwear sizes, pairs (`psg`), order numbers (`SJ/EQ/...`), dates, millimeter dimensions.
 
 ### Named Rules
 **The Tabular Numerals Rule.** All dynamic numbers, footwear sizes, currency amounts, and order codes must specify `tabular-nums` or `font-mono` with OpenType `tnum` enabled to prevent horizontal jitter during live calculation updates.  
@@ -182,9 +195,9 @@ The palette is anchored by Equator Insole's signature crimson red, supported by 
 ## Layout
 
 The spatial framework provides three distinct responsive experience tiers:
-1. **Desktop Workstation (≥1024px):** Split-screen Master-Detail layout with persistent collapsible navigation sidebar, list pane, and live editing/preview canvas.
+1. **Desktop Workstation (≥1024px):** Split-screen Master-Detail layout with persistent collapsible navigation sidebar, list pane, and live 3-pane CAD vector drafting bed.
 2. **Tablet Floor View (768px–1023px):** Touch-friendly sizing pads, collapsible sizing drawers, and bottom action bars.
-3. **Mobile Warehouse Feed (<768px):** Single-column stacked cards with 44px+ touch targets and slide-up detail sheets.
+3. **Mobile Warehouse Feed (<768px):** Single-column stacked cards with 44px+ touch targets and 4-tab mobile mode selector.
 
 **Spacing Rhythm:** Base unit of 4px. Component padding scales across `8px` (`p-2`), `12px` (`p-3`), `16px` (`p-4`), and `24px` (`p-6`).
 
@@ -226,6 +239,9 @@ The interface is intentionally flat at rest. Depth and hierarchy are established
 ### Sizing Matrix Cells
 - Monospace tabular numeric inputs with `inputmode="numeric"`. Active non-zero cells highlight in soft crimson (`bg-red-50/90 border-[#8B0000] text-[#8B0000] font-bold`).
 
+### Caliper Numeric Inputs
+- Compact, high-contrast numeric input boxes (`<input type="number" step="0.1" />`) synchronized with CAD range sliders, displaying explicit millimeter (`mm`) units and color-matched values.
+
 ### Touch Size Pad
 - 5x2 footwear sizing grid with active ring indicators, ±1/±10 steppers, and color-coded magnitude step presets (+50 blue, +100 amber, +200 red).
 
@@ -236,9 +252,10 @@ The interface is intentionally flat at rest. Depth and hierarchy are established
 ### Do:
 - **Do** format all currency in Indonesian Rupiah with thousand-separator dots: `Rp 1.250.000`.
 - **Do** include Indonesian *Terbilang* spelled-out text on printable Delivery Orders and Invoices.
-- **Do** use `tabular-nums` on all footwear quantities, sizes, prices, and dates.
+- **Do** use `tabular-nums` on all footwear quantities, sizes, prices, dates, and caliper dimensions.
 - **Do** ensure all mobile action buttons satisfy minimum 44px touch targets.
 - **Do** guard multi-field forms against accidental loss with `isDirty` discard confirmations.
+- **Do** provide non-blocking in-app toasts for save and export feedback.
 
 ### Don't:
 - **Don't** use generic floating decorative gradients or rainbow AI accents.
