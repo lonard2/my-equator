@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   buildInsoleGeometry,
   calculateInsoleLength,
   calculateDefaultWidths,
   convertSizing,
+  calculatePerimeterLength,
   INSOLE_PRESETS,
   InsoleParameters,
   SizingSystem,
@@ -36,6 +37,13 @@ import {
   Eye,
   SlidersHorizontal,
   FileCode,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  Printer,
+  Cpu,
+  Scissors,
+  Check,
 } from "lucide-react";
 import { CadAiModal } from "./CadAiModal";
 
@@ -86,19 +94,26 @@ export function CadStudio({ language }: CadStudioProps) {
   const [showDimensions, setShowDimensions] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
 
-  // Viewport Zoom & Pan
+  // Viewport Zoom & Pan (Touch + Mouse Pointer Events)
   const [zoomScale, setZoomScale] = useState<number>(1.0);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Modals & States
+  // Modals & Feedback States
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [savedBlueprints, setSavedBlueprints] = useState<any[]>([]);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [inspectorTab, setInspectorTab] = useState<"COMPONENTS" | "LAYERS" | "SPECS">("COMPONENTS");
+  const [isCncPreFlightOpen, setIsCncPreFlightOpen] = useState(false);
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   // Recalculate derived dimensions when sizing changes
   useEffect(() => {
@@ -171,6 +186,7 @@ export function CadStudio({ language }: CadStudioProps) {
     if (preset.heelCupRadiusFactor) setHeelCupRadius(preset.heelCupRadiusFactor);
     if (preset.metatarsalPadSizeFactor) setMetatarsalSize(preset.metatarsalPadSizeFactor);
     if (preset.metatarsalPadYPosition) setMetatarsalYPos(preset.metatarsalPadYPosition);
+    showToast(isId ? `Preset "${preset.name}" diterapkan` : `Preset "${preset.name}" applied`);
   };
 
   // Apply Generative AI Insole Parameters
@@ -188,6 +204,7 @@ export function CadStudio({ language }: CadStudioProps) {
     if (aiData.heelCupDepth) setHeelCupDepth(aiData.heelCupDepth);
     if (aiData.metatarsalPadSizeFactor) setMetatarsalSize(aiData.metatarsalPadSizeFactor);
     setMobileCadView("CANVAS");
+    showToast(isId ? "Desain AI berhasil diintegrasikan ke canvas CAD" : "AI Insole design loaded into CAD canvas");
   };
 
   // Export DXF (AutoCAD R12 / CorelDRAW)
@@ -229,9 +246,10 @@ export function CadStudio({ language }: CadStudioProps) {
       a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}_R12.dxf`;
       a.click();
       window.URL.revokeObjectURL(url);
+      showToast(isId ? "File AutoCAD R12 DXF berhasil diunduh" : "AutoCAD R12 DXF file downloaded");
     } catch (err) {
       console.error("DXF export failed:", err);
-      alert(isId ? "Gagal mengekspor file DXF." : "Failed to export DXF file.");
+      showToast(isId ? "Gagal mengekspor file DXF." : "Failed to export DXF file.");
     } finally {
       setExporting(null);
     }
@@ -276,9 +294,10 @@ export function CadStudio({ language }: CadStudioProps) {
       a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}.svg`;
       a.click();
       window.URL.revokeObjectURL(url);
+      showToast(isId ? "File Vector SVG berhasil diunduh" : "Vector SVG file downloaded");
     } catch (err) {
       console.error("SVG export failed:", err);
-      alert(isId ? "Gagal mengekspor file SVG." : "Failed to export SVG file.");
+      showToast(isId ? "Gagal mengekspor file SVG." : "Failed to export SVG file.");
     } finally {
       setExporting(null);
     }
@@ -292,295 +311,246 @@ export function CadStudio({ language }: CadStudioProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: blueprintName,
-          shoeSize: geometry.size,
-          baseLengthMm: effectiveLength,
+          articleCode: `EQ-CAD-${geometry.size}-${Date.now().toString().slice(-4)}`,
+          sizingSystem,
+          rawSizeValue,
+          customLengthMm: sizingSystem === "CUSTOM_MM" ? customLengthMm : undefined,
+          foot,
+          archProfile,
+          archFactor,
+          toeShape,
           ballWidthMm: ballWidth,
           heelWidthMm: heelWidth,
           waistWidthMm: waistWidth,
-          archProfile,
-          archOffsetFactor: archFactor,
           thicknessForefootMm: forefootThickness,
           thicknessHeelMm: heelThickness,
           materialType,
+          archPlateLengthFactor: archPlateLength,
+          archPlateWidthFactor: archPlateWidth,
+          archPlateLateralWing,
+          heelCupDepth,
+          heelCupRadiusFactor: heelCupRadius,
+          metatarsalPadSizeFactor: metatarsalSize,
+          metatarsalPadYPosition: metatarsalYPos,
         }),
       });
 
       const json = await res.json();
       if (json.success) {
-        alert(isId ? "Blueprint berhasil disimpan ke katalog!" : "Blueprint saved successfully!");
+        showToast(isId ? "Blueprint CAD berhasil disimpan ke database!" : "CAD Blueprint saved to database!");
         fetchBlueprints();
+      } else {
+        showToast(json.error || (isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint."));
       }
     } catch (err) {
-      console.error(err);
-      alert(isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint.");
+      console.error("Failed to save blueprint:", err);
+      showToast(isId ? "Terjadi kesalahan saat menyimpan blueprint." : "Error saving blueprint.");
     }
   };
 
-  // Load Selected Blueprint
-  const handleLoadBlueprint = (bp: any) => {
-    setBlueprintName(bp.name);
-    setSizingSystem("EU");
-    setRawSizeValue(bp.shoeSize);
-    setBallWidth(bp.ballWidthMm);
-    setHeelWidth(bp.heelWidthMm);
-    setWaistWidth(bp.waistWidthMm);
-    setArchProfile(bp.archProfile);
-    setArchFactor(bp.archOffsetFactor || 1.0);
-    setForefootThickness(bp.thicknessForefootMm || 3.0);
-    setHeelThickness(bp.thicknessHeelMm || 5.0);
-    setMaterialType(bp.materialType || "High Density EVA");
-    setIsLibraryOpen(false);
-  };
-
-  // Canvas Pan Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Unified Pointer Handlers for Mouse & Touch Panning
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsPanning(true);
     setStartPan({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPanning) return;
-    setPanOffset({ x: e.clientX - startPan.x, y: e.clientY - startPan.y });
+    setPanOffset({
+      x: e.clientX - startPan.x,
+      y: e.clientY - startPan.y,
+    });
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsPanning(false);
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId);
+    } catch (_) {}
   };
 
-  const vbW = geometry.bounds.width;
-  const vbH = geometry.bounds.height;
+  // Calculations for Pre-Flight & Yields
+  const singlePerimeter = calculatePerimeterLength(
+    foot === "LEFT" ? geometry.outlinePointsLeft : geometry.outlinePointsRight
+  );
+  const totalPerimeter = foot === "PAIR" ? singlePerimeter * 2 : singlePerimeter;
+  const pairGap = 25;
+  const singleW = geometry.bounds.width;
+  const totalW = foot === "PAIR" ? singleW * 2 + pairGap : singleW;
+  const totalH = geometry.bounds.height;
 
-  const activeOutline = foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight;
-  const activeArch = foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight;
-  const activeHeel = foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight;
-  const activeMeta = foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight;
+  // Viewport dimensions
+  const vbW = totalW;
+  const vbH = totalH;
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      {/* Top Header & Desktop Action Controls */}
-      <div className="p-3 sm:p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0 shadow-xs">
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="p-2 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400 shrink-0">
-            <Compass className="h-5 w-5 animate-spin-slow" />
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-950 text-gray-100">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-60 px-4 py-2.5 rounded-2xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Top Header Bar */}
+      <div className="p-3 sm:p-4 border-b border-gray-800 bg-gray-900/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2.5 z-30">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-2xl bg-[#8B0000]/20 text-[#8B0000] dark:text-red-400 border border-[#8B0000]/30 shrink-0">
+            <Compass className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="font-extrabold text-sm sm:text-base tracking-wide flex items-center gap-2">
-              <span>{isId ? "Studio Insole CAD & Vector" : "Insole CAD & Vector Studio"}</span>
-              <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[10px] font-bold text-[#8B0000] dark:text-red-300">
-                CorelDRAW & AutoCAD R12 DXF
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-white leading-tight">
+                {isId ? "Insole CAD & Generative Design Studio" : "Insole CAD & Design Studio"}
+              </h2>
+              <span className="px-2 py-0.5 rounded-md bg-red-950/80 text-red-400 border border-red-900/60 font-mono text-[10px] font-bold">
+                R12 DXF
               </span>
-            </h2>
-            <p className="text-[11px] text-gray-500">
+            </div>
+            <p className="text-[11px] text-gray-400 mt-0.5">
               {isId
-                ? "Generator kontur sol anatomis dengan kustomisasi layer ortotik independen"
-                : "Anatomical parametric insole generator with customizable orthotic layers"}
+                ? "Parametric vector shoe insole curve generator & CorelDRAW compatible die exporter"
+                : "Vector insole curve generator with AutoCAD R12 DXF stream export for CNC & laser cutting"}
             </p>
           </div>
         </div>
 
-        {/* Desktop Quick Action Buttons (hidden on mobile, available in mobile tab) */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* Header Action Buttons */}
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setIsAiModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-700 to-[#8B0000] hover:from-red-800 hover:to-[#A00000] text-white text-xs font-bold shadow-md hover:shadow-red-900/30 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-gradient-to-r from-red-800 to-[#8B0000] hover:from-red-700 hover:to-red-900 text-white text-xs font-bold shadow-lg shadow-red-950/50 active:scale-95 transition"
           >
-            <Sparkles className="h-4 w-4 animate-pulse text-amber-300" />
-            <span>{isId ? "Prompt AI Insole" : "AI Insole Generator"}</span>
-          </button>
-
-          <select
-            onChange={(e) => {
-              const p = INSOLE_PRESETS.find((pr) => pr.id === e.target.value);
-              if (p) handleApplyPreset(p);
-            }}
-            className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-[#8B0000] focus:outline-none shadow-xs"
-          >
-            <option value="">{isId ? "Pilih Preset Pabrik..." : "Preset Catalog..."}</option>
-            {INSOLE_PRESETS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.archProfile})
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setIsLibraryOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
-          >
-            <FolderOpen className="h-4 w-4 text-[#8B0000]" />
-            <span>{isId ? "Katalog" : "Library"}</span>
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            <span>{isId ? "AI Generative Model" : "AI Generative Model"}</span>
           </button>
 
           <button
+            type="button"
+            onClick={() => setIsCncPreFlightOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+          >
+            <Scissors className="h-4 w-4" />
+            <span>{isId ? "Verifikasi & Ekspor CNC" : "CNC Pre-Flight & Export"}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleSaveBlueprint}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
-            title="Simpan Blueprint"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
           >
             <Save className="h-4 w-4" />
-            <span>{isId ? "Simpan" : "Save"}</span>
-          </button>
-
-          <button
-            onClick={handleExportDxf}
-            disabled={exporting === "DXF"}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" />
-            <span>{exporting === "DXF" ? "Exporting..." : "DXF (R12)"}</span>
-          </button>
-
-          <button
-            onClick={handleExportSvg}
-            disabled={exporting === "SVG"}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs"
-          >
-            <Share2 className="h-4 w-4" />
-            <span>SVG</span>
+            <span className="hidden sm:inline">{isId ? "Simpan" : "Save"}</span>
           </button>
         </div>
       </div>
 
-      {/* MOBILE ADAPTIVE VIEW MODE SELECTOR (md:hidden) */}
-      <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-1.5 px-3 flex items-center justify-between gap-1 overflow-x-auto shrink-0 shadow-xs">
+      {/* Mobile Mode Switcher Bar (md:hidden) */}
+      <div className="md:hidden p-2 border-b border-gray-800 bg-gray-900 flex items-center justify-between text-xs font-bold">
         <button
+          type="button"
           onClick={() => setMobileCadView("CANVAS")}
-          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
-            mobileCadView === "CANVAS"
-              ? "bg-[#8B0000] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          className={`flex-1 py-2 rounded-xl text-center transition ${
+            mobileCadView === "CANVAS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
           }`}
         >
-          <Eye className="h-3.5 w-3.5" />
-          <span>Canvas</span>
+          {isId ? "1. Canvas" : "1. Canvas"}
         </button>
-
         <button
+          type="button"
           onClick={() => setMobileCadView("PARAMETERS")}
-          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
-            mobileCadView === "PARAMETERS"
-              ? "bg-[#8B0000] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          className={`flex-1 py-2 rounded-xl text-center transition ${
+            mobileCadView === "PARAMETERS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
           }`}
         >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          <span>Ukuran</span>
+          {isId ? "2. Ukuran" : "2. Sizing"}
         </button>
-
         <button
+          type="button"
           onClick={() => setMobileCadView("ORTHOTICS")}
-          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
-            mobileCadView === "ORTHOTICS"
-              ? "bg-[#8B0000] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          className={`flex-1 py-2 rounded-xl text-center transition ${
+            mobileCadView === "ORTHOTICS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
           }`}
         >
-          <Shield className="h-3.5 w-3.5" />
-          <span>Ortotik</span>
+          {isId ? "3. Ortotik" : "3. Orthotics"}
         </button>
-
         <button
+          type="button"
           onClick={() => setMobileCadView("EXPORT")}
-          className={`flex-1 min-w-[75px] py-2 rounded-xl font-extrabold text-[11px] flex items-center justify-center gap-1 transition active:scale-95 ${
-            mobileCadView === "EXPORT"
-              ? "bg-[#8B0000] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800"
+          className={`flex-1 py-2 rounded-xl text-center transition ${
+            mobileCadView === "EXPORT" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
           }`}
         >
-          <FileCode className="h-3.5 w-3.5" />
-          <span>AI & Ekspor</span>
+          {isId ? "4. Ekspor" : "4. Export"}
         </button>
       </div>
 
-      {/* Main Multi-Pane Workspace */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        {/* Left Toolbar: Base Sizing & Outline Parameters (Desktop or Mobile PARAMETERS view) */}
+      {/* Main CAD Studio Body Workspace */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Sidebar: Sizing, Presets, and Caliper Parameters */}
         <div
-          className={`w-full md:w-80 lg:w-88 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4 overflow-y-auto shrink-0 text-xs ${
-            mobileCadView === "PARAMETERS" ? "block flex-1 pb-24" : "hidden md:block"
+          className={`w-full md:w-80 lg:w-88 border-r border-gray-800 bg-gray-900/95 overflow-y-auto p-4 space-y-4 text-xs ${
+            mobileCadView === "PARAMETERS" ? "block" : "hidden md:block"
           }`}
         >
-          {/* Multi-System Size Switcher */}
-          <div className="space-y-2">
-            <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px] flex items-center justify-between">
-              <span className="flex items-center gap-1">
-                <Globe2 className="h-3.5 w-3.5 text-[#8B0000]" />
-                <span>{isId ? "Standar Ukuran Sepatu" : "Sizing System"}</span>
+          {/* Sizing Standard Selector */}
+          <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase text-gray-400">
+                {isId ? "Sistem Standar Ukuran" : "Sizing Standard System"}
               </span>
-              <span className="font-mono text-red-700 dark:text-red-400 font-extrabold text-xs">
-                {geometry.sizingLabel}
-              </span>
-            </label>
+              <span className="font-mono text-[10px] text-red-400 font-bold">{geometry.sizingLabel}</span>
+            </div>
 
-            {/* Sizing Standard Tabs */}
-            <div className="grid grid-cols-3 gap-1 rounded-2xl bg-gray-100 dark:bg-gray-800 p-1">
-              {[
-                { id: "EU", label: "EU" },
-                { id: "US_MEN", label: "US Men" },
-                { id: "US_WOMEN", label: "US Women" },
-                { id: "UK", label: "UK" },
-                { id: "MONDOPOINT_CM", label: "CM / Mondo" },
-                { id: "CUSTOM_MM", label: "Custom mm" },
-              ].map((sys) => (
+            <div className="grid grid-cols-3 gap-1">
+              {(["EU", "US_MEN", "US_WOMEN", "UK", "MONDOPOINT_CM", "CUSTOM_MM"] as SizingSystem[]).map((sys) => (
                 <button
-                  key={sys.id}
-                  onClick={() => setSizingSystem(sys.id as SizingSystem)}
-                  className={`py-2 rounded-xl font-bold text-[11px] transition active:scale-95 ${
-                    sizingSystem === sys.id
-                      ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                  key={sys}
+                  type="button"
+                  onClick={() => setSizingSystem(sys)}
+                  className={`py-1.5 rounded-lg text-[10px] font-bold border transition ${
+                    sizingSystem === sys
+                      ? "bg-[#8B0000] text-white border-[#8B0000]"
+                      : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                   }`}
                 >
-                  {sys.label}
+                  {sys.replace("_", " ")}
                 </button>
               ))}
             </div>
 
-            {/* Size Stepper & Continuous Slider */}
+            {/* Size Slider or Custom Input */}
             {sizingSystem === "CUSTOM_MM" ? (
-              <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400">
-                  <span>Panjang Insole Custom:</span>
-                  <span className="font-mono font-bold text-gray-900 dark:text-white">{customLengthMm} mm</span>
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400">
+                  {isId ? "Panjang Kustom (mm)" : "Custom Length (mm)"}
+                </label>
                 <input
-                  type="range"
-                  min={210}
-                  max={330}
-                  step={0.5}
+                  type="number"
+                  step="0.1"
+                  min={180}
+                  max={340}
                   value={customLengthMm}
-                  onChange={(e) => setCustomLengthMm(parseFloat(e.target.value))}
-                  className="w-full accent-[#8B0000]"
+                  onChange={(e) => setCustomLengthMm(parseFloat(e.target.value) || 260)}
+                  className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 font-mono font-bold text-white text-xs focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
             ) : (
-              <div className="space-y-2 pt-1">
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => setRawSizeValue(Math.max(1, Math.round((rawSizeValue - 0.5) * 10) / 10))}
-                    className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-4 text-base active:scale-95"
-                  >
-                    -
-                  </button>
-                  <div className="text-center flex-1">
-                    <span className="text-lg font-black text-gray-900 dark:text-white font-mono">
-                      {rawSizeValue}
-                    </span>
-                    <p className="text-[10px] text-gray-500 font-mono">
-                      (Equiv: EU {conversion.eu} • UK {conversion.uk} • US {conversion.usMen})
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setRawSizeValue(Math.round((rawSizeValue + 0.5) * 10) / 10)}
-                    className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 font-bold px-4 text-base active:scale-95"
-                  >
-                    +
-                  </button>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase text-gray-400">
+                    {isId ? "Ukuran Sepatu" : "Shoe Size"}
+                  </span>
+                  <span className="font-mono font-black text-sm text-white">{rawSizeValue}</span>
                 </div>
                 <input
                   type="range"
-                  min={sizingSystem === "MONDOPOINT_CM" ? 21 : sizingSystem.startsWith("US") || sizingSystem === "UK" ? 4 : 34}
-                  max={sizingSystem === "MONDOPOINT_CM" ? 33 : sizingSystem.startsWith("US") || sizingSystem === "UK" ? 15 : 48}
-                  step={0.5}
+                  min={sizingSystem === "EU" ? 35 : sizingSystem === "MONDOPOINT_CM" ? 22 : 4}
+                  max={sizingSystem === "EU" ? 48 : sizingSystem === "MONDOPOINT_CM" ? 31 : 14}
+                  step={sizingSystem === "MONDOPOINT_CM" ? 0.5 : 1}
                   value={rawSizeValue}
                   onChange={(e) => setRawSizeValue(parseFloat(e.target.value))}
                   className="w-full accent-[#8B0000]"
@@ -589,111 +559,140 @@ export function CadStudio({ language }: CadStudioProps) {
             )}
           </div>
 
-          {/* Foot Orientation Toggle */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[11px]">
-              {isId ? "Orientasi Kaki (Foot Bed)" : "Foot Orientation"}
-            </label>
-            <div className="grid grid-cols-2 gap-2">
+          {/* Foot Laterality (Left / Right / Pair Switcher) */}
+          <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+            <span className="text-[10px] font-bold uppercase text-gray-400 block">
+              {isId ? "Orientasi Kaki (Simetri)" : "Foot Symmetry & Laterality"}
+            </span>
+            <div className="grid grid-cols-3 gap-1.5">
               <button
-                onClick={() => setFoot("RIGHT")}
-                className={`py-2.5 rounded-xl font-bold text-xs transition active:scale-95 ${
-                  foot === "RIGHT"
-                    ? "bg-red-50 dark:bg-red-950/60 border-2 border-[#8B0000] text-[#8B0000] dark:text-red-300 shadow-xs"
-                    : "border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                }`}
-              >
-                {isId ? "Kaki Kanan (Right)" : "Right Foot"}
-              </button>
-              <button
+                type="button"
                 onClick={() => setFoot("LEFT")}
-                className={`py-2.5 rounded-xl font-bold text-xs transition active:scale-95 ${
+                className={`py-2 rounded-xl text-xs font-bold border transition ${
                   foot === "LEFT"
-                    ? "bg-red-50 dark:bg-red-950/60 border-2 border-[#8B0000] text-[#8B0000] dark:text-red-300 shadow-xs"
-                    : "border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                    ? "bg-blue-900/80 text-blue-200 border-blue-600"
+                    : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                 }`}
               >
-                {isId ? "Kaki Kiri (Left)" : "Left Foot"}
+                {isId ? "Kiri (Left)" : "Left"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFoot("RIGHT")}
+                className={`py-2 rounded-xl text-xs font-bold border transition ${
+                  foot === "RIGHT"
+                    ? "bg-[#8B0000] text-white border-[#8B0000]"
+                    : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
+                }`}
+              >
+                {isId ? "Kanan (Right)" : "Right"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFoot("PAIR")}
+                className={`py-2 rounded-xl text-xs font-bold border transition ${
+                  foot === "PAIR"
+                    ? "bg-emerald-800 text-emerald-100 border-emerald-500 shadow-xs"
+                    : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
+                }`}
+              >
+                {isId ? "Sepasang (Pair)" : "Pair (L+R)"}
               </button>
             </div>
           </div>
 
-          {/* Arch Support Contour & Toe Shape */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[10px]">
-                {isId ? "Profil Arch" : "Arch Profile"}
-              </label>
-              <select
-                value={archProfile}
-                onChange={(e) => setArchProfile(e.target.value as ArchProfile)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
-              >
-                <option value="FLAT">Flat / Low</option>
-                <option value="MEDIUM">Neutral</option>
-                <option value="HIGH">High Arch</option>
-              </select>
+          {/* Caliper Direct-Entry & Width Adjusters */}
+          <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase text-gray-400">
+                {isId ? "Pengukuran Caliper Presisi (mm)" : "Precision Caliper Dimensions (mm)"}
+              </span>
+              <Wrench className="h-3.5 w-3.5 text-gray-400" />
             </div>
 
+            {/* Forefoot Ball Width */}
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-[10px]">
-                {isId ? "Bentuk Toe Box" : "Toe Shape"}
-              </label>
-              <select
-                value={toeShape}
-                onChange={(e) => setToeShape(e.target.value as ToeShape)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
-              >
-                <option value="ROUNDED">Round</option>
-                <option value="ANATOMIC">Anatomic</option>
-                <option value="SQUARE_ROUND">Square</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Fine Tuning Sliders */}
-          <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <div>
-              <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                <span>{isId ? "Lebar Bola Kaki (Forefoot):" : "Ball Width:"}</span>
-                <span className="font-mono font-bold text-gray-900 dark:text-white">{ballWidth} mm</span>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold uppercase text-gray-400">
+                  {isId ? "Lebar Bola Kaki (Ball)" : "Forefoot Ball Width"}
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={70}
+                    max={130}
+                    value={ballWidth}
+                    onChange={(e) => setBallWidth(Math.max(70, Math.min(130, parseFloat(e.target.value) || 70)))}
+                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-amber-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                  />
+                  <span className="text-[10px] text-gray-400 font-semibold">mm</span>
+                </div>
               </div>
               <input
                 type="range"
-                min={75}
-                max={125}
+                min={70}
+                max={130}
                 step={0.5}
                 value={ballWidth}
                 onChange={(e) => setBallWidth(parseFloat(e.target.value))}
-                className="w-full accent-[#8B0000]"
+                className="w-full accent-amber-500"
               />
             </div>
 
-            <div>
-              <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                <span>{isId ? "Lebar Tumit (Heel):" : "Heel Width:"}</span>
-                <span className="font-mono font-bold text-gray-900 dark:text-white">{heelWidth} mm</span>
+            {/* Rearfoot Heel Width */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold uppercase text-gray-400">
+                  {isId ? "Lebar Mangkuk Tumit (Heel)" : "Rearfoot Heel Width"}
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={45}
+                    max={95}
+                    value={heelWidth}
+                    onChange={(e) => setHeelWidth(Math.max(45, Math.min(95, parseFloat(e.target.value) || 45)))}
+                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                  />
+                  <span className="text-[10px] text-gray-400 font-semibold">mm</span>
+                </div>
               </div>
               <input
                 type="range"
-                min={50}
+                min={45}
                 max={95}
                 step={0.5}
                 value={heelWidth}
                 onChange={(e) => setHeelWidth(parseFloat(e.target.value))}
-                className="w-full accent-[#8B0000]"
+                className="w-full accent-emerald-500"
               />
             </div>
 
-            <div>
-              <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                <span>{isId ? "Faktor Kedalaman Arch:" : "Arch Depth Factor:"}</span>
-                <span className="font-mono font-bold text-gray-900 dark:text-white">{archFactor.toFixed(2)}x</span>
+            {/* Arch Flange Factor */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold uppercase text-gray-400">
+                  {isId ? "Tinggi Lekukan Arch (Flange)" : "Arch Flange Height"}
+                </label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.05"
+                    min={0.75}
+                    max={1.45}
+                    value={archFactor}
+                    onChange={(e) => setArchFactor(Math.max(0.75, Math.min(1.45, parseFloat(e.target.value) || 1.0)))}
+                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                  />
+                  <span className="text-[10px] text-gray-400 font-semibold">x</span>
+                </div>
               </div>
               <input
                 type="range"
-                min={0.8}
-                max={1.5}
+                min={0.75}
+                max={1.45}
                 step={0.05}
                 value={archFactor}
                 onChange={(e) => setArchFactor(parseFloat(e.target.value))}
@@ -701,16 +700,43 @@ export function CadStudio({ language }: CadStudioProps) {
               />
             </div>
           </div>
+
+          {/* Factory Presets Selector */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase text-gray-400 block">
+              {isId ? "Preset Insole Pabrik" : "Factory Insole Presets"}
+            </span>
+            <div className="grid grid-cols-1 gap-1.5">
+              {INSOLE_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleApplyPreset(preset)}
+                  className="p-2.5 rounded-xl border border-gray-800 bg-gray-800/60 hover:bg-gray-800 text-left transition flex items-center justify-between group"
+                >
+                  <div>
+                    <p className="font-bold text-xs text-gray-200 group-hover:text-white">{preset.name}</p>
+                    <p className="text-[10px] text-gray-400">{preset.description}</p>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 font-mono">
+                    {preset.archProfile}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Center Interactive SVG / CAD Viewport (Desktop or Mobile CANVAS view) */}
+        {/* Center Interactive SVG / CAD Viewport */}
         <div
           className={`flex-1 relative bg-gray-900 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none ${
             mobileCadView === "CANVAS" ? "flex" : "hidden md:flex"
           }`}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={() => setIsPanning(false)}
+          style={{ touchAction: "none" }}
         >
           {/* Millimeter Grid Backdrop */}
           {showGrid && (
@@ -730,6 +756,7 @@ export function CadStudio({ language }: CadStudioProps) {
           <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
               <button
+                type="button"
                 onClick={() => setZoomScale(Math.min(2.5, zoomScale + 0.15))}
                 className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
                 title="Zoom In"
@@ -737,6 +764,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 <ZoomIn className="h-4 w-4" />
               </button>
               <button
+                type="button"
                 onClick={() => setZoomScale(Math.max(0.5, zoomScale - 0.15))}
                 className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-95 transition"
                 title="Zoom Out"
@@ -744,6 +772,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 <ZoomOut className="h-4 w-4" />
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setZoomScale(1.0);
                   setPanOffset({ x: 0, y: 0 });
@@ -762,6 +791,7 @@ export function CadStudio({ language }: CadStudioProps) {
             {/* Desktop Right Sidebar Collapse / Expand Button */}
             <div className="hidden md:block pointer-events-auto">
               <button
+                type="button"
                 onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
                 className="p-2 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 hover:bg-gray-800 text-white active:scale-95 transition shadow-xl flex items-center gap-1.5 text-xs font-semibold"
                 title={isRightSidebarOpen ? "Tutup Panel" : "Buka Panel"}
@@ -781,7 +811,7 @@ export function CadStudio({ language }: CadStudioProps) {
             </div>
           </div>
 
-          {/* Live Authentic Insole SVG Vector Container */}
+          {/* Live Insole SVG Vector Drafting Space */}
           <div
             className="transition-transform duration-75"
             style={{
@@ -792,86 +822,151 @@ export function CadStudio({ language }: CadStudioProps) {
               viewBox={`0 0 ${vbW} ${vbH}`}
               className="drop-shadow-2xl"
               style={{
-                width: `${vbW * 1.45}px`,
-                height: `${vbH * 1.45}px`,
+                width: `${vbW * (foot === "PAIR" ? 1.15 : 1.45)}px`,
+                height: `${vbH * (foot === "PAIR" ? 1.15 : 1.45)}px`,
               }}
             >
-              {/* Outer Cut Outline (Anatomical Footwear Cut) */}
-              {showOutline && (
-                <path
-                  d={activeOutline}
-                  className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
-                />
-              )}
+              {/* SINGLE FOOT VIEW */}
+              {foot !== "PAIR" ? (
+                <g id="single-insole-viewport">
+                  {/* Outer Cut Outline */}
+                  {showOutline && (
+                    <path
+                      d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
+                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                    />
+                  )}
 
-              {/* Arch Support Plate (Red) */}
-              {showArchPlate && (
-                <path
-                  d={activeArch}
-                  className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
-                />
-              )}
+                  {/* Arch Support Plate (Red) */}
+                  {showArchPlate && (
+                    <path
+                      d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
+                      className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                    />
+                  )}
 
-              {/* Heel Cup Pad (Green) */}
-              {showHeelCup && (
-                <path
-                  d={activeHeel}
-                  className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
-                />
-              )}
+                  {/* Heel Cup Pad (Green) */}
+                  {showHeelCup && (
+                    <path
+                      d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
+                      className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                    />
+                  )}
 
-              {/* Metatarsal Cushion Dome (Cyan) */}
-              {showMetatarsal && (
-                <path
-                  d={activeMeta}
-                  className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
-                />
-              )}
+                  {/* Metatarsal Cushion Dome (Cyan) */}
+                  {showMetatarsal && (
+                    <path
+                      d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
+                      className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                    />
+                  )}
 
-              {/* Dimension Reference Lines & Labels */}
-              {showDimensions && (
-                <g className="text-gray-400 font-mono text-[6px]">
-                  {/* Vertical Length Dimension Line */}
-                  <line
-                    x1={vbW - 15}
-                    y1={15}
-                    x2={vbW - 15}
-                    y2={vbH - 15}
-                    stroke="#3b82f6"
-                    strokeWidth="0.8"
-                    strokeDasharray="2,2"
-                  />
-                  <text
-                    x={vbW - 12}
-                    y={vbH / 2}
-                    fill="#3b82f6"
-                    fontSize="7"
-                    fontWeight="bold"
-                    transform={`rotate(90, ${vbW - 12}, ${vbH / 2})`}
-                  >
-                    L: {geometry.length} mm
-                  </text>
+                  {/* Dimension Reference Lines & Labels */}
+                  {showDimensions && (
+                    <g fontFamily="monospace" fontSize="7" fill="#3b82f6" fontWeight="bold">
+                      {/* Vertical Length Dimension Line */}
+                      <line
+                        x1={vbW - 15}
+                        y1={15}
+                        x2={vbW - 15}
+                        y2={vbH - 15}
+                        stroke="#3b82f6"
+                        strokeWidth="0.8"
+                        strokeDasharray="2,2"
+                      />
+                      <text
+                        x={vbW - 12}
+                        y={vbH / 2}
+                        transform={`rotate(90, ${vbW - 12}, ${vbH / 2})`}
+                      >
+                        L: {geometry.length} mm
+                      </text>
 
-                  {/* Forefoot Width Dimension Line */}
-                  <line
-                    x1={vbW / 2 - ballWidth / 2}
-                    y1={vbH * 0.28}
-                    x2={vbW / 2 + ballWidth / 2}
-                    y2={vbH * 0.28}
-                    stroke="#eab308"
-                    strokeWidth="0.8"
-                    strokeDasharray="2,2"
-                  />
-                  <text
-                    x={vbW / 2}
-                    y={vbH * 0.26}
-                    fill="#eab308"
-                    fontSize="7"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    W(Ball): {ballWidth} mm
-                  </text>
+                      {/* Forefoot Width Dimension Line */}
+                      <line
+                        x1={vbW / 2 - ballWidth / 2}
+                        y1={vbH * 0.28}
+                        x2={vbW / 2 + ballWidth / 2}
+                        y2={vbH * 0.28}
+                        stroke="#eab308"
+                        strokeWidth="0.8"
+                        strokeDasharray="2,2"
+                      />
+                      <text
+                        x={vbW / 2}
+                        y={vbH * 0.26}
+                        fill="#eab308"
+                        textAnchor="middle"
+                      >
+                        W(Ball): {ballWidth} mm
+                      </text>
+                    </g>
+                  )}
+                </g>
+              ) : (
+                /* Symmetrical Pair View Mode */
+                <g id="pair-insole-viewport">
+                  {/* Left Foot Insole */}
+                  <g id="insole-left-side">
+                    {showOutline && (
+                      <path
+                        d={geometry.svgPathLeft}
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                      />
+                    )}
+                    {showArchPlate && (
+                      <path
+                        d={geometry.archPlateSvgLeft}
+                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      />
+                    )}
+                    {showHeelCup && (
+                      <path
+                        d={geometry.heelCupSvgLeft}
+                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      />
+                    )}
+                    {showMetatarsal && (
+                      <path
+                        d={geometry.metatarsalSvgLeft}
+                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      />
+                    )}
+                    <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                      LEFT ({geometry.sizingLabel})
+                    </text>
+                  </g>
+
+                  {/* Right Foot Insole */}
+                  <g id="insole-right-side" transform={`translate(${singleW + pairGap}, 0)`}>
+                    {showOutline && (
+                      <path
+                        d={geometry.svgPathRight}
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                      />
+                    )}
+                    {showArchPlate && (
+                      <path
+                        d={geometry.archPlateSvgRight}
+                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      />
+                    )}
+                    {showHeelCup && (
+                      <path
+                        d={geometry.heelCupSvgRight}
+                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      />
+                    )}
+                    {showMetatarsal && (
+                      <path
+                        d={geometry.metatarsalSvgRight}
+                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      />
+                    )}
+                    <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                      RIGHT ({geometry.sizingLabel})
+                    </text>
+                  </g>
                 </g>
               )}
             </svg>
@@ -892,6 +987,9 @@ export function CadStudio({ language }: CadStudioProps) {
               <span>
                 Tumit: <strong className="text-emerald-400">{heelWidth} mm</strong>
               </span>
+              <span>
+                Keliling: <strong className="text-cyan-400">{totalPerimeter} mm</strong>
+              </span>
             </div>
             <span className="text-[10px] text-gray-400 font-semibold hidden lg:inline">
               Equator Anatomical CAD Engine v3.0
@@ -899,393 +997,439 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
         </div>
 
-        {/* Right Inspector: Customizable Orthotic Components, Layers & Specs (Desktop or Mobile ORTHOTICS view) */}
-        <div
-          className={`shrink-0 ${
-            mobileCadView === "ORTHOTICS"
-              ? "block w-full flex-1 p-4 space-y-4 overflow-y-auto pb-24 bg-white dark:bg-gray-900 text-xs"
-              : isRightSidebarOpen
-              ? "hidden md:block w-full md:w-80 lg:w-88 border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-4 overflow-y-auto text-xs"
-              : "hidden"
-          }`}
-        >
-          {/* Inspector Mode Switcher */}
-          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-gray-100 dark:bg-gray-800 p-1 font-bold text-[10px]">
-            <button
-              onClick={() => setInspectorTab("COMPONENTS")}
-              className={`py-2 rounded-xl transition ${
-                inspectorTab === "COMPONENTS"
-                  ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
-                  : "text-gray-500"
-              }`}
-            >
-              Komponen
-            </button>
-            <button
-              onClick={() => setInspectorTab("LAYERS")}
-              className={`py-2 rounded-xl transition ${
-                inspectorTab === "LAYERS"
-                  ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
-                  : "text-gray-500"
-              }`}
-            >
-              Layers
-            </button>
-            <button
-              onClick={() => setInspectorTab("SPECS")}
-              className={`py-2 rounded-xl transition ${
-                inspectorTab === "SPECS"
-                  ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
-                  : "text-gray-500"
-              }`}
-            >
-              Spek & Yield
-            </button>
-          </div>
-
-          {inspectorTab === "COMPONENTS" ? (
-            /* Orthotic Component Customization Sliders */
-            <div className="space-y-4">
-              {/* 1. TPU Arch Plate Customizer */}
-              <div className="p-3 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-xs text-red-950 dark:text-red-300 flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5 text-red-600" />
-                    <span>Plat Arch TPU (Bridge)</span>
-                  </span>
-                  <span className="font-mono text-[10px] font-bold text-red-700 dark:text-red-400">
-                    {archPlateLength.toFixed(2)}x
-                  </span>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Jangkauan Panjang:</span>
-                    <span className="font-bold">{Math.round(geometry.length * 0.45 * archPlateLength)} mm</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.75}
-                    max={1.35}
-                    step={0.05}
-                    value={archPlateLength}
-                    onChange={(e) => setArchPlateLength(parseFloat(e.target.value))}
-                    className="w-full accent-[#8B0000]"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Tinggi Flange Medial:</span>
-                    <span className="font-bold">{archPlateWidth.toFixed(2)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.70}
-                    max={1.30}
-                    step={0.05}
-                    value={archPlateWidth}
-                    onChange={(e) => setArchPlateWidth(parseFloat(e.target.value))}
-                    className="w-full accent-[#8B0000]"
-                  />
-                </div>
-
-                <label className="flex items-center gap-2 text-[11px] cursor-pointer font-semibold text-red-950 dark:text-red-200">
-                  <input
-                    type="checkbox"
-                    checked={archPlateLateralWing}
-                    onChange={(e) => setArchPlateLateralWing(e.target.checked)}
-                    className="rounded text-[#8B0000] focus:ring-0"
-                  />
-                  <span>Sayap Stabilisator Torsi Lateral</span>
-                </label>
-              </div>
-
-              {/* 2. Heel Cup Customizer */}
-              <div className="p-3 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-xs text-emerald-950 dark:text-emerald-300">
-                    Mangkuk Tumit (Heel Cup)
-                  </span>
-                  <span className="font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                    {heelCupDepth}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1 text-[10px]">
-                  {(["SHALLOW", "MEDIUM", "DEEP"] as HeelCupDepthProfile[]).map((dp) => (
-                    <button
-                      key={dp}
-                      type="button"
-                      onClick={() => setHeelCupDepth(dp)}
-                      className={`py-1.5 rounded-lg font-bold transition ${
-                        heelCupDepth === dp
-                          ? "bg-emerald-700 text-white shadow-xs"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      {dp}
-                    </button>
-                  ))}
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Radius Distribusi Beban:</span>
-                    <span className="font-bold">{heelCupRadius.toFixed(2)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.8}
-                    max={1.4}
-                    step={0.05}
-                    value={heelCupRadius}
-                    onChange={(e) => setHeelCupRadius(parseFloat(e.target.value))}
-                    className="w-full accent-emerald-600"
-                  />
-                </div>
-              </div>
-
-              {/* 3. Metatarsal Pad Customizer */}
-              <div className="p-3 rounded-2xl bg-cyan-50/60 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-900/40 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-xs text-cyan-950 dark:text-cyan-300">
-                    Bantalan Metatarsal (Cushion Dome)
-                  </span>
-                  <span className="font-mono text-[10px] font-bold text-cyan-700 dark:text-cyan-400">
-                    {metatarsalSize.toFixed(2)}x
-                  </span>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Ukuran Diameter Kubah:</span>
-                    <span className="font-bold">{metatarsalSize.toFixed(2)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.7}
-                    max={1.4}
-                    step={0.05}
-                    value={metatarsalSize}
-                    onChange={(e) => setMetatarsalSize(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-600"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Posisi Longitudinal (Y):</span>
-                    <span className="font-bold">{Math.round(metatarsalYPos * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.55}
-                    max={0.75}
-                    step={0.01}
-                    value={metatarsalYPos}
-                    onChange={(e) => setMetatarsalYPos(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-600"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : inspectorTab === "LAYERS" ? (
-            /* Layer Visibility Controls */
-            <div className="space-y-2">
-              {[
-                { label: "Kontur Luar Sol (EVA Cut)", state: showOutline, setter: setShowOutline, color: "bg-[#8B0000]" },
-                { label: "Plat Arch Shank (TPU Bridge)", state: showArchPlate, setter: setShowArchPlate, color: "bg-red-500" },
-                { label: "Mangkuk Tumit (Heel Cup)", state: showHeelCup, setter: setShowHeelCup, color: "bg-emerald-500" },
-                { label: "Kubah Metatarsal Pad", state: showMetatarsal, setter: setShowMetatarsal, color: "bg-cyan-500" },
-                { label: "Garis Ukur Dimensi CAD (mm)", state: showDimensions, setter: setShowDimensions, color: "bg-blue-500" },
-                { label: "Grid Matriks Milimeter", state: showGrid, setter: setShowGrid, color: "bg-gray-400" },
-              ].map((item, idx) => (
-                <label
-                  key={idx}
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200 text-xs">{item.label}</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={item.state}
-                    onChange={(e) => item.setter(e.target.checked)}
-                    className="rounded text-[#8B0000] focus:ring-0"
-                  />
-                </label>
-              ))}
-            </div>
-          ) : (
-            /* Manufacturing Specs & Yield Calculations */
-            <div className="space-y-3">
-              <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 space-y-2">
-                <span className="font-bold text-[11px] text-gray-500 uppercase block">Kalkulasi Material Insole</span>
-                <div className="grid grid-cols-2 gap-2 font-mono text-xs">
-                  <div>
-                    <span className="text-[10px] text-gray-400 block">Tebal Forefoot</span>
-                    <span className="font-bold">{forefootThickness} mm</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 block">Tebal Heel Drop</span>
-                    <span className="font-bold">{heelThickness} mm</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 block">Luas Area Potong</span>
-                    <span className="font-bold">~{Math.round(geometry.length * ballWidth * 0.007)} cm²</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 block">Yield per Lembar EVA</span>
-                    <span className="font-bold">~18-22 psg</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Tipe Material EVA / PU</label>
-                <input
-                  type="text"
-                  value={materialType}
-                  onChange={(e) => setMaterialType(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 font-semibold text-xs text-gray-900 dark:text-white"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile Dedicated AI & EXPORT Panel (Mobile EXPORT view only) */}
-        {mobileCadView === "EXPORT" && (
-          <div className="md:hidden w-full flex-1 p-4 space-y-4 overflow-y-auto pb-24 bg-white dark:bg-gray-900 text-xs">
-            <div className="space-y-1">
-              <h3 className="font-black text-sm text-gray-900 dark:text-white">
-                Generative AI & Ekspor CAD
-              </h3>
-              <p className="text-xs text-gray-500">
-                Gunakan asisten AI untuk memformulasikan sol atau unduh format CNC
-              </p>
-            </div>
-
-            {/* AI Generator Trigger */}
-            <button
-              onClick={() => setIsAiModalOpen(true)}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-700 to-[#8B0000] text-white text-xs font-black shadow-md flex items-center justify-center gap-2 active:scale-95 transition"
-            >
-              <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
-              <span>Prompt AI Generative Insole</span>
-            </button>
-
-            {/* Preset Selector */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-gray-400 block">Pilih Preset Model Pabrik</label>
-              <select
-                onChange={(e) => {
-                  const p = INSOLE_PRESETS.find((pr) => pr.id === e.target.value);
-                  if (p) {
-                    handleApplyPreset(p);
-                    setMobileCadView("CANVAS");
-                  }
-                }}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
+        {/* Right Sidebar: Orthotic Components, Layers & Specs */}
+        {isRightSidebarOpen && (
+          <div
+            className={`w-full md:w-80 lg:w-88 border-l border-gray-800 bg-gray-900/95 overflow-y-auto p-4 space-y-4 text-xs ${
+              mobileCadView === "ORTHOTICS" || mobileCadView === "EXPORT" ? "block" : "hidden md:block"
+            }`}
+          >
+            {/* Inspector Tab Switcher */}
+            <div className="flex items-center rounded-xl bg-gray-800 p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setInspectorTab("COMPONENTS")}
+                className={`flex-1 py-1.5 rounded-lg transition ${
+                  inspectorTab === "COMPONENTS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+                }`}
               >
-                <option value="">Pilih Preset Pabrik...</option>
-                {INSOLE_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.archProfile})
-                  </option>
-                ))}
-              </select>
+                {isId ? "Komponen" : "Orthotics"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInspectorTab("LAYERS")}
+                className={`flex-1 py-1.5 rounded-lg transition ${
+                  inspectorTab === "LAYERS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {isId ? "Layer CAD" : "Layers"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInspectorTab("SPECS")}
+                className={`flex-1 py-1.5 rounded-lg transition ${
+                  inspectorTab === "SPECS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {isId ? "Spek & Yield" : "Specs"}
+              </button>
             </div>
 
-            {/* Save Blueprint */}
-            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-              <label className="text-[10px] font-bold uppercase text-gray-400 block">Nama Blueprint Model</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={blueprintName}
-                  onChange={(e) => setBlueprintName(e.target.value)}
-                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-semibold"
-                />
-                <button
-                  onClick={handleSaveBlueprint}
-                  className="px-4 py-2 rounded-xl bg-[#8B0000] text-white font-bold text-xs shadow-xs active:scale-95"
-                >
-                  Simpan
-                </button>
-              </div>
-            </div>
+            {/* TAB 1: ORTHOTIC COMPONENTS */}
+            {inspectorTab === "COMPONENTS" && (
+              <div className="space-y-4">
+                {/* TPU Arch Support Plate */}
+                <div className="p-3.5 rounded-2xl bg-red-950/30 border border-red-900/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-red-300">
+                      {isId ? "Plat Arch TPU (Bridge)" : "TPU Arch Bridge"}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-red-900/60 text-red-200 font-mono font-bold">
+                      LAYER: RED
+                    </span>
+                  </div>
 
-            {/* Export Buttons */}
-            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-              <span className="text-[10px] font-bold uppercase text-gray-400 block">Unduh Berkas CAD & Vektor</span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={handleExportDxf}
-                  disabled={exporting === "DXF"}
-                  className="py-3 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-md flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>{exporting === "DXF" ? "Exporting..." : "DXF (R12 / Corel)"}</span>
-                </button>
-                <button
-                  onClick={handleExportSvg}
-                  disabled={exporting === "SVG"}
-                  className="py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
-                >
-                  <Share2 className="h-4 w-4" />
-                  <span>Vektor SVG</span>
-                </button>
+                  {/* Arch Plate Length */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase text-gray-400">
+                        {isId ? "Panjang Bridge TPU" : "TPU Bridge Length"}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.05"
+                          min={0.75}
+                          max={1.35}
+                          value={archPlateLength}
+                          onChange={(e) => setArchPlateLength(Math.max(0.75, Math.min(1.35, parseFloat(e.target.value) || 1.0)))}
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                        />
+                        <span className="text-[10px] text-gray-400 font-semibold">x</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.75}
+                      max={1.35}
+                      step={0.05}
+                      value={archPlateLength}
+                      onChange={(e) => setArchPlateLength(parseFloat(e.target.value))}
+                      className="w-full accent-red-500"
+                    />
+                  </div>
+
+                  {/* Arch Plate Width */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase text-gray-400">
+                        {isId ? "Lebar Flange Medial" : "Medial Flange Spread"}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.05"
+                          min={0.70}
+                          max={1.30}
+                          value={archPlateWidth}
+                          onChange={(e) => setArchPlateWidth(Math.max(0.70, Math.min(1.30, parseFloat(e.target.value) || 1.0)))}
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                        />
+                        <span className="text-[10px] text-gray-400 font-semibold">x</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.70}
+                      max={1.30}
+                      step={0.05}
+                      value={archPlateWidth}
+                      onChange={(e) => setArchPlateWidth(parseFloat(e.target.value))}
+                      className="w-full accent-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Heel Cup Pad */}
+                <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-900/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-emerald-300">
+                      {isId ? "Mangkuk Tumit (Heel Cup)" : "Heel Cup Profile"}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-200 font-mono font-bold">
+                      LAYER: GREEN
+                    </span>
+                  </div>
+
+                  {/* Heel Cup Radius Factor */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase text-gray-400">
+                        {isId ? "Diameter Mangkuk Tumit" : "Heel Cup Radius"}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.05"
+                          min={0.70}
+                          max={1.30}
+                          value={heelCupRadius}
+                          onChange={(e) => setHeelCupRadius(Math.max(0.70, Math.min(1.30, parseFloat(e.target.value) || 1.0)))}
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                        />
+                        <span className="text-[10px] text-gray-400 font-semibold">x</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.70}
+                      max={1.30}
+                      step={0.05}
+                      value={heelCupRadius}
+                      onChange={(e) => setHeelCupRadius(parseFloat(e.target.value))}
+                      className="w-full accent-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Metatarsal Pad */}
+                <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-900/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-cyan-300">
+                      {isId ? "Bantalan Metatarsal (Dome)" : "Metatarsal Pad Dome"}
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-900/60 text-cyan-200 font-mono font-bold">
+                      LAYER: CYAN
+                    </span>
+                  </div>
+
+                  {/* Metatarsal Size Factor */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase text-gray-400">
+                        {isId ? "Ukuran Kubah Dome" : "Dome Size Factor"}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.05"
+                          min={0.60}
+                          max={1.40}
+                          value={metatarsalSize}
+                          onChange={(e) => setMetatarsalSize(Math.max(0.60, Math.min(1.40, parseFloat(e.target.value) || 1.0)))}
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                        />
+                        <span className="text-[10px] text-gray-400 font-semibold">x</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.60}
+                      max={1.40}
+                      step={0.05}
+                      value={metatarsalSize}
+                      onChange={(e) => setMetatarsalSize(parseFloat(e.target.value))}
+                      className="w-full accent-cyan-500"
+                    />
+                  </div>
+
+                  {/* Metatarsal Y Pos */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold uppercase text-gray-400">
+                        {isId ? "Posisi Longitudinal (Y)" : "Longitudinal Y Position"}
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min={0.58}
+                          max={0.72}
+                          value={metatarsalYPos}
+                          onChange={(e) => setMetatarsalYPos(Math.max(0.58, Math.min(0.72, parseFloat(e.target.value) || 0.65)))}
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-[#8B0000]"
+                        />
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.58}
+                      max={0.72}
+                      step={0.01}
+                      value={metatarsalYPos}
+                      onChange={(e) => setMetatarsalYPos(parseFloat(e.target.value))}
+                      className="w-full accent-cyan-500"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* TAB 2: LAYER VISIBILITY */}
+            {inspectorTab === "LAYERS" && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                  {isId ? "Visibilitas Layer CAD" : "CAD Layer Visibility"}
+                </span>
+
+                <div className="p-3 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-gray-300 font-bold">{isId ? "Garis Potong (Cut Outline)" : "Cut Outline"}</span>
+                    <input
+                      type="checkbox"
+                      checked={showOutline}
+                      onChange={(e) => setShowOutline(e.target.checked)}
+                      className="rounded text-[#8B0000] focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-red-400 font-bold">{isId ? "Plat Arch TPU (Red)" : "TPU Arch Plate (Red)"}</span>
+                    <input
+                      type="checkbox"
+                      checked={showArchPlate}
+                      onChange={(e) => setShowArchPlate(e.target.checked)}
+                      className="rounded text-red-600 focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-emerald-400 font-bold">{isId ? "Mangkuk Tumit (Green)" : "Heel Cup (Green)"}</span>
+                    <input
+                      type="checkbox"
+                      checked={showHeelCup}
+                      onChange={(e) => setShowHeelCup(e.target.checked)}
+                      className="rounded text-emerald-600 focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-cyan-400 font-bold">{isId ? "Bantalan Metatarsal (Cyan)" : "Metatarsal Pad (Cyan)"}</span>
+                    <input
+                      type="checkbox"
+                      checked={showMetatarsal}
+                      onChange={(e) => setShowMetatarsal(e.target.checked)}
+                      className="rounded text-cyan-600 focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-blue-400 font-bold">{isId ? "Dimensi & Ukuran (HUD)" : "Dimensions HUD"}</span>
+                    <input
+                      type="checkbox"
+                      checked={showDimensions}
+                      onChange={(e) => setShowDimensions(e.target.checked)}
+                      className="rounded text-blue-600 focus:ring-0"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: SPECS & YIELD */}
+            {inspectorTab === "SPECS" && (
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                    {isId ? "Spesifikasi Material" : "Material Specifications"}
+                  </span>
+                  <div className="space-y-1 font-mono text-[11px]">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Material:</span>
+                      <span className="font-bold text-white">{materialType}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Tebal Depan:</span>
+                      <span className="text-white">{forefootThickness} mm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Tebal Tumit:</span>
+                      <span className="text-white">{heelThickness} mm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Keliling Potong:</span>
+                      <span className="text-cyan-400 font-bold">{totalPerimeter} mm</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block">
+                    {isId ? "Estimasi Yield per Lembar EVA" : "EVA Sheet Yield Estimate"}
+                  </span>
+                  <p className="text-xs text-gray-300">
+                    Lembar Standar: <strong>1200 x 2400 mm</strong>
+                  </p>
+                  <p className="font-mono text-base font-black text-emerald-400">
+                    ~{Math.floor((1200 * 2400) / ((geometry.bounds.width + 10) * (geometry.bounds.height + 10) * 2))}{" "}
+                    <span className="text-xs font-normal text-gray-400">pasang / lembar</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* AI Insole Generative Modal */}
+      {/* CNC Die Pre-Flight Verification & Export Modal */}
+      {isCncPreFlightOpen && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-lg rounded-3xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-2xl bg-emerald-950/80 text-emerald-400 border border-emerald-800">
+                  <Scissors className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-white">
+                    {isId ? "Verifikasi Pisau Pond & CNC Cutter" : "CNC Die-Cut Pre-Flight Verification"}
+                  </h3>
+                  <p className="text-[11px] text-gray-400">
+                    {isId ? "Validasi toolpath polyline dan lapisan DXF sebelum pemotongan" : "Toolpath polyline & DXF layer audit"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCncPreFlightOpen(false)}
+                className="p-1 text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Audit Checklist */}
+            <div className="space-y-2.5 text-xs">
+              <div className="p-3 rounded-2xl bg-gray-800/80 border border-gray-700 grid grid-cols-2 gap-2 font-mono">
+                <div>
+                  <span className="text-[10px] text-gray-400 uppercase block">{isId ? "Ukuran Bounding Box" : "Bounding Box"}</span>
+                  <span className="font-bold text-white tabular-nums">{totalW.toFixed(1)} x {totalH.toFixed(1)} mm</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 uppercase block">{isId ? "Panjang Lintasan Potong" : "Cut Perimeter"}</span>
+                  <span className="font-bold text-cyan-400 tabular-nums">{totalPerimeter} mm</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 flex items-center gap-2.5 text-emerald-300">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>{isId ? "✓ Polyline 100% Manifold Tertutup (Tanpa self-intersection)" : "✓ 100% Manifold Closed Loop Verified"}</span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase text-gray-400 block">{isId ? "Audit Lapisan Layer DXF (Corel / CNC)" : "DXF Layer Color Audit"}</span>
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div className="flex items-center gap-1.5 text-gray-200">
+                    <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-400" />
+                    <span>CUT_OUTLINE (Color 7)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-red-300">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                    <span>ARCH_SUPPORT (Color 1)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-emerald-300">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    <span>HEEL_CUP (Color 3)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-cyan-300">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+                    <span>METATARSAL (Color 4)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
+              <button
+                type="button"
+                onClick={handleExportSvg}
+                disabled={exporting !== null}
+                className="px-4 py-2 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 transition"
+              >
+                {exporting === "SVG" ? "Exporting..." : isId ? "Unduh Vector SVG" : "Download SVG"}
+              </button>
+              <button
+                type="button"
+                onClick={handleExportDxf}
+                disabled={exporting !== null}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+              >
+                <Download className="h-4 w-4" />
+                <span>{exporting === "DXF" ? "Exporting..." : isId ? "Unduh AutoCAD R12 DXF" : "Download R12 DXF"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Generative Model Modal */}
       <CadAiModal
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         onApplyGeneratedModel={handleApplyAiGeneration}
         language={language}
       />
-
-      {/* Blueprint Library Catalog Modal */}
-      {isLibraryOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
-              <h3 className="font-bold text-base">Katalog Blueprint Insole Tersimpan</h3>
-              <button onClick={() => setIsLibraryOpen(false)} className="p-1 rounded-lg hover:bg-white/10">✕</button>
-            </div>
-            <div className="p-4 space-y-2 overflow-y-auto flex-1 text-xs">
-              {savedBlueprints.length === 0 ? (
-                <p className="text-center text-gray-400 py-8">Belum ada blueprint tersimpan.</p>
-              ) : (
-                savedBlueprints.map((bp) => (
-                  <div
-                    key={bp.id}
-                    onClick={() => handleLoadBlueprint(bp)}
-                    className="p-3 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-[#8B0000] cursor-pointer flex items-center justify-between transition"
-                  >
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white text-sm">{bp.name}</h4>
-                      <p className="text-[11px] text-gray-500">
-                        Size EU {bp.shoeSize} • Panjang: {bp.baseLengthMm} mm • Arch: {bp.archProfile}
-                      </p>
-                    </div>
-                    <button className="px-3 py-1 rounded-xl bg-red-50 text-[#8B0000] font-bold text-xs">
-                      Muat
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

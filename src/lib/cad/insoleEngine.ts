@@ -548,9 +548,29 @@ export const INSOLE_PRESETS = [
 ];
 
 /**
+ * Calculate total perimeter length of a closed point loop (in millimeters)
+ */
+export function calculatePerimeterLength(pts: Point2D[]): number {
+  if (!pts || pts.length < 2) return 0;
+  let total = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % pts.length];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    total += Math.sqrt(dx * dx + dy * dy);
+  }
+  return Math.round(total * 10) / 10;
+}
+
+/**
  * Generate AutoCAD R12 DXF Stream (CorelDRAW, AutoCAD, and CNC Cutters compatible)
  */
 export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "RIGHT"): string {
+  if (foot === "PAIR") {
+    return generatePairDxfContent(geometry);
+  }
+
   const points = foot === "LEFT" ? geometry.outlinePointsLeft : geometry.outlinePointsRight;
   const archPoints = foot === "LEFT" ? geometry.archPlatePointsLeft : geometry.archPlatePointsRight;
   const heelCupPoints = foot === "LEFT" ? geometry.heelCupPointsLeft : geometry.heelCupPointsRight;
@@ -603,9 +623,72 @@ export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "R
 }
 
 /**
+ * Generate Paired Left + Right AutoCAD R12 DXF Stream
+ */
+export function generatePairDxfContent(geometry: InsoleGeometry, gapMm: number = 25): string {
+  const offsetX = geometry.bounds.width + gapMm;
+
+  let dxf = "";
+
+  dxf += "0\nSECTION\n2\nHEADER\n";
+  dxf += "9\n$ACADVER\n1\nAC1009\n";
+  dxf += "9\n$INSUNITS\n70\n4\n";
+  dxf += "0\nENDSEC\n";
+
+  dxf += "0\nSECTION\n2\nTABLES\n";
+  dxf += "0\nTABLE\n2\nLAYER\n70\n5\n";
+  dxf += "0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n";
+  dxf += "0\nLAYER\n2\nCUT_OUTLINE\n70\n0\n62\n7\n6\nCONTINUOUS\n";
+  dxf += "0\nLAYER\n2\nARCH_SUPPORT\n70\n0\n62\n1\n6\nCONTINUOUS\n";
+  dxf += "0\nLAYER\n2\nHEEL_CUP\n70\n0\n62\n3\n6\nCONTINUOUS\n";
+  dxf += "0\nLAYER\n2\nMETATARSAL\n70\n0\n62\n4\n6\nCONTINUOUS\n";
+  dxf += "0\nENDTAB\n0\nENDSEC\n";
+
+  dxf += "0\nSECTION\n2\nENTITIES\n";
+
+  const appendPolyline = (pts: Point2D[], layerName: string, dx: number = 0) => {
+    if (!pts || pts.length === 0) return;
+    dxf += "0\nPOLYLINE\n";
+    dxf += `8\n${layerName}\n`;
+    dxf += "66\n1\n";
+    dxf += "70\n1\n";
+
+    pts.forEach((p) => {
+      dxf += "0\nVERTEX\n";
+      dxf += `8\n${layerName}\n`;
+      dxf += `10\n${(p.x + dx).toFixed(3)}\n`;
+      dxf += `20\n${p.y.toFixed(3)}\n`;
+      dxf += "30\n0.000\n";
+    });
+
+    dxf += "0\nSEQEND\n";
+  };
+
+  // Left Insole (at X=0)
+  appendPolyline(geometry.outlinePointsLeft, "CUT_OUTLINE", 0);
+  appendPolyline(geometry.archPlatePointsLeft, "ARCH_SUPPORT", 0);
+  appendPolyline(geometry.heelCupPointsLeft, "HEEL_CUP", 0);
+  appendPolyline(geometry.metatarsalPadPointsLeft, "METATARSAL", 0);
+
+  // Right Insole (at X=offsetX)
+  appendPolyline(geometry.outlinePointsRight, "CUT_OUTLINE", offsetX);
+  appendPolyline(geometry.archPlatePointsRight, "ARCH_SUPPORT", offsetX);
+  appendPolyline(geometry.heelCupPointsRight, "HEEL_CUP", offsetX);
+  appendPolyline(geometry.metatarsalPadPointsRight, "METATARSAL", offsetX);
+
+  dxf += "0\nENDSEC\n0\nEOF\n";
+
+  return dxf;
+}
+
+/**
  * Generate Standalone SVG File Content
  */
 export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "RIGHT"): string {
+  if (foot === "PAIR") {
+    return generatePairSvgDocument(geometry);
+  }
+
   const path = foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight;
   const arch = foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight;
   const heel = foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight;
@@ -629,6 +712,40 @@ export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "
     <path class="heel-cup" d="${heel}" />
     <path class="metatarsal" d="${meta}" />
     <text x="15" y="${h - 15}" class="text-label">EQUATOR INSOLE ${geometry.sizingLabel} (${foot}) - L:${geometry.length}mm W:${geometry.ballWidth}mm</text>
+  </g>
+</svg>`;
+}
+
+/**
+ * Generate Combined Paired SVG File Content
+ */
+export function generatePairSvgDocument(geometry: InsoleGeometry, gapMm: number = 25): string {
+  const singleW = geometry.bounds.width;
+  const totalW = singleW * 2 + gapMm;
+  const h = geometry.bounds.height;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${h}" width="${totalW}mm" height="${h}mm">
+  <style>
+    .cut-outline { fill: #f8fafc; stroke: #8B0000; stroke-width: 1.5; }
+    .arch-support { fill: #fee2e2; stroke: #ef4444; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.85; }
+    .heel-cup { fill: #dcfce7; stroke: #16a34a; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.85; }
+    .metatarsal { fill: #e0f2fe; stroke: #0284c7; stroke-width: 1.0; stroke-dasharray: 2,2; opacity: 0.85; }
+    .text-label { font-family: monospace; font-size: 8px; fill: #64748b; font-weight: bold; }
+  </style>
+  <g id="insole-pair-left" transform="translate(0, 0)">
+    <path class="cut-outline" d="${geometry.svgPathLeft}" />
+    <path class="arch-support" d="${geometry.archPlateSvgLeft}" />
+    <path class="heel-cup" d="${geometry.heelCupSvgLeft}" />
+    <path class="metatarsal" d="${geometry.metatarsalSvgLeft}" />
+    <text x="15" y="${h - 15}" class="text-label">EQUATOR INSOLE ${geometry.sizingLabel} (LEFT)</text>
+  </g>
+  <g id="insole-pair-right" transform="translate(${singleW + gapMm}, 0)">
+    <path class="cut-outline" d="${geometry.svgPathRight}" />
+    <path class="arch-support" d="${geometry.archPlateSvgRight}" />
+    <path class="heel-cup" d="${geometry.heelCupSvgRight}" />
+    <path class="metatarsal" d="${geometry.metatarsalSvgRight}" />
+    <text x="15" y="${h - 15}" class="text-label">EQUATOR INSOLE ${geometry.sizingLabel} (RIGHT) - L:${geometry.length}mm</text>
   </g>
 </svg>`;
 }
