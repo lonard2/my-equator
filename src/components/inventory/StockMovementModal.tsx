@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { MaterialItem, MovementType } from "@/types";
-import { X, ArrowDownRight, ArrowUpRight, AlertCircle, CheckCircle2, User, FileText } from "lucide-react";
+import { X, ArrowDownRight, ArrowUpRight, AlertCircle, CheckCircle2, User, FileText, Sparkles } from "lucide-react";
+import { formatIDR } from "@/lib/utils/formatters";
 
 interface StockMovementModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const MOVEMENT_TYPES: Array<{
   id: MovementType;
   labelId: string;
   labelEn: string;
+  descriptionId: string;
   direction: "IN" | "OUT" | "SET";
   badgeColor: string;
 }> = [
@@ -24,36 +26,41 @@ const MOVEMENT_TYPES: Array<{
     id: "IN_PURCHASE",
     labelId: "Barang Masuk (Pembelian Supplier)",
     labelEn: "Stock IN (Supplier Purchase)",
+    descriptionId: "Penerimaan material baru dari supplier PO",
     direction: "IN",
-    badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+    badgeColor: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
   },
   {
     id: "OUT_PRODUCTION",
     labelId: "Barang Keluar (Produksi & Cutting)",
     labelEn: "Stock OUT (Production / Cutting)",
+    descriptionId: "Pengambilan bahan untuk batch pemotongan insole",
     direction: "OUT",
-    badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    badgeColor: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
   },
   {
     id: "IN_RETURN",
     labelId: "Retur Masuk (Sisa Produksi)",
     labelEn: "Stock IN (Production Return)",
+    descriptionId: "Pengembalian sisa lembaran/bahan dari lantai kerja",
     direction: "IN",
-    badgeColor: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
+    badgeColor: "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border-teal-200 dark:border-teal-900/60",
   },
   {
     id: "OUT_WASTAGE",
     labelId: "Barang Rusak / Afkir / Scrap",
     labelEn: "Stock OUT (Wastage / Scrap)",
+    descriptionId: "Penghapusan material rusak, cacat cetak, atau kadaluarsa",
     direction: "OUT",
-    badgeColor: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+    badgeColor: "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-900/60",
   },
   {
     id: "ADJUSTMENT",
     labelId: "Penyesuaian Fisik (Stock Opname)",
     labelEn: "Stock Opname Adjustment",
+    descriptionId: "Koreksi nilai absolut berdasarkan hitung fisik gudang",
     direction: "SET",
-    badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+    badgeColor: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
   },
 ];
 
@@ -73,6 +80,7 @@ export function StockMovementModal({
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [operatorName, setOperatorName] = useState<string>("Staff Gudang");
   const [notes, setNotes] = useState<string>("");
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -100,10 +108,37 @@ export function StockMovementModal({
     projectedStock = quantity || 0;
   }
 
+  const isOutOfStockWarning = currentMovementConfig?.direction === "OUT" && (quantity || 0) > currentStock;
+
+  const handleStepQuantity = (delta: number) => {
+    setQuantity((prev) => Math.max(1, (prev || 0) + delta));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!materialId || quantity <= 0 || !operatorName.trim()) {
-      alert(isId ? "Mohon lengkapi bahan, jumlah, dan nama operator." : "Please fill in material, qty, and operator.");
+    setValidationError(null);
+
+    if (!materialId) {
+      setValidationError(isId ? "Pilih bahan baku terlebih dahulu." : "Please select a material.");
+      return;
+    }
+
+    if (!quantity || quantity <= 0) {
+      setValidationError(isId ? "Jumlah mutasi harus lebih dari 0." : "Quantity must be greater than 0.");
+      return;
+    }
+
+    if (!operatorName.trim()) {
+      setValidationError(isId ? "Nama operator gudang wajib diisi." : "Operator name is required.");
+      return;
+    }
+
+    if (currentMovementConfig?.direction === "OUT" && quantity > currentStock) {
+      setValidationError(
+        isId
+          ? `Stok tidak mencukupi. Stok saat ini ${currentStock} ${unit}, jumlah keluar ${quantity} ${unit}.`
+          : `Insufficient stock. Current stock is ${currentStock} ${unit}.`
+      );
       return;
     }
 
@@ -116,66 +151,73 @@ export function StockMovementModal({
           materialId,
           type: movementType,
           quantity,
-          referenceNumber,
-          operatorName,
-          notes,
+          referenceNumber: referenceNumber.trim() || undefined,
+          operatorName: operatorName.trim(),
+          notes: notes.trim() || undefined,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to record stock movement");
-      onSuccess();
-      onClose();
+      const json = await res.json();
+      if (json.success) {
+        onSuccess();
+        onClose();
+      } else {
+        setValidationError(json.error || (isId ? "Gagal mencatat mutasi stok." : "Failed to record movement."));
+      }
     } catch (err) {
-      console.error(err);
-      alert(isId ? "Gagal mencatat mutasi stok." : "Failed to record stock movement.");
+      console.error("Failed to record stock movement:", err);
+      setValidationError(isId ? "Terjadi kesalahan jaringan." : "Network error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+      <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-[#8B0000] dark:text-red-400 shadow-xs">
-              {currentMovementConfig?.direction === "IN" ? (
-                <ArrowDownRight className="h-5 w-5 text-emerald-600" />
-              ) : currentMovementConfig?.direction === "OUT" ? (
-                <ArrowUpRight className="h-5 w-5 text-blue-600" />
-              ) : (
-                <CheckCircle2 className="h-5 w-5 text-amber-600" />
-              )}
+        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+              <ArrowDownRight className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
-                {isId ? "Catat Mutasi Stok Bahan (IN / OUT)" : "Record Stock Movement"}
+              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+                {isId ? "Catat Mutasi Stok Gudang" : "Record Stock Movement"}
               </h3>
               <p className="text-[11px] text-gray-500">
-                {isId ? "Pencatatan saldo fisik dan jejak audit inventaris" : "Audit trail entry"}
+                {isId ? "Penerimaan PO, pengeluaran produksi & penyesuaian opname" : "Log material IN / OUT / opname adjustments"}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
-          {/* Material Picker */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+          {validationError && (
+            <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-red-700 dark:text-red-300 font-bold">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
+          {/* Material SKU Selector */}
           <div className="space-y-1">
-            <label className="font-bold text-gray-700 dark:text-gray-300">
-              {isId ? "Pilih Bahan Baku *" : "Select Material *"}
+            <label className="text-[10px] font-bold uppercase text-gray-400 block">
+              {isId ? "Pilih Bahan Baku" : "Select Material SKU"} <span className="text-red-500">*</span>
             </label>
             <select
               value={materialId}
               onChange={(e) => setMaterialId(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+              required
             >
               {materials.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -185,130 +227,169 @@ export function StockMovementModal({
             </select>
           </div>
 
-          {/* Movement Type */}
-          <div className="space-y-1">
-            <label className="font-bold text-gray-700 dark:text-gray-300">
-              {isId ? "Jenis Mutasi Stok *" : "Movement Type *"}
+          {/* Movement Type Radio Grid */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase text-gray-400 block">
+              {isId ? "Jenis Mutasi Stok" : "Movement Type"} <span className="text-red-500">*</span>
             </label>
-            <select
-              value={movementType}
-              onChange={(e) => setMovementType(e.target.value as MovementType)}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs font-semibold"
-            >
-              {MOVEMENT_TYPES.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {isId ? t.labelId : t.labelEn}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {MOVEMENT_TYPES.map((t) => {
+                const isSelected = movementType === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setMovementType(t.id)}
+                    className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
+                      isSelected
+                        ? "border-[#8B0000] bg-red-50/70 dark:bg-red-950/40 text-[#8B0000] dark:text-red-300 font-bold"
+                        : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-[11px] leading-tight">{isId ? t.labelId : t.labelEn}</p>
+                      <p className="text-[9px] text-gray-400 mt-0.5">{t.descriptionId}</p>
+                    </div>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                      t.direction === "IN" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" :
+                      t.direction === "OUT" ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" :
+                      "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                    }`}>
+                      {t.direction}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Quantity & Live Balance Calculator */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId
-                  ? movementType === "ADJUSTMENT"
-                    ? "Jumlah Stok Aktual Baru *"
-                    : "Jumlah Pasokan / Pengambilan *"
-                  : "Quantity *"}
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={quantity || ""}
-                  onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 0)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-sm font-bold font-mono text-[#8B0000] dark:text-red-400"
-                />
-                <span className="absolute right-3 top-3 text-[11px] font-semibold text-gray-400">
-                  {unit}
-                </span>
+          {/* Quantity Input with Quick Stepper Chips */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase text-gray-400 block">
+              {movementType === "ADJUSTMENT"
+                ? isId ? "Jumlah Stok Fisik Aktual (Opname)" : "Adjusted Stock Count"
+                : isId ? "Jumlah Mutasi" : "Quantity"}{" "}
+              ({unit}) <span className="text-red-500">*</span>
+            </label>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={999999}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 0))}
+                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-extrabold text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                required
+              />
+              <div className="flex gap-1">
+                {[5, 10, 50, 100].map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() => handleStepQuantity(step)}
+                    className="px-2.5 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition active:scale-95"
+                  >
+                    +{step}
+                  </button>
+                ))}
               </div>
             </div>
+          </div>
 
-            {/* Projected Stock Preview Card */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-2.5 flex flex-col justify-center">
-              <span className="text-[10px] text-gray-500 font-semibold uppercase">
-                {isId ? "Proyeksi Stok Setelahnya" : "Projected Balance"}
+          {/* Live Stock Projection Indicator */}
+          <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+            isOutOfStockWarning
+              ? "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900/60"
+              : "bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-800"
+          }`}>
+            <div>
+              <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                {isId ? "Stok Sebelum Mutasi" : "Current Stock"}
               </span>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="font-mono font-extrabold text-sm text-gray-900 dark:text-white">
-                  {currentStock}
-                </span>
-                <span className="text-gray-400 text-xs">➔</span>
-                <span
-                  className={`font-mono font-extrabold text-base ${
-                    projectedStock < (selectedMaterial?.safetyThreshold || 10)
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-emerald-600 dark:text-emerald-400"
-                  }`}
-                >
-                  {projectedStock} {unit}
-                </span>
-              </div>
+              <span className="font-mono font-black text-sm text-gray-900 dark:text-white tabular-nums">
+                {currentStock.toLocaleString("id-ID")} {unit}
+              </span>
+            </div>
+
+            <div className="text-center">
+              <span className="text-gray-400 font-black">➔</span>
+            </div>
+
+            <div className="text-right">
+              <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                {isId ? "Estimasi Stok Akhir" : "Projected Stock"}
+              </span>
+              <span className={`font-mono font-black text-base tabular-nums ${
+                isOutOfStockWarning ? "text-red-600" : "text-emerald-700 dark:text-emerald-400"
+              }`}>
+                {projectedStock.toLocaleString("id-ID")} {unit}
+              </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Reference & Operator Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "No. Referensi (PO / SPK)" : "Reference (PO / SPK)"}
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "No. Referensi (PO / SPK)" : "Reference No (PO/WO)"}
               </label>
               <input
                 type="text"
-                placeholder="e.g. PO-SUP-882 / SPK-CUT-04"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-mono"
+                placeholder="e.g. PO/EQ/2026/08/042"
+                maxLength={40}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "Nama Operator Gudang *" : "Operator Name *"}
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Nama Operator / PIC" : "Operator Name"} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                required
                 value={operatorName}
                 onChange={(e) => setOperatorName(e.target.value)}
-                placeholder="e.g. Agus (Gudang Bahan)"
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs"
+                maxLength={50}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                required
               />
             </div>
           </div>
 
+          {/* Notes */}
           <div className="space-y-1">
-            <label className="font-bold text-gray-700 dark:text-gray-300">
+            <label className="text-[10px] font-bold uppercase text-gray-400 block">
               {isId ? "Catatan Mutasi" : "Notes"}
             </label>
             <input
               type="text"
-              placeholder="e.g. Penerimaan batch PO Q3 dari PT Indo Foam"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs"
+              placeholder={isId ? "Keterangan batch produksi, surat jalan masuk, dll" : "Production batch info, incoming DO, etc"}
+              maxLength={150}
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
             />
           </div>
 
-          {/* Action Buttons */}
+          {/* Actions Footer */}
           <div className="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 active:scale-95 transition"
+              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               {isId ? "Batal" : "Cancel"}
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
+              disabled={loading || isOutOfStockWarning}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
-              <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Konfirmasi Mutasi" : "Commit Movement"}</span>
+              <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Mutasi" : "Save Movement"}</span>
             </button>
           </div>
         </form>

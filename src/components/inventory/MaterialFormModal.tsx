@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MaterialItem, MaterialCategory } from "@/types";
-import { X, Save, Boxes, AlertTriangle } from "lucide-react";
+import { X, Save, Boxes, AlertTriangle, Sparkles, Layers } from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
 
 interface MaterialFormModalProps {
@@ -14,15 +14,22 @@ interface MaterialFormModalProps {
 }
 
 const CATEGORIES: Array<{ id: MaterialCategory; labelId: string; labelEn: string }> = [
-  { id: "EVA_SHEET", labelId: "Lembaran EVA Foam", labelEn: "EVA Foam Sheet" },
+  { id: "EVA_SHEET", labelId: "Lembaran EVA Foam Sheet", labelEn: "EVA Foam Sheet" },
   { id: "LATEX", labelId: "Latex Cushion Roll", labelEn: "Latex Cushion Roll" },
-  { id: "PU_CHEMICAL", labelId: "Bahan Kimia PU", labelEn: "PU Chemical" },
+  { id: "PU_CHEMICAL", labelId: "Bahan Kimia Cair PU (Polyol/Iso)", labelEn: "PU Chemical" },
   { id: "TPU_SHANK", labelId: "Shank & Torsion Bar TPU", labelEn: "TPU Shank" },
-  { id: "FABRIC", labelId: "Kain / Mesh Laminasi", labelEn: "Fabric & Mesh" },
-  { id: "CUTTING_DIE", labelId: "Pisau Pond / Cutting Die", labelEn: "Cutting Die" },
+  { id: "FABRIC", labelId: "Kain / Mesh Laminasi Insole", labelEn: "Fabric & Mesh" },
+  { id: "CUTTING_DIE", labelId: "Pisau Pond / Cutting Die Set", labelEn: "Cutting Die Set" },
 ];
 
 const UNITS = ["Lembar", "Roll", "Drum", "Pcs", "Meter", "Set", "Kg"];
+
+const THICKNESS_PRESETS = ["2mm", "3mm", "4mm", "5mm", "8mm", "10mm", "20mm"];
+const HARDNESS_PRESETS = [
+  { code: "SOFT_30", label: "Soft 25-30° Shore C (Comfort / Casual)" },
+  { code: "MED_40", label: "Medium 35-40° Shore C (Running / Sport)" },
+  { code: "HARD_55", label: "Hard 50-55° Shore C (Orthotic / Rigid)" },
+];
 
 export function MaterialFormModal({
   isOpen,
@@ -43,6 +50,12 @@ export function MaterialFormModal({
   const [unitCost, setUnitCost] = useState<number>(0);
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+
+  const [thickness, setThickness] = useState("4mm");
+  const [hardness, setHardness] = useState("MED_40");
+
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -63,18 +76,56 @@ export function MaterialFormModal({
       setUnit("Lembar");
       setCurrentStock(0);
       setSafetyThreshold(20);
-      setUnitCost(50000);
+      setUnitCost(45000);
       setLocation("Gudang A - Rak 01");
-      setNotes("");
+      setNotes("EVA Sheet 1.2m x 2.4m");
     }
+    setValidationError(null);
+    setShowDiscardConfirm(false);
   }, [materialToEdit, isOpen]);
+
+  const isDirty = useMemo(() => {
+    if (!materialToEdit) {
+      return name.trim().length > 0 || currentStock > 0;
+    }
+    return (
+      name !== materialToEdit.name ||
+      category !== materialToEdit.category ||
+      unit !== materialToEdit.unit ||
+      safetyThreshold !== materialToEdit.safetyThreshold ||
+      unitCost !== materialToEdit.unitCost ||
+      (location || "") !== (materialToEdit.location || "") ||
+      (notes || "") !== (materialToEdit.notes || "")
+    );
+  }, [name, category, unit, safetyThreshold, unitCost, location, notes, currentStock, materialToEdit]);
 
   if (!isOpen) return null;
 
+  const handleAttemptClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleApplyPresetName = (presetName: string, defaultUnit: string, defaultUnitCost: number) => {
+    setName(presetName);
+    setUnit(defaultUnit);
+    setUnitCost(defaultUnitCost);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
+
     if (!name.trim() || !sku.trim()) {
-      alert(isId ? "Mohon isi Nama Bahan dan SKU." : "Please fill in material name and SKU.");
+      setValidationError(isId ? "Nama bahan baku dan SKU wajib diisi." : "Material name and SKU are required.");
+      return;
+    }
+
+    if (safetyThreshold < 0 || unitCost < 0) {
+      setValidationError(isId ? "Batas safety stock dan harga tidak boleh negatif." : "Threshold and unit cost cannot be negative.");
       return;
     }
 
@@ -86,13 +137,13 @@ export function MaterialFormModal({
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name,
+            name: name.trim(),
             category,
             unit,
             safetyThreshold,
             unitCost,
-            location,
-            notes,
+            location: location.trim() || undefined,
+            notes: notes.trim() || undefined,
           }),
         });
       } else {
@@ -100,88 +151,133 @@ export function MaterialFormModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            sku,
-            name,
+            sku: sku.trim().toUpperCase(),
+            name: name.trim(),
             category,
             unit,
             currentStock,
             safetyThreshold,
             unitCost,
-            location,
-            notes,
+            location: location.trim() || undefined,
+            notes: notes.trim() || undefined,
           }),
         });
       }
 
-      if (!res.ok) throw new Error("Failed to save material");
-      onSuccess();
-      onClose();
+      const json = await res.json();
+      if (json.success) {
+        onSuccess();
+        onClose();
+      } else {
+        setValidationError(json.error || (isId ? "Gagal menyimpan SKU bahan." : "Failed to save material."));
+      }
     } catch (err) {
-      console.error(err);
-      alert(isId ? "Gagal menyimpan data bahan baku." : "Failed to save material SKU.");
+      console.error("Failed to save material:", err);
+      setValidationError(isId ? "Terjadi kesalahan jaringan." : "Network error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+      <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-[#8B0000] dark:text-red-400 shadow-xs">
+        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
               <Boxes className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
                 {isEditing
-                  ? isId
-                    ? "Edit Data Bahan Baku"
-                    : "Edit Raw Material SKU"
-                  : isId
-                  ? "Tambah Bahan Baku Baru"
-                  : "Register New Material SKU"}
+                  ? isId ? "Edit Parameter Bahan Baku" : "Edit Material SKU"
+                  : isId ? "Tambah SKU Bahan Baku Baru" : "Add New Material SKU"}
               </h3>
               <p className="text-[11px] text-gray-500">
-                {isId ? "Master data inventaris & parameter safety stock" : "Inventory master catalog"}
+                {isId ? "Katalog material insole pabrik Equator" : "Equator factory insole material catalog"}
               </p>
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            type="button"
+            onClick={handleAttemptClose}
+            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+          {validationError && (
+            <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-red-700 dark:text-red-300 font-bold">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
+          {/* Quick Factory Insole Presets (When creating new item) */}
+          {!isEditing && (
+            <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-gray-500 font-bold">
+                <span className="flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-amber-500" />
+                  <span>{isId ? "Template Cepat Bahan Insole:" : "Quick Material Presets:"}</span>
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { name: "EVA 4mm High-Density 40° Hitam (1.2x2.4m)", cat: "EVA_SHEET" as MaterialCategory, unit: "Lembar", cost: 48000 },
+                  { name: "EVA 8mm Rigid Orthotic 55° Abu-abu (1.2x2.4m)", cat: "EVA_SHEET" as MaterialCategory, unit: "Lembar", cost: 85000 },
+                  { name: "Natural Latex 3mm High-Rebound Roll (50m)", cat: "LATEX" as MaterialCategory, unit: "Roll", cost: 650000 },
+                  { name: "Kain BK Mesh Anti-Bakteri Hitam (Roll 50m)", cat: "FABRIC" as MaterialCategory, unit: "Meter", cost: 28000 },
+                  { name: "Plat TPU Arch Shank Support 75mm", cat: "TPU_SHANK" as MaterialCategory, unit: "Pcs", cost: 1800 },
+                ].map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setCategory(p.cat);
+                      handleApplyPresetName(p.name, p.unit, p.cost);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] transition"
+                  >
+                    {p.name.split(" ")[0]} {p.name.split(" ")[1]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SKU and Category Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "Kode SKU Bahan *" : "Material SKU *"}
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Kode SKU Bahan" : "Material SKU Code"} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                required
-                disabled={isEditing}
                 value={sku}
                 onChange={(e) => setSku(e.target.value.toUpperCase())}
-                placeholder="e.g. RAW-EVA-3MM-BLK"
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 font-mono font-bold text-xs uppercase disabled:opacity-60"
+                disabled={isEditing}
+                maxLength={40}
+                className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 font-mono font-bold text-xs uppercase focus:outline-none focus:border-[#8B0000] ${
+                  isEditing ? "bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed" : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                }`}
+                placeholder="e.g. RAW-EVA-4MM-BLK"
+                required
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "Kategori Bahan *" : "Category *"}
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Kategori Material" : "Category"} <span className="text-red-500">*</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as MaterialCategory)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-semibold"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -192,29 +288,48 @@ export function MaterialFormModal({
             </div>
           </div>
 
+          {/* Material Name */}
           <div className="space-y-1">
-            <label className="font-bold text-gray-700 dark:text-gray-300">
-              {isId ? "Nama Lengkap Bahan Baku *" : "Material Description *"}
+            <label className="text-[10px] font-bold uppercase text-gray-400 block">
+              {isId ? "Nama Lengkap Bahan Baku" : "Full Material Name"} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. EVA Foam Sheet 3mm Shore C 65 (Black High Rebound)"
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-semibold"
+              maxLength={120}
+              placeholder={isId ? "e.g. EVA Foam 4mm High-Density 40° Hitam (1.2m x 2.4m)" : "e.g. EVA Foam Sheet 4mm Black"}
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+              required
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          {/* Stock, Unit & Safety Threshold Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {!isEditing && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                  {isId ? "Stok Awal" : "Initial Stock"}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={999999}
+                  value={currentStock}
+                  onChange={(e) => setCurrentStock(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                />
+              </div>
+            )}
+
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "Satuan Unit" : "Unit"}
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Satuan Unit" : "Unit of Measure"} <span className="text-red-500">*</span>
               </label>
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
               >
                 {UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -224,95 +339,129 @@ export function MaterialFormModal({
               </select>
             </div>
 
-            {!isEditing && (
-              <div className="space-y-1">
-                <label className="font-bold text-gray-700 dark:text-gray-300">
-                  {isId ? "Stok Awal" : "Initial Stock"}
-                </label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Batas Safety Stock" : "Safety Threshold"} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={999999}
+                value={safetyThreshold}
+                onChange={(e) => setSafetyThreshold(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Unit Cost and Warehouse Location */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Harga Beli per Satuan (IDR)" : "Unit Cost (IDR)"} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
                 <input
                   type="number"
-                  min="0"
-                  value={currentStock}
-                  onChange={(e) => setCurrentStock(parseInt(e.target.value, 10) || 0)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs font-bold font-mono"
+                  min={0}
+                  step={500}
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                  required
                 />
+                <span className="absolute right-3 top-2 text-[10px] text-gray-400 font-mono pointer-events-none">
+                  {formatIDR(unitCost)}
+                </span>
               </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="font-bold text-amber-700 dark:text-amber-400">
-                {isId ? "Batas Safety Stock" : "Safety Alert Level"}
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={safetyThreshold}
-                onChange={(e) => setSafetyThreshold(parseInt(e.target.value, 10) || 1)}
-                className="w-full rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/30 p-2 text-xs font-bold font-mono text-amber-900 dark:text-amber-300"
-              />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "Harga Beli Satuan (IDR)" : "Unit Cost (IDR)"}
+              <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {isId ? "Lokasi Rak / Gudang" : "Warehouse Location"}
               </label>
               <input
-                type="number"
-                min="0"
-                value={unitCost || ""}
-                onChange={(e) => setUnitCost(parseInt(e.target.value, 10) || 0)}
-                placeholder="Rp 0"
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Gudang Utama - Rak EVA B-03"
+                maxLength={60}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
               />
             </div>
           </div>
 
+          {/* Notes / Technical Specs */}
           <div className="space-y-1">
-            <label className="font-bold text-gray-700 dark:text-gray-300">
-              {isId ? "Lokasi Rak Gudang" : "Warehouse Location"}
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Gudang Utama - Rak A02 / Pallet 04"
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="font-bold text-gray-700 dark:text-gray-300">
-              {isId ? "Catatan / Spesifikasi Teknis" : "Technical Specs & Notes"}
+            <label className="text-[10px] font-bold uppercase text-gray-400 block">
+              {isId ? "Spesifikasi / Catatan Tambahan" : "Technical Notes"}
             </label>
             <textarea
-              rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Supplier: PT Indo Foam Perkasa. Density 65 Shore C."
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs"
+              rows={2}
+              maxLength={250}
+              placeholder={isId ? "Spesifikasi density, supplier PO, dimensi lembaran..." : "Density specs, supplier, sheet dimensions..."}
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
             />
           </div>
 
-          {/* Action Buttons */}
+          {/* Actions Footer */}
           <div className="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 active:scale-95 transition"
+              onClick={handleAttemptClose}
+              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               {isId ? "Batal" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
-              <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Bahan" : "Save Material"}</span>
+              <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan SKU" : "Save SKU"}</span>
             </button>
           </div>
         </form>
       </div>
+
+      {/* Discard Confirmation Dialog */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-5 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
+            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+              {isId ? "Tutup tanpa menyimpan?" : "Discard unsaved changes?"}
+            </h4>
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              {isId
+                ? "Perubahan data bahan baku yang telah Anda ketik akan hilang."
+                : "Any changes you entered will be lost."}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+              >
+                {isId ? "Lanjut Mengisi" : "Keep Editing"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  onClose();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs"
+              >
+                {isId ? "Buang Perubahan" : "Discard"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
