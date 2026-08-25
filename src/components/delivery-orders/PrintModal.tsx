@@ -210,8 +210,19 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
               </div>
 
               {/* Simulated Dot-Matrix Continuous Terminal Sheet */}
-              <div className="rounded-2xl border-2 border-emerald-900/40 bg-[#091510] p-4 sm:p-6 overflow-x-auto shadow-2xl text-[#34d399] font-mono text-xs sm:text-[13px] leading-relaxed selection:bg-emerald-600/40 selection:text-white">
-                <pre className="font-mono">{monospaceText}</pre>
+              <div className="rounded-2xl border-2 border-emerald-900/40 bg-[#091510] p-4 sm:p-6 overflow-x-auto shadow-2xl text-[#34d399] font-mono text-xs sm:text-[13px] leading-relaxed selection:bg-emerald-600/40 selection:text-white animate-paper-feed relative">
+                {/* Visual Tractor-Feed Perforation Margin Simulation */}
+                <div className="absolute left-1.5 top-0 bottom-0 flex flex-col justify-around opacity-25 pointer-events-none">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <span key={i} className="w-1.5 h-1.5 rounded-full bg-emerald-400 my-1 block" />
+                  ))}
+                </div>
+                <div className="absolute right-1.5 top-0 bottom-0 flex flex-col justify-around opacity-25 pointer-events-none">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <span key={i} className="w-1.5 h-1.5 rounded-full bg-emerald-400 my-1 block" />
+                  ))}
+                </div>
+                <pre className="font-mono pl-3 pr-3">{monospaceText}</pre>
               </div>
             </div>
           ) : (

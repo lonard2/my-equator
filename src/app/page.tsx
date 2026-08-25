@@ -267,6 +267,7 @@ export default function HomePage() {
 
         {/* Dynamic Center Work Area */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
+          <div key={currentTab} className="flex-1 flex flex-col overflow-hidden animate-view-enter">
           {currentTab === "DELIVERY_ORDERS" ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               {/* Top KPI Micro Strip */}
@@ -517,6 +518,7 @@ export default function HomePage() {
               language={language}
             />
           )}
+          </div>
         </main>
       </div>
 

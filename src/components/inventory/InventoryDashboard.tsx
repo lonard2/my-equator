@@ -86,6 +86,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
     notes?: string;
   } | null>(null);
   const [materialToDelete, setMaterialToDelete] = useState<MaterialItem | null>(null);
+  const [recentlyMutatedId, setRecentlyMutatedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
 
@@ -801,7 +802,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                   return (
                     <div
                       key={m.id}
-                      className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-3"
+                      className={`p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-3 transition-all duration-300 ${
+                        m.id === recentlyMutatedId ? "animate-ledger-flash ring-2 ring-emerald-400" : ""
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-400 bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded-md">
@@ -984,7 +987,14 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       const badge = getHealthBadge(m.healthStatus);
                       const totalVal = m.currentStock * m.unitCost;
                       return (
-                        <tr key={m.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
+                        <tr
+                          key={m.id}
+                          className={`transition-all duration-300 ${
+                            m.id === recentlyMutatedId
+                              ? "animate-ledger-flash font-bold bg-emerald-50/50 dark:bg-emerald-950/30"
+                              : "hover:bg-gray-50/60 dark:hover:bg-gray-800/40"
+                          }`}
+                        >
                           <td className="p-3.5 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
                           <td className="p-3.5">
                             <p className="font-bold text-gray-900 dark:text-white">{m.name}</p>
@@ -1358,6 +1368,10 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         }}
         onSuccess={() => {
           showToast(isId ? "Transaksi mutasi stok berhasil dicatat" : "Stock movement successfully recorded");
+          if (selectedMaterialForMovement) {
+            setRecentlyMutatedId(selectedMaterialForMovement);
+            setTimeout(() => setRecentlyMutatedId(null), 2500);
+          }
           fetchInventory();
         }}
         materials={materials}

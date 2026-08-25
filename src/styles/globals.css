@@ -68,10 +68,10 @@
   }
 }
 
-/* Micro-Interaction Animation Utilities */
+/* Precision Industrial Micro-Interactions & Motion Suite */
 @keyframes bump {
   0% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  50% { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
 
@@ -80,12 +80,78 @@
   50% { opacity: 0.65; }
 }
 
+@keyframes paper-feed {
+  0% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes status-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(139, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
+}
+
+@keyframes ledger-flash {
+  0% { background-color: rgba(16, 185, 129, 0.25); }
+  100% { background-color: transparent; }
+}
+
+@keyframes view-enter {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .animate-bump {
-  animation: bump 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: bump 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-pulse-slow {
   animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+.animate-paper-feed {
+  animation: paper-feed 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-status-pulse {
+  animation: status-pulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.animate-ledger-flash {
+  animation: ledger-flash 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-view-enter {
+  animation: view-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes staging-glow {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  60% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.animate-staging-glow {
+  animation: staging-glow 1.6s cubic-bezier(0.16, 1, 0.3, 1) 1;
+}
+
+@keyframes drawer-enter {
+  0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-drawer-enter {
+  animation: drawer-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Reduced Motion Safety */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Tablet & Mobile Touch Target Improvements */

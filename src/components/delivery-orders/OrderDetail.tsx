@@ -9,7 +9,9 @@ import { StatusBadge } from "./StatusBadge";
 import {
   Printer,
   FileDown,
+  FileText,
   Truck,
+  CheckCircle,
   CheckCircle2,
   Calendar,
   Building,
@@ -605,6 +607,64 @@ export function OrderDetail({
 
       {/* Main Content Area */}
       <div className="p-4 sm:p-6 space-y-6 max-w-6xl">
+        {/* Animated Operational Lifecycle Stepper */}
+        {order.status !== "CANCELLED" && (
+          <div className="p-3.5 sm:p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs">
+            <div className="flex items-center justify-between relative">
+              {/* Background Connector Bar */}
+              <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-0.5 bg-gray-100 dark:bg-gray-800 z-0" />
+              
+              {[
+                { key: "DRAFT", labelId: "Draft", labelEn: "Draft", icon: FileText, stepIdx: 0 },
+                { key: "CONFIRMED", labelId: "Terkonfirmasi", labelEn: "Confirmed", icon: CheckCircle, stepIdx: 1 },
+                { key: "PRINTED", labelId: "Tercetak", labelEn: "Printed", icon: Printer, stepIdx: 2 },
+                { key: "DISPATCHED", labelId: "Pengiriman", labelEn: "Dispatched", icon: Truck, stepIdx: 3 },
+                { key: "DELIVERED", labelId: "Diterima", labelEn: "Delivered", icon: CheckCircle2, stepIdx: 4 },
+              ].map((step, idx) => {
+                const stepOrder: Record<DeliveryOrderStatus, number> = {
+                  DRAFT: 0,
+                  CONFIRMED: 1,
+                  PRINTED: 2,
+                  DISPATCHED: 3,
+                  DELIVERED: 4,
+                  CANCELLED: -1,
+                };
+                const currentIdx = stepOrder[order.status] ?? 0;
+                const isPassed = currentIdx > idx;
+                const isCurrent = currentIdx === idx;
+                const Icon = step.icon;
+
+                return (
+                  <div key={step.key} className="flex flex-col items-center relative z-10">
+                    <div
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                        isPassed
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : isCurrent
+                          ? "bg-[#8B0000] text-white shadow-md animate-status-pulse ring-2 ring-red-300 dark:ring-red-900"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span
+                      className={`text-[10px] sm:text-[11px] mt-1 font-semibold transition-colors duration-200 text-center ${
+                        isCurrent
+                          ? "text-[#8B0000] dark:text-red-400 font-bold"
+                          : isPassed
+                          ? "text-emerald-700 dark:text-emerald-400"
+                          : "text-gray-400 dark:text-gray-500"
+                      }`}
+                    >
+                      {isId ? step.labelId : step.labelEn}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Info Cards (View / Edit Mode) */}
         {!isEditing ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

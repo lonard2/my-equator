@@ -94,12 +94,12 @@ export function StatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full font-semibold ${item.classes} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center rounded-full font-semibold transition-all duration-200 ease-out ${item.classes} ${sizeClasses} ${className}`}
     >
       {showIcon ? (
         <Icon className={size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3"} />
       ) : (
-        <span className={`h-1.5 w-1.5 rounded-full ${item.dotClasses}`} />
+        <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-200 ${item.dotClasses}`} />
       )}
       <span>{label}</span>
     </span>

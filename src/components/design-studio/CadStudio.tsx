@@ -937,7 +937,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showOutline && (
                     <path
                       d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -945,7 +945,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showArchPlate && (
                     <path
                       d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
-                      className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -953,7 +953,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showHeelCup && (
                     <path
                       d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
-                      className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -961,7 +961,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showMetatarsal && (
                     <path
                       d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
-                      className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                      className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -1015,25 +1015,25 @@ export function CadStudio({ language }: CadStudioProps) {
                     {showOutline && (
                       <path
                         d={geometry.svgPathLeft}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
                       <path
                         d={geometry.archPlateSvgLeft}
-                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                       />
                     )}
                     {showHeelCup && (
                       <path
                         d={geometry.heelCupSvgLeft}
-                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                       />
                     )}
                     {showMetatarsal && (
                       <path
                         d={geometry.metatarsalSvgLeft}
-                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                       />
                     )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
@@ -1046,25 +1046,25 @@ export function CadStudio({ language }: CadStudioProps) {
                     {showOutline && (
                       <path
                         d={geometry.svgPathRight}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md"
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
                       <path
                         d={geometry.archPlateSvgRight}
-                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                       />
                     )}
                     {showHeelCup && (
                       <path
                         d={geometry.heelCupSvgRight}
-                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                       />
                     )}
                     {showMetatarsal && (
                       <path
                         d={geometry.metatarsalSvgRight}
-                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3]"
+                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
                       />
                     )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">

@@ -257,7 +257,7 @@ export function KhatulistiwaAssistant({
       {/* Spacious & Font-Conscious Floating Window Widget */}
       {isOpen && (
         <div
-          className={`fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200 transition-all ${
+          className={`fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden animate-drawer-enter transition-all ${
             isExpanded
               ? "w-[calc(100vw-32px)] sm:w-[740px] md:w-[800px] h-[720px] max-h-[90vh]"
               : "w-[calc(100vw-32px)] sm:w-[520px] md:w-[560px] h-[640px] max-h-[86vh]"
@@ -350,7 +350,7 @@ export function KhatulistiwaAssistant({
               return (
                 <div
                   key={idx}
-                  className={`flex flex-col ${isUser ? "items-end" : "items-start"} space-y-1.5`}
+                  className={`flex flex-col ${isUser ? "items-end" : "items-start"} space-y-1.5 animate-paper-feed`}
                 >
                   <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400 px-1 font-bold uppercase tracking-wider">
                     <span>{isUser ? (isId ? "Anda" : "You") : "Khatulistiwa AI"}</span>
@@ -384,7 +384,7 @@ export function KhatulistiwaAssistant({
 
                   {/* Staged Draft Action Card with Footwear Size Matrix */}
                   {staged && (
-                    <div className="mt-2 w-full max-w-[92%] rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/50 p-4 space-y-3 shadow-sm animate-in zoom-in-95 duration-150">
+                    <div className="mt-2 w-full max-w-[92%] rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/50 p-4 space-y-3 shadow-sm animate-staging-glow animate-in zoom-in-95 duration-150">
                       <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-300 font-bold text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
                           <FileCheck2 className="h-4 w-4 text-emerald-600 shrink-0" />
