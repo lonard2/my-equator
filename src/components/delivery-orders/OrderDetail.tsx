@@ -26,6 +26,10 @@ import {
   Ban,
   MoreVertical,
   ChevronDown,
+  ChevronUp,
+  Copy,
+  Check,
+  Info,
 } from "lucide-react";
 
 interface OrderDetailProps {
@@ -38,6 +42,7 @@ interface OrderDetailProps {
 }
 
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+const OVERSIZED_SIZES: FootwearSize[] = [46, 47, 48];
 
 interface EditableItem {
   id: string;
@@ -61,6 +66,9 @@ export function OrderDetail({
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copiedOrderNo, setCopiedOrderNo] = useState(false);
+  const [showOversized, setShowOversized] = useState(false);
   const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
   const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
 
@@ -87,6 +95,20 @@ export function OrderDetail({
   const [deliveryDate, setDeliveryDate] = useState(order.deliveryDate);
   const [notes, setNotes] = useState(order.notes || "");
   const [editItems, setEditItems] = useState<EditableItem[]>([]);
+
+  // Check if current order contains oversized footwear sizes
+  const hasOversizedSizes = (order.items || []).some((item) =>
+    OVERSIZED_SIZES.some((s) => item.sizes && item.sizes[s] && Number(item.sizes[s]) > 0)
+  );
+
+  const activeDisplayedSizes = showOversized || hasOversizedSizes
+    ? [...STANDARD_SIZES, ...OVERSIZED_SIZES]
+    : STANDARD_SIZES;
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Close dropdown on outside click or Escape
   useEffect(() => {
@@ -136,9 +158,21 @@ export function OrderDetail({
     setIsMoreMenuOpen(false);
   }, [order]);
 
+  const handleCopyOrderNumber = () => {
+    navigator.clipboard.writeText(order.orderNumber);
+    setCopiedOrderNo(true);
+    showToast(isId ? `Nomor ${order.orderNumber} berhasil disalin ke clipboard!` : `Order ${order.orderNumber} copied!`);
+    setTimeout(() => setCopiedOrderNo(false), 2000);
+  };
+
   const handleDownloadPrn = () => {
     setIsMoreMenuOpen(false);
     window.open(`/api/orders/${order.id}/print-escp?format=binary`, "_blank");
+    showToast(
+      isId
+        ? "File stream biner ESC/P untuk printer dot-matrix Epson LX berhasil diunduh."
+        : "Binary ESC/P .PRN stream downloaded for Epson LX dot-matrix printer."
+    );
   };
 
   const handleAddItem = () => {
@@ -163,7 +197,8 @@ export function OrderDetail({
   };
 
   const handleSizeChange = (itemId: string, size: FootwearSize, value: string) => {
-    const num = parseInt(value, 10);
+    const clean = value.replace(/[^0-9]/g, "");
+    const num = parseInt(clean, 10);
     setEditItems(
       editItems.map((item) => {
         if (item.id !== itemId) return item;
@@ -171,7 +206,7 @@ export function OrderDetail({
         if (isNaN(num) || num <= 0) {
           delete newSizes[size];
         } else {
-          newSizes[size] = num;
+          newSizes[size] = Math.min(num, 99999);
         }
         return { ...item, sizes: newSizes };
       })
@@ -186,27 +221,48 @@ export function OrderDetail({
 
   const handleSaveChanges = async () => {
     setErrorMessage(null);
+    if (!recipientName.trim()) {
+      setErrorMessage(isId ? "Nama customer wajib diisi." : "Customer name is required.");
+      return;
+    }
+    if (!destinationAddress.trim()) {
+      setErrorMessage(isId ? "Alamat tujuan wajib diisi." : "Destination address is required.");
+      return;
+    }
+
+    let pairsCount = 0;
+    editItems.forEach((i) => {
+      Object.values(i.sizes).forEach((q) => {
+        if (typeof q === "number" && q > 0) pairsCount += q;
+      });
+    });
+
+    if (pairsCount <= 0) {
+      setErrorMessage(isId ? "Surat jalan harus memiliki minimal 1 pasang ukuran insole." : "At least 1 pair is required.");
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipientName,
-          destinationAddress,
-          poNumber,
-          vehicleNumber,
-          driverName,
+          recipientName: recipientName.trim(),
+          destinationAddress: destinationAddress.trim(),
+          poNumber: poNumber.trim(),
+          vehicleNumber: vehicleNumber.trim(),
+          driverName: driverName.trim(),
           deliveryDate,
-          notes,
+          notes: notes.trim(),
           items: editItems.map((i) => ({
             id: i.id,
-            articleCode: i.articleCode,
-            articleName: i.articleName,
-            colorway: i.colorway,
-            unitPrice: i.unitPrice,
+            articleCode: i.articleCode.trim(),
+            articleName: i.articleName.trim(),
+            colorway: i.colorway.trim(),
+            unitPrice: Math.max(0, i.unitPrice || 0),
             sizes: i.sizes,
-            notes: i.notes,
+            notes: i.notes?.trim() || "",
           })),
         }),
       });
@@ -216,6 +272,7 @@ export function OrderDetail({
         throw new Error(data.error || (isId ? "Gagal menyimpan perubahan." : "Failed to update order."));
       }
       setIsEditing(false);
+      showToast(isId ? "Perubahan surat jalan berhasil disimpan!" : "Delivery order updated successfully!");
       onOrderUpdated();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : (isId ? "Gagal menyimpan perubahan surat jalan." : "Failed to update order.");
@@ -236,6 +293,7 @@ export function OrderDetail({
       await onStatusChange(order.id, rollbackTarget as DeliveryOrderStatus, rollbackReason);
       setIsRollbackModalOpen(false);
       setRollbackReason("");
+      showToast(isId ? `Status berhasil diubah menjadi ${rollbackTarget}` : `Status changed to ${rollbackTarget}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : (isId ? "Gagal mengubah status." : "Failed to change status.");
       setRollbackError(message);
@@ -259,26 +317,33 @@ export function OrderDetail({
   });
 
   const nextStatusMap: Partial<
-    Record<DeliveryOrderStatus, { next: DeliveryOrderStatus; label: string; icon: React.ElementType }>
+    Record<
+      DeliveryOrderStatus,
+      { next: DeliveryOrderStatus; label: string; subLabel: string; icon: React.ElementType }
+    >
   > = {
     DRAFT: {
       next: "CONFIRMED",
       label: isId ? "Konfirmasi Pesanan" : "Confirm Order",
+      subLabel: isId ? "Kunci data pesanan dan verifikasi jadwal produksi" : "Verify production schedule",
       icon: CheckCircle2,
     },
     CONFIRMED: {
       next: "PRINTED",
       label: isId ? "Tandai Tercetak" : "Mark as Printed",
+      subLabel: isId ? "Tercetak pada kertas Continuous Form LX-310" : "Spool to continuous paper",
       icon: Printer,
     },
     PRINTED: {
       next: "DISPATCHED",
       label: isId ? "Kirimkan ke Armada" : "Dispatch with Driver",
+      subLabel: isId ? "Muat barang ke kendaraan & kirim keluar gudang" : "Hand off to driver for delivery",
       icon: Truck,
     },
     DISPATCHED: {
       next: "DELIVERED",
       label: isId ? "Selesai Diterima" : "Mark as Delivered",
+      subLabel: isId ? "Barang telah diterima dan ditandatangani customer" : "Signed receipt confirmed",
       icon: CheckCircle2,
     },
   };
@@ -288,16 +353,36 @@ export function OrderDetail({
   const canEdit = order.status === "DRAFT" || order.status === "CONFIRMED";
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto relative">
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-2xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Top Header Banner */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 sm:p-5 sticky top-0 z-20 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono">
-                {order.orderNumber}
-              </h2>
+              <button
+                type="button"
+                onClick={handleCopyOrderNumber}
+                title={isId ? "Klik untuk menyalin nomor DO" : "Click to copy order number"}
+                className="group flex items-center gap-1 text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono hover:text-[#8B0000] dark:hover:text-red-400 transition"
+              >
+                <span>{order.orderNumber}</span>
+                {copiedOrderNo ? (
+                  <Check className="h-4 w-4 text-emerald-600 ml-1" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#8B0000] opacity-60 group-hover:opacity-100 transition ml-1" />
+                )}
+              </button>
+
               <StatusBadge status={order.status} size="md" language={language} />
+
               {isEditing && (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
                   {isId ? "Mode Edit Aktif" : "Editing"}
@@ -313,22 +398,27 @@ export function OrderDetail({
           <div className="flex items-center gap-2">
             {!isEditing ? (
               <>
-                {/* 1. Primary Forward Action CTA */}
+                {/* 1. Primary Forward Action CTA with Explanatory Tooltip Subtext */}
                 {nextAction && order.status !== "CANCELLED" && (
-                  <button
-                    onClick={() => onStatusChange(order.id, nextAction.next)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition"
-                  >
-                    <nextAction.icon className="h-3.5 w-3.5" />
-                    <span>{nextAction.label}</span>
-                  </button>
+                  <div className="flex flex-col items-end">
+                    <button
+                      onClick={() => onStatusChange(order.id, nextAction.next)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
+                    >
+                      <nextAction.icon className="h-3.5 w-3.5" />
+                      <span>{nextAction.label}</span>
+                    </button>
+                    <span className="hidden lg:block text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      {nextAction.subLabel}
+                    </span>
+                  </div>
                 )}
 
                 {/* 2. Secondary Primary: Edit Order */}
                 {canEdit && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95"
                   >
                     <Edit3 className="h-3.5 w-3.5 text-gray-500" />
                     <span>{isId ? "Edit" : "Edit"}</span>
@@ -338,7 +428,7 @@ export function OrderDetail({
                 {/* 3. Secondary Primary: Print Trigger */}
                 <button
                   onClick={() => onOpenPrint(order)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95"
                 >
                   <Printer className="h-3.5 w-3.5 text-gray-500" />
                   <span>{isId ? "Cetak" : "Print"}</span>
@@ -351,13 +441,13 @@ export function OrderDetail({
                     onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                     aria-expanded={isMoreMenuOpen}
                     aria-label={isId ? "Menu tindakan lainnya" : "More actions"}
-                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    className="p-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition active:scale-95"
                   >
                     <MoreVertical className="h-4 w-4" />
                   </button>
 
                   {isMoreMenuOpen && (
-                    <div className="absolute right-0 mt-1.5 w-56 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute right-0 mt-1.5 w-60 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
                       {/* Download PRN Stream */}
                       <button
                         type="button"
@@ -367,7 +457,7 @@ export function OrderDetail({
                         <FileDown className="h-4 w-4 text-gray-500" />
                         <div>
                           <p className="font-semibold">{isId ? "Unduh Stream .PRN" : "Download .PRN File"}</p>
-                          <p className="text-[10px] text-gray-400">Epson LX-300/310 Dot-Matrix</p>
+                          <p className="text-[10px] text-gray-400">Epson LX-300/310 Continuous Form</p>
                         </div>
                       </button>
 
@@ -387,7 +477,7 @@ export function OrderDetail({
                           <div>
                             <p className="font-semibold">{isId ? "Koreksi / Rollback Status" : "Revert Status"}</p>
                             <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
-                              {isId ? "Kembalikan ke tahap sebelumnya" : "Step back to earlier status"}
+                              {isId ? "Kembalikan ke status sebelumnya" : "Step back to earlier status"}
                             </p>
                           </div>
                         </button>
@@ -441,7 +531,7 @@ export function OrderDetail({
                     setIsEditing(false);
                     setErrorMessage(null);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <X className="h-3.5 w-3.5" />
                   <span>{isId ? "Batal" : "Cancel"}</span>
@@ -450,7 +540,7 @@ export function OrderDetail({
                   type="button"
                   onClick={handleSaveChanges}
                   disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 active:scale-95"
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span>
@@ -471,7 +561,7 @@ export function OrderDetail({
 
       {/* Non-blocking Error Banner */}
       {errorMessage && (
-        <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+        <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-xs text-red-800 dark:text-red-300 font-medium">
             <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
             <span>{errorMessage}</span>
@@ -487,7 +577,7 @@ export function OrderDetail({
 
       {/* Cancelled Banner */}
       {order.status === "CANCELLED" && (
-        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Ban className="h-5 w-5 text-red-600 shrink-0" />
             <div>
@@ -506,7 +596,7 @@ export function OrderDetail({
               setRollbackTarget("DRAFT");
               setIsRollbackModalOpen(true);
             }}
-            className="px-3.5 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 text-xs font-bold text-red-700 dark:text-red-300 shadow-xs hover:bg-red-50"
+            className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 text-xs font-bold text-red-700 dark:text-red-300 shadow-xs hover:bg-red-50"
           >
             {isId ? "Buka Menjadi Draft" : "Re-open as Draft"}
           </button>
@@ -518,9 +608,9 @@ export function OrderDetail({
         {/* Info Cards (View / Edit Mode) */}
         {!isEditing ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <Building className="h-3.5 w-3.5" />
+                <Building className="h-3.5 w-3.5 text-[#8B0000]" />
                 <span>{isId ? "Penerima / Customer" : "Customer / Recipient"}</span>
               </div>
               <p className="font-bold text-sm text-gray-900 dark:text-white">{order.recipientName}</p>
@@ -530,9 +620,9 @@ export function OrderDetail({
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <Calendar className="h-3.5 w-3.5" />
+                <Calendar className="h-3.5 w-3.5 text-[#8B0000]" />
                 <span>{isId ? "Jadwal & Referensi" : "Schedule & References"}</span>
               </div>
               <div className="text-xs space-y-1">
@@ -542,14 +632,14 @@ export function OrderDetail({
                 </p>
                 <p className="text-gray-800 dark:text-gray-200">
                   <span className="text-gray-500">PO / SPK:</span>{" "}
-                  <span className="font-semibold">{order.poNumber || "-"}</span>
+                  <span className="font-semibold font-mono">{order.poNumber || "-"}</span>
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <Truck className="h-3.5 w-3.5" />
+                <Truck className="h-3.5 w-3.5 text-[#8B0000]" />
                 <span>{isId ? "Armada & Pengemudi" : "Logistics & Driver"}</span>
               </div>
               <div className="text-xs space-y-1">
@@ -566,7 +656,7 @@ export function OrderDetail({
           </div>
         ) : (
           /* Interactive Edit Mode for Header Fields */
-          <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 sm:p-5 space-y-4 shadow-xs">
+          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 sm:p-5 space-y-4 shadow-xs">
             <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
               <Edit3 className="h-4 w-4 text-[#8B0000]" />
               <span>{isId ? "Edit Informasi Surat Jalan" : "Edit Order Information"}</span>
@@ -580,7 +670,7 @@ export function OrderDetail({
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
 
@@ -592,7 +682,7 @@ export function OrderDetail({
                   type="text"
                   value={poNumber}
                   onChange={(e) => setPoNumber(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
 
@@ -604,7 +694,7 @@ export function OrderDetail({
                   type="date"
                   value={deliveryDate}
                   onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
 
@@ -616,7 +706,7 @@ export function OrderDetail({
                   type="text"
                   value={destinationAddress}
                   onChange={(e) => setDestinationAddress(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
 
@@ -628,7 +718,7 @@ export function OrderDetail({
                   type="text"
                   value={driverName}
                   onChange={(e) => setDriverName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
             </div>
@@ -636,12 +726,22 @@ export function OrderDetail({
         )}
 
         {/* Size Matrix Items Table */}
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="font-bold text-sm text-gray-900 dark:text-white">
-                {isId ? "Rincian Matriks Ukuran Sepatu (EU 36–45)" : "Footwear Size Breakdown Matrix"}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                  {isId ? "Rincian Matriks Ukuran Sepatu" : "Footwear Size Breakdown Matrix"}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowOversized(!showOversized)}
+                  className="text-[11px] font-semibold text-gray-500 hover:text-[#8B0000] dark:hover:text-red-400 flex items-center gap-0.5"
+                >
+                  <span>{showOversized ? (isId ? "Sembunyikan 46-48" : "Hide 46-48") : (isId ? "+ Jumbo EU 46-48" : "+ Oversize 46-48")}</span>
+                  {showOversized ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+              </div>
               <p className="text-xs text-gray-500">
                 {isEditing
                   ? isId
@@ -653,11 +753,11 @@ export function OrderDetail({
 
             <div className="flex items-center gap-3">
               {isEditing && (
-                <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 text-xs font-semibold">
+                <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-0.5 text-xs font-semibold">
                   <button
                     type="button"
                     onClick={() => setInputMode("GRID")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "GRID"
                         ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                         : "text-gray-500"
@@ -669,7 +769,7 @@ export function OrderDetail({
                   <button
                     type="button"
                     onClick={() => setInputMode("TOUCH_PAD")}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "TOUCH_PAD"
                         ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
                         : "text-gray-500"
@@ -713,8 +813,15 @@ export function OrderDetail({
                   <tr>
                     <th className="p-3 w-10 text-center">No</th>
                     <th className="p-3 min-w-[180px]">{isId ? "Artikel & Spesifikasi" : "Article & Specs"}</th>
-                    {STANDARD_SIZES.map((size) => (
-                      <th key={size} className="p-2 text-center w-10 font-mono bg-red-50/40 dark:bg-red-950/20">
+                    {activeDisplayedSizes.map((size) => (
+                      <th
+                        key={size}
+                        className={`p-2 text-center w-10 font-mono ${
+                          size >= 46
+                            ? "bg-amber-50/60 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200"
+                            : "bg-red-50/40 dark:bg-red-950/20 text-red-900 dark:text-red-200"
+                        }`}
+                      >
                         {size}
                       </th>
                     ))}
@@ -734,7 +841,7 @@ export function OrderDetail({
                         </p>
                         {item.notes && <p className="text-[10px] text-amber-600 mt-0.5">{item.notes}</p>}
                       </td>
-                      {STANDARD_SIZES.map((size) => {
+                      {activeDisplayedSizes.map((size) => {
                         const qty = item.sizes?.[size];
                         return (
                           <td
@@ -766,7 +873,7 @@ export function OrderDetail({
                     <td colSpan={2} className="p-3 text-gray-800 dark:text-gray-200 uppercase">
                       {isId ? "Grand Total Pengiriman" : "Grand Total"}
                     </td>
-                    {STANDARD_SIZES.map((size) => {
+                    {activeDisplayedSizes.map((size) => {
                       const colSum =
                         order.items?.reduce((sum, item) => sum + (item.sizes?.[size] || 0), 0) || 0;
                       return (
@@ -795,7 +902,7 @@ export function OrderDetail({
                       key={item.id}
                       type="button"
                       onClick={() => setActiveItemIndex(idx)}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-bold whitespace-nowrap transition ${
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition ${
                         activeItemIndex === idx
                           ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
                           : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
@@ -819,7 +926,7 @@ export function OrderDetail({
                   <tr>
                     <th className="p-2.5 text-left w-36">{isId ? "Artikel & Kode" : "Article"}</th>
                     <th className="p-2.5 text-left w-24">{isId ? "Harga (IDR)" : "Price"}</th>
-                    {STANDARD_SIZES.map((size) => (
+                    {activeDisplayedSizes.map((size) => (
                       <th key={size} className="p-2 text-center w-11 font-mono">
                         {size}
                       </th>
@@ -848,7 +955,7 @@ export function OrderDetail({
                                 )
                               )
                             }
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-[11px] font-mono"
+                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-[11px] font-mono bg-white dark:bg-gray-800"
                           />
                           <input
                             type="text"
@@ -860,7 +967,7 @@ export function OrderDetail({
                                 )
                               )
                             }
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold"
+                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold bg-white dark:bg-gray-800"
                           />
                         </td>
                         <td className="p-2.5">
@@ -877,10 +984,10 @@ export function OrderDetail({
                                 )
                               )
                             }
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs"
+                            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs bg-white dark:bg-gray-800"
                           />
                         </td>
-                        {STANDARD_SIZES.map((size) => {
+                        {activeDisplayedSizes.map((size) => {
                           const val = item.sizes[size] || "";
                           return (
                             <td key={size} className="p-1">
@@ -891,10 +998,10 @@ export function OrderDetail({
                                 placeholder="-"
                                 value={val}
                                 onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
-                                className={`w-full text-center rounded border px-1 py-1 text-xs font-mono font-bold transition ${
+                                className={`w-full text-center rounded-lg border px-1 py-1 text-xs font-mono font-bold transition ${
                                   val && Number(val) > 0
                                     ? "bg-red-50 dark:bg-red-950/60 border-[#8B0000] text-[#8B0000] dark:text-red-300"
-                                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800"
                                 }`}
                               />
                             </td>
@@ -926,7 +1033,7 @@ export function OrderDetail({
         {!isEditing ? (
           <>
             {order.totalAmount && order.totalAmount > 0 && (
-              <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4">
+              <div className="rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4 shadow-xs">
                 <p className="text-xs font-semibold text-red-900 dark:text-red-300 uppercase tracking-wide">
                   {isId ? "Terbilang Formal:" : "Spelled Out in Words:"}
                 </p>
@@ -937,7 +1044,7 @@ export function OrderDetail({
             )}
 
             {order.notes && (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-xs">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                   {isId ? "Catatan Tambahan" : "Notes"}
                 </p>
@@ -954,7 +1061,7 @@ export function OrderDetail({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
             />
           </div>
         )}
@@ -963,9 +1070,9 @@ export function OrderDetail({
       {/* In-App Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 shrink-0">
+              <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 shrink-0">
                 <Trash2 className="h-5 w-5" />
               </div>
               <div className="space-y-1">
@@ -984,7 +1091,7 @@ export function OrderDetail({
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 {isId ? "Batal" : "Cancel"}
               </button>
@@ -994,7 +1101,7 @@ export function OrderDetail({
                   setIsDeleteModalOpen(false);
                   onDeleteOrder(order.id);
                 }}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition"
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
               >
                 {isId ? "Ya, Hapus Dokumen" : "Yes, Delete Order"}
               </button>
@@ -1006,7 +1113,7 @@ export function OrderDetail({
       {/* Status Rollback & Cancellation Modal */}
       {isRollbackModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <RotateCcw className="h-5 w-5" />
@@ -1029,12 +1136,12 @@ export function OrderDetail({
 
             <div className="p-5 space-y-4">
               {rollbackError && (
-                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300 font-medium">
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300 font-medium">
                   {rollbackError}
                 </div>
               )}
 
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
+              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-900 dark:text-amber-300 space-y-0.5">
                   <p className="font-bold">
@@ -1067,7 +1174,7 @@ export function OrderDetail({
                         key={st}
                         type="button"
                         onClick={() => setRollbackTarget(st)}
-                        className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between ${
+                        className={`p-2.5 rounded-2xl border text-left text-xs font-bold transition flex items-center justify-between ${
                           rollbackTarget === st
                             ? "border-[#8B0000] bg-red-50 dark:bg-red-950/50 text-[#8B0000] dark:text-red-300"
                             : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300"
@@ -1095,7 +1202,7 @@ export function OrderDetail({
                   }
                   value={rollbackReason}
                   onChange={(e) => setRollbackReason(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
 
@@ -1106,7 +1213,7 @@ export function OrderDetail({
                     setIsRollbackModalOpen(false);
                     setRollbackError(null);
                   }}
-                  className="px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
+                  className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
                 >
                   {isId ? "Batal" : "Cancel"}
                 </button>
@@ -1114,7 +1221,7 @@ export function OrderDetail({
                   type="button"
                   onClick={handleExecuteRollback}
                   disabled={rollbackSubmitting || !rollbackReason.trim()}
-                  className="px-4 py-2 rounded-lg bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] disabled:opacity-50 transition"
+                  className="px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] disabled:opacity-50 transition active:scale-95"
                 >
                   {rollbackSubmitting
                     ? isId ? "Memproses..." : "Processing..."

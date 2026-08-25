@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-25T12:35:00Z",
+  "title": "Design System: MyEquator",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Equator Crimson",
+        "canonical": "#8B0000",
+        "tonalRamp": ["#4A0000", "#680000", "#8B0000", "#A00000", "#C41E1E", "#E54848", "#F87171", "#FEE2E2"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Pure Surface",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#111827", "#1F2937", "#374151", "#6B7280", "#9CA3AF", "#E5E7EB", "#F3F4F6", "#FFFFFF"]
+      },
+      "terminal-text": {
+        "role": "accent",
+        "displayName": "CRT Phosphor Green",
+        "canonical": "#34d399",
+        "tonalRamp": ["#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Heavy", "purpose": "Module headers and IDR revenue totals." },
+      "headline": { "displayName": "Headline Bold", "purpose": "Section titles and modal headers." },
+      "title": { "displayName": "Title Medium", "purpose": "Card titles and table groupings." },
+      "body": { "displayName": "Body Regular", "purpose": "Form fields, addresses, notes." },
+      "label": { "displayName": "Monospace Data", "purpose": "Footwear sizes, order codes, pairs (psg)." }
+    },
+    "shadows": [
+      { "name": "shadow-xs", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Base card perimeters." },
+      { "name": "shadow-md", "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1)", "purpose": "Primary CTA buttons and active elevation." },
+      { "name": "shadow-2xl", "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "purpose": "Modals and print sheets." }
+    ],
+    "motion": [
+      { "name": "ease-out-fast", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Micro-interactions and modal transitions." },
+      { "name": "scale-active", "value": "scale(0.95)", "purpose": "Tactile touch feedback on button click." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-conviction primary CTA button in Equator Crimson.",
+      "html": "<button class=\"ds-btn-primary\">BUAT SURAT JALAN</button>",
+      "css": ".ds-btn-primary { background: #8B0000; color: #FFFFFF; font-family: -apple-system, sans-serif; font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 12px; border: none; cursor: pointer; transition: background 0.15s, transform 0.1s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); } .ds-btn-primary:hover { background: #A00000; } .ds-btn-primary:active { transform: scale(0.95); }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Matched-hue status tag with static status dot indicator.",
+      "html": "<span class=\"ds-badge-confirmed\"><span class=\"ds-dot\"></span>Terkonfirmasi</span>",
+      "css": ".ds-badge-confirmed { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #DBEAFE; } .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: #1D4ED8; }"
+    },
+    {
+      "name": "Size Cell Input",
+      "kind": "input",
+      "refersTo": "input-size-cell",
+      "description": "Footwear size matrix numeric input with active crimson highlight.",
+      "html": "<input type=\"text\" class=\"ds-size-input\" value=\"150\" />",
+      "css": ".ds-size-input { width: 48px; text-align: center; font-family: monospace; font-size: 12px; font-weight: 800; padding: 6px 4px; border-radius: 10px; border: 1px solid #8B0000; background: #FEF2F2; color: #8B0000; outline: none; }"
+    },
+    {
+      "name": "CRT Terminal Print Frame",
+      "kind": "custom",
+      "refersTo": "terminal-preview",
+      "description": "80-column ESC/P dot-matrix phosphor green terminal emulator.",
+      "html": "<div class=\"ds-terminal\">================================================================================<br/>EQUATOR INSOLE - SURAT JALAN #SJ/EQ/2026/08/0001<br/>================================================================================</div>",
+      "css": ".ds-terminal { background: #091510; color: #34d399; font-family: monospace; font-size: 11px; padding: 16px; border-radius: 16px; border: 1px solid #064e3b; overflow-x: auto; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Precision Vulcanizer",
+    "overview": "MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson (#8B0000), structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, and crisp mechanical affordances.",
+    "keyCharacteristics": [
+      "Crimson Brand Dominance: Dark Red (#8B0000) reserved for high-conviction actions.",
+      "Physical Matrix Ergonomics: Tabular footwear size grids with auto-summed totals.",
+      "Industrial Terminal Evocation: High-contrast 80-column CRT phosphor green previews.",
+      "High-Assurance Safety: Non-blocking in-app confirmation dialogs and isDirty unsaved changes tracking."
+    ],
+    "rules": [
+      { "name": "The Singular Accent Rule", "body": "Deep crimson (#8B0000) is used on <=10% of any view.", "section": "colors" },
+      { "name": "The Matched Hue Rule", "body": "Status badges always pair text and background from the same color family.", "section": "colors" },
+      { "name": "The Tabular Numerals Rule", "body": "All dynamic numbers, sizes, and currency must specify tabular-nums or font-mono.", "section": "typography" },
+      { "name": "The Inset Indicator Rule", "body": "Active list items use an inset indicator bar rather than a thick left border.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do format all currency in Indonesian Rupiah with thousand-separator dots: Rp 1.250.000.",
+      "Do include Indonesian Terbilang spelled-out text on printable Delivery Orders and Invoices.",
+      "Do use tabular-nums on all footwear quantities, sizes, prices, and dates.",
+      "Do ensure all mobile action buttons satisfy minimum 44px touch targets."
+    ],
+    "donts": [
+      "Don't use generic floating decorative gradients or rainbow AI accents.",
+      "Don't place dark gray text on saturated background colors (gray-on-color).",
+      "Don't use native browser alert() or window.confirm() popups.",
+      "Don't apply border-left-4 on list cards; use inset indicator bars."
+    ]
+  }
+}

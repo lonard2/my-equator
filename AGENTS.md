@@ -213,3 +213,4 @@ To ensure complete understanding and learning throughout the development journey
 5. Use the latest stable versions of libraries and frameworks.
 6. Avoid overengineering; prioritize simple, robust implementations.
 7. Maintain a concise and informative `README.md`.
+8. Make use of the spacious amount of Skills available to the CLI.

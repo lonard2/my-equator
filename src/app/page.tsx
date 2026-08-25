@@ -9,6 +9,7 @@ import { OrderDetail } from "@/components/delivery-orders/OrderDetail";
 import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
+import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
@@ -358,9 +359,7 @@ export default function HomePage() {
                           <span className="font-bold text-xs text-[#8B0000] dark:text-red-400 font-mono">
                             {order.orderNumber}
                           </span>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950 text-[#8B0000] dark:text-red-300">
-                            {order.status}
-                          </span>
+                          <StatusBadge status={order.status} size="sm" language={language} />
                         </div>
 
                         <div>
@@ -386,50 +385,54 @@ export default function HomePage() {
 
                         <div className="grid grid-cols-2 gap-2 pt-1">
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setPrintOrder(order);
                             }}
-                            className="py-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
+                            className="py-2.5 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
                           >
-                            <Printer className="h-3.5 w-3.5" />
+                            <Printer className="h-4 w-4" />
                             <span>Cetak Slip</span>
                           </button>
 
                           {order.status === "PRINTED" ? (
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
                                 handleStatusChange(order.id, "DISPATCHED");
                               }}
-                              className="py-2 rounded-xl bg-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                              className="py-2.5 min-h-[44px] rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
                             >
-                              <Truck className="h-3.5 w-3.5" />
+                              <Truck className="h-4 w-4" />
                               <span>Kirimkan</span>
                             </button>
                           ) : order.status === "DISPATCHED" ? (
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
                                 handleStatusChange(order.id, "DELIVERED");
                               }}
-                              className="py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                              className="py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
                             >
                               <span>Tiba di Lokasi</span>
                             </button>
                           ) : (
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
                                 setIsMobileDetailOpen(true);
                               }}
-                              className="py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
+                              className="py-2.5 min-h-[44px] rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
                             >
                               <span>Detail</span>
-                              <ChevronRight className="h-3.5 w-3.5" />
+                              <ChevronRight className="h-4 w-4" />
                             </button>
                           )}
                         </div>

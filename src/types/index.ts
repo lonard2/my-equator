@@ -12,7 +12,7 @@ export interface UserSession {
 // Delivery Order & Size Matrix Types
 export type DeliveryOrderStatus = "DRAFT" | "CONFIRMED" | "PRINTED" | "DISPATCHED" | "DELIVERED" | "CANCELLED";
 
-export type FootwearSize = 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45;
+export type FootwearSize = 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48;
 
 export type SizeBreakdown = {
   [size in FootwearSize]?: number;

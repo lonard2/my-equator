@@ -100,3 +100,4 @@ temp/
 .temp/
 .eslintcache
 .stylelintcache
+*.tsbuildinfo
