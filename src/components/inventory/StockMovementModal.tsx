@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { MaterialItem, MovementType } from "@/types";
-import { X, ArrowDownRight, ArrowUpRight, AlertCircle, CheckCircle2, User, FileText, Sparkles } from "lucide-react";
-import { formatIDR } from "@/lib/utils/formatters";
+import { X, ArrowDownRight, AlertCircle, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 
 interface StockMovementModalProps {
   isOpen: boolean;
@@ -90,18 +89,77 @@ export function StockMovementModal({
   const [notes, setNotes] = useState<string>("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  const initialFormRef = useRef<{
+    materialId: string;
+    movementType: MovementType;
+    quantity: number;
+    referenceNumber: string;
+    notes: string;
+  }>({
+    materialId: "",
+    movementType: "IN_PURCHASE",
+    quantity: 10,
+    referenceNumber: "",
+    notes: "",
+  });
 
   useEffect(() => {
-    if (preselectedMaterialId) {
-      setMaterialId(preselectedMaterialId);
-    } else if (materials.length > 0 && !materialId) {
-      setMaterialId(materials[0].id);
-    }
-    if (initialMovementType) setMovementType(initialMovementType);
-    if (initialQuantity !== undefined) setQuantity(initialQuantity);
-    if (initialReferenceNumber !== undefined) setReferenceNumber(initialReferenceNumber);
-    if (initialNotes !== undefined) setNotes(initialNotes);
+    const selectedMat = preselectedMaterialId || (materials.length > 0 ? materials[0].id : "");
+    const selectedType = initialMovementType || "IN_PURCHASE";
+    const selectedQty = initialQuantity !== undefined ? initialQuantity : 10;
+    const selectedRef = initialReferenceNumber || "";
+    const selectedNotes = initialNotes || "";
+
+    setMaterialId(selectedMat);
+    setMovementType(selectedType);
+    setQuantity(selectedQty);
+    setReferenceNumber(selectedRef);
+    setNotes(selectedNotes);
+    setValidationError(null);
+    setShowDiscardConfirm(false);
+
+    initialFormRef.current = {
+      materialId: selectedMat,
+      movementType: selectedType,
+      quantity: selectedQty,
+      referenceNumber: selectedRef,
+      notes: selectedNotes,
+    };
   }, [preselectedMaterialId, initialMovementType, initialQuantity, initialReferenceNumber, initialNotes, materials, isOpen]);
+
+  // Check if form has unsaved modifications
+  const isDirty =
+    materialId !== initialFormRef.current.materialId ||
+    movementType !== initialFormRef.current.movementType ||
+    quantity !== initialFormRef.current.quantity ||
+    referenceNumber !== initialFormRef.current.referenceNumber ||
+    notes !== initialFormRef.current.notes;
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
+  // Escape key listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showDiscardConfirm) {
+          setShowDiscardConfirm(false);
+        } else {
+          handleRequestClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isDirty, showDiscardConfirm]);
 
   if (!isOpen) return null;
 
@@ -123,11 +181,12 @@ export function StockMovementModal({
   const isOutOfStockWarning = currentMovementConfig?.direction === "OUT" && (quantity || 0) > currentStock;
 
   const handleStepQuantity = (delta: number) => {
-    setQuantity((prev) => Math.max(1, (prev || 0) + delta));
+    setQuantity((prev) => Math.min(1000000, Math.max(1, (prev || 0) + delta)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setValidationError(null);
 
     if (!materialId) {
@@ -148,8 +207,8 @@ export function StockMovementModal({
     if (currentMovementConfig?.direction === "OUT" && quantity > currentStock) {
       setValidationError(
         isId
-          ? `Stok tidak mencukupi. Stok saat ini ${currentStock} ${unit}, jumlah keluar ${quantity} ${unit}.`
-          : `Insufficient stock. Current stock is ${currentStock} ${unit}.`
+          ? `Stok tidak mencukupi. Stok saat ini ${currentStock.toLocaleString("id-ID")} ${unit}, jumlah keluar ${quantity.toLocaleString("id-ID")} ${unit}.`
+          : `Insufficient stock. Current stock is ${currentStock.toLocaleString()} ${unit}, requested OUT is ${quantity.toLocaleString()} ${unit}.`
       );
       return;
     }
@@ -162,7 +221,7 @@ export function StockMovementModal({
         body: JSON.stringify({
           materialId,
           type: movementType,
-          quantity,
+          quantity: Math.floor(quantity),
           referenceNumber: referenceNumber.trim() || undefined,
           operatorName: operatorName.trim(),
           notes: notes.trim() || undefined,
@@ -178,14 +237,19 @@ export function StockMovementModal({
       }
     } catch (err) {
       console.error("Failed to record stock movement:", err);
-      setValidationError(isId ? "Terjadi kesalahan jaringan." : "Network error occurred.");
+      setValidationError(isId ? "Terjadi kesalahan jaringan saat menyimpan mutasi." : "Network error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="movement-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
+    >
       <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
@@ -194,7 +258,7 @@ export function StockMovementModal({
               <ArrowDownRight className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+              <h3 id="movement-modal-title" className="font-extrabold text-base text-gray-900 dark:text-white">
                 {isId ? "Catat Mutasi Stok Gudang" : "Record Stock Movement"}
               </h3>
               <p className="text-[11px] text-gray-500">
@@ -204,8 +268,9 @@ export function StockMovementModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleRequestClose}
             className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            aria-label="Close Movement Modal"
           >
             <X className="h-5 w-5" />
           </button>
@@ -228,12 +293,13 @@ export function StockMovementModal({
             <select
               value={materialId}
               onChange={(e) => setMaterialId(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+              disabled={loading}
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60"
               required
             >
               {materials.map((m) => (
                 <option key={m.id} value={m.id}>
-                  [{m.sku}] {m.name} (Stok: {m.currentStock} {m.unit})
+                  [{m.sku}] {m.name} (Stok: {m.currentStock.toLocaleString("id-ID")} {m.unit})
                 </option>
               ))}
             </select>
@@ -251,12 +317,13 @@ export function StockMovementModal({
                   <button
                     key={t.id}
                     type="button"
+                    disabled={loading}
                     onClick={() => setMovementType(t.id)}
                     className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50/70 dark:bg-red-950/40 text-[#8B0000] dark:text-red-300 font-bold"
+                        ? "border-[#8B0000] bg-red-50/70 dark:bg-red-950/40 text-[#8B0000] dark:text-red-300 font-bold shadow-xs"
                         : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50"
-                    }`}
+                    } disabled:opacity-60`}
                   >
                     <div>
                       <p className="text-[11px] leading-tight">{isId ? t.labelId : t.labelEn}</p>
@@ -287,11 +354,13 @@ export function StockMovementModal({
             <div className="flex items-center gap-2">
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
-                max={999999}
+                max={1000000}
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 0))}
-                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-extrabold text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                disabled={loading}
+                onChange={(e) => setQuantity(Math.min(1000000, Math.max(1, parseInt(e.target.value, 10) || 0)))}
+                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-extrabold text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums disabled:opacity-60"
                 required
               />
               <div className="flex gap-1">
@@ -299,8 +368,9 @@ export function StockMovementModal({
                   <button
                     key={step}
                     type="button"
+                    disabled={loading}
                     onClick={() => handleStepQuantity(step)}
-                    className="px-2.5 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition active:scale-95"
+                    className="px-2.5 py-2 min-h-[38px] rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition active:scale-95 disabled:opacity-50"
                   >
                     +{step}
                   </button>
@@ -344,15 +414,16 @@ export function StockMovementModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase text-gray-400 block">
-                {isId ? "No. Referensi (PO / SPK)" : "Reference No (PO/WO)"}
+                {isId ? "No. Referensi (PO / SPK / Koreksi)" : "Reference No (PO/WO/Offset)"}
               </label>
               <input
                 type="text"
                 value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
+                disabled={loading}
+                onChange={(e) => setReferenceNumber(e.target.value.toUpperCase())}
                 placeholder="e.g. PO/EQ/2026/08/042"
                 maxLength={40}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60 uppercase"
               />
             </div>
 
@@ -363,9 +434,10 @@ export function StockMovementModal({
               <input
                 type="text"
                 value={operatorName}
+                disabled={loading}
                 onChange={(e) => setOperatorName(e.target.value)}
                 maxLength={50}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60"
                 required
               />
             </div>
@@ -379,10 +451,11 @@ export function StockMovementModal({
             <input
               type="text"
               value={notes}
+              disabled={loading}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={isId ? "Keterangan batch produksi, surat jalan masuk, dll" : "Production batch info, incoming DO, etc"}
-              maxLength={150}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+              placeholder={isId ? "Keterangan batch produksi, surat jalan masuk, koreksi dll" : "Production batch info, incoming DO, offset info"}
+              maxLength={200}
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60"
             />
           </div>
 
@@ -390,8 +463,9 @@ export function StockMovementModal({
           <div className="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              onClick={handleRequestClose}
+              disabled={loading}
+              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
             >
               {isId ? "Batal" : "Cancel"}
             </button>
@@ -406,6 +480,53 @@ export function StockMovementModal({
           </div>
         </form>
       </div>
+
+      {/* Discard Changes In-App Confirmation Modal */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-amber-600">
+              <div className="p-2 rounded-2xl bg-amber-100 dark:bg-amber-950/70">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-base text-gray-900 dark:text-white">
+                  {isId ? "Batalkan Pengisian?" : "Discard Changes?"}
+                </h4>
+                <p className="text-xs text-gray-500">
+                  {isId ? "Perubahan mutasi belum disimpan" : "Unsaved movement changes"}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              {isId
+                ? "Anda telah mengubah data formulir mutasi. Jika Anda menutup modal sekarang, data yang telah diisi akan hilang."
+                : "You have unsaved changes in the movement form. Closing now will discard your input."}
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100"
+              >
+                {isId ? "Lanjutkan Mengisi" : "Keep Editing"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  onClose();
+                }}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
+              >
+                {isId ? "Tutup & Buang" : "Discard"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
