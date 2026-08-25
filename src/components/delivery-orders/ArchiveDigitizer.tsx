@@ -866,24 +866,26 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         </div>
 
         {/* DESKTOP VIEW (>= md) 16-Column High-Speed Table */}
-        <div className="hidden md:block overflow-x-auto flex-1">
+        <div className="hidden md:block overflow-x-auto flex-1 max-h-[650px] relative">
           <table className="w-full text-xs text-left border-collapse">
-            <thead className="bg-gray-100/80 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+            <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold border-b border-gray-200 dark:border-gray-700 sticky top-0 z-20 shadow-2xs">
               <tr>
-                <th className="p-2.5 w-10 text-center sticky left-0 bg-gray-100 dark:bg-gray-800 z-10">No</th>
-                <th className="p-2.5 w-36">{isId ? "No. Surat Jalan" : "Order Number"}</th>
+                <th className="p-2.5 w-10 text-center sticky left-0 bg-gray-100 dark:bg-gray-800 z-30">No</th>
+                <th className="p-2.5 w-36 sticky left-10 bg-gray-100 dark:bg-gray-800 z-30 shadow-xs border-r border-gray-200 dark:border-gray-700">
+                  {isId ? "No. Surat Jalan" : "Order Number"}
+                </th>
                 <th className="p-2.5 min-w-[220px]">{isId ? "Penerima / Customer" : "Customer / Recipient"}</th>
                 <th className="p-2.5 w-28">{isId ? "Tanggal" : "Date"}</th>
                 <th className="p-2.5 min-w-[160px]">{isId ? "Model Artikel" : "Insole Article"}</th>
 
-                {/* Sizing Columns (EU 36–45) with minimum 48px width */}
+                {/* Sizing Columns (EU 36–45) with minimum 50px width */}
                 {STANDARD_SIZES.map((size) => (
-                  <th key={size} className="p-2 text-center min-w-[48px] bg-red-50/50 dark:bg-red-950/30 text-[#8B0000] dark:text-red-300 font-mono font-extrabold">
+                  <th key={size} className="p-2 text-center min-w-[50px] bg-red-50/60 dark:bg-red-950/40 text-[#8B0000] dark:text-red-300 font-mono font-extrabold border-l border-red-100 dark:border-red-900/40">
                     {size}
                   </th>
                 ))}
 
-                <th className="p-2.5 text-right w-20">{isId ? "Total (psg)" : "Total"}</th>
+                <th className="p-2.5 text-right w-24 bg-gray-50 dark:bg-gray-800/80 border-l border-gray-200 dark:border-gray-700">{isId ? "Total (psg)" : "Total"}</th>
                 <th className="p-2.5 text-center w-12">{isId ? "Aksi" : "Action"}</th>
               </tr>
             </thead>
@@ -901,11 +903,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       isInvalid ? "bg-red-50/40 dark:bg-red-950/20" : ""
                     }`}
                   >
-                    <td className="p-2 text-center text-gray-400 font-mono sticky left-0 bg-white dark:bg-gray-900">
+                    <td className="p-2 text-center text-gray-400 font-mono sticky left-0 bg-white dark:bg-gray-900 z-10">
                       {rIdx + 1}
                     </td>
 
-                    <td className="p-2">
+                    <td className="p-2 sticky left-10 bg-white dark:bg-gray-900 z-10 shadow-xs border-r border-gray-200 dark:border-gray-800">
                       <input
                         type="text"
                         value={row.orderNumber}
@@ -954,7 +956,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       const qty = row.sizes[size] || 0;
                       const hasQty = qty > 0;
                       return (
-                        <td key={size} className="p-1.5 text-center">
+                        <td key={size} className="p-1.5 text-center border-l border-gray-100 dark:border-gray-800">
                           <input
                             type="text"
                             inputMode="numeric"
@@ -966,7 +968,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                             onChange={(e) => handleSizeChange(row.id, size, e.target.value)}
                             onKeyDown={(e) => handleSizeKeyDown(e, rIdx, size)}
                             placeholder="·"
-                            className={`w-full min-w-[44px] text-center rounded-lg border px-1 py-1 font-mono font-extrabold text-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B0000] tabular-nums ${
+                            className={`w-full min-w-[48px] text-center rounded-lg border px-1.5 py-1 font-mono font-extrabold text-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B0000] tabular-nums ${
                               hasQty
                                 ? "bg-red-50/90 dark:bg-red-950/70 border-[#8B0000] text-[#8B0000] dark:text-red-300"
                                 : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-400"
@@ -976,7 +978,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       );
                     })}
 
-                    <td className="p-2 text-right">
+                    <td className="p-2 text-right bg-gray-50/50 dark:bg-gray-800/40 border-l border-gray-200 dark:border-gray-700">
                       <span className="font-mono font-black text-xs text-gray-900 dark:text-white tabular-nums">
                         {rowTotal}
                       </span>
@@ -998,23 +1000,23 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               })}
             </tbody>
 
-            {/* Batch Aggregate Summary Footer */}
-            <tfoot className="bg-gray-100 dark:bg-gray-800/80 font-bold border-t-2 border-gray-300 dark:border-gray-700 text-xs">
+            {/* Batch Aggregate Summary Footer (Sticky) */}
+            <tfoot className="bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-xs font-bold border-t-2 border-gray-300 dark:border-gray-700 text-xs sticky bottom-0 z-20 shadow-md">
               <tr>
-                <td colSpan={5} className="p-3 text-gray-700 dark:text-gray-300">
+                <td colSpan={5} className="p-3 text-gray-700 dark:text-gray-300 sticky left-0 bg-gray-100/95 dark:bg-gray-800/95 z-30">
                   {isId ? `Total Batch Rekap (${rows.length} Surat Jalan)` : `Batch Manifest Total (${rows.length} Orders)`}
                 </td>
 
                 {STANDARD_SIZES.map((size) => {
                   const columnSum = rows.reduce((sum, r) => sum + (r.sizes[size] || 0), 0);
                   return (
-                    <td key={size} className="p-2 text-center font-mono font-black text-gray-900 dark:text-white tabular-nums">
+                    <td key={size} className="p-2 text-center font-mono font-black text-gray-900 dark:text-white tabular-nums border-l border-gray-200 dark:border-gray-700">
                       {columnSum > 0 ? columnSum : "-"}
                     </td>
                   );
                 })}
 
-                <td className="p-3 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
+                <td className="p-3 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums border-l border-gray-200 dark:border-gray-700">
                   {totalBatchPairs.toLocaleString("id-ID")}
                 </td>
                 <td></td>
