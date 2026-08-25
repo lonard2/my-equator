@@ -126,13 +126,49 @@ export function SecurityDashboard({
   const [userList, setUserList] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [logFilter, setLogFilter] = useState("");
+  const [logEntityTypeFilter, setLogEntityTypeFilter] = useState<"ALL" | "DELIVERY_ORDER" | "INVENTORY" | "USER" | "SECURITY" | "CAD">("ALL");
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [isSwitchingUser, setIsSwitchingUser] = useState(false);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [exportingSnapshot, setExportingSnapshot] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // In-App Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+    isDestructive?: boolean;
+  } | null>(null);
+
+  // Snapshot Pre-Flight Inspection Modal State
+  const [snapshotPreFlight, setSnapshotPreFlight] = useState<{
+    isOpen: boolean;
+    fileData: any;
+    summary: {
+      exportDate: string;
+      schemaVersion: string;
+      ordersCount: number;
+      itemsCount: number;
+      materialsCount: number;
+      movementsCount: number;
+      usersCount: number;
+      blueprintsCount: number;
+      totalRecords: number;
+    };
+  } | null>(null);
+
+  // Helper for SVG Initials Avatar
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
 
   // New User Form State
   const [newUsername, setNewUsername] = useState("");
@@ -337,28 +373,38 @@ export function SecurityDashboard({
       return;
     }
 
-    if (!confirm(isId ? `Apakah Anda yakin ingin menghapus akun pengguna @${username}?` : `Are you sure you want to delete user @${username}?`)) return;
-
-    setActionFeedback(null);
-    try {
-      const res = await fetch(`/api/security/users/${userId}`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setActionFeedback({
-          type: "success",
-          message: isId ? `Pengguna @${username} berhasil dihapus.` : `User @${username} deleted successfully.`,
-        });
-        fetchUsers();
-        fetchLogs();
-      } else {
-        setActionFeedback({ type: "error", message: json.error || "Gagal menghapus user." });
-      }
-    } catch (err: any) {
-      setActionFeedback({ type: "error", message: err.message });
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: isId ? "Hapus Akun Pengguna" : "Delete User Account",
+      message: isId
+        ? `Apakah Anda yakin ingin menghapus akun pengguna @${username}? Akun dan riwayat sesi pengguna ini akan dihapus secara permanen.`
+        : `Are you sure you want to delete user @${username}? This account and its session history will be permanently deleted.`,
+      confirmLabel: isId ? "Hapus Pengguna" : "Delete User",
+      isDestructive: true,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setActionFeedback(null);
+        try {
+          const res = await fetch(`/api/security/users/${userId}`, {
+            method: "DELETE",
+            headers: getAuthHeaders(),
+          });
+          const json = await res.json();
+          if (json.success) {
+            setActionFeedback({
+              type: "success",
+              message: isId ? `Pengguna @${username} berhasil dihapus.` : `User @${username} deleted successfully.`,
+            });
+            fetchUsers();
+            fetchLogs();
+          } else {
+            setActionFeedback({ type: "error", message: json.error || "Gagal menghapus user." });
+          }
+        } catch (err: any) {
+          setActionFeedback({ type: "error", message: err.message });
+        }
+      },
+    });
   };
 
   const handleToggleUserActive = async (user: ManagedUser) => {
@@ -408,6 +454,7 @@ export function SecurityDashboard({
     }
 
     try {
+      setExportingSnapshot(true);
       const res = await fetch("/api/security/snapshot-export", {
         headers: {
           "x-user-role": currentUser.role,
@@ -428,8 +475,14 @@ export function SecurityDashboard({
       a.download = `Equator_DB_Snapshot_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       window.URL.revokeObjectURL(url);
+      setActionFeedback({
+        type: "success",
+        message: isId ? "Snapshot basis data pabrik berhasil diunduh." : "Database snapshot downloaded successfully.",
+      });
     } catch (err: any) {
       setActionFeedback({ type: "error", message: err.message });
+    } finally {
+      setExportingSnapshot(false);
     }
   };
 
@@ -446,29 +499,57 @@ export function SecurityDashboard({
       return;
     }
 
-    const confirmRestore = window.confirm(
-      isId
-        ? "PERINGATAN: Memulihkan snapshot akan memperbarui seluruh data sistem dengan isi file backup. Lanjutkan?"
-        : "WARNING: Restoring snapshot will overwrite existing database records. Proceed?"
-    );
+    try {
+      const text = await file.text();
+      const jsonData = JSON.parse(text);
 
-    if (!confirmRestore) {
+      const tables = jsonData.tables || jsonData;
+      const ordersCount = Array.isArray(tables.deliveryOrders) ? tables.deliveryOrders.length : 0;
+      const itemsCount = Array.isArray(tables.deliveryOrderItems) ? tables.deliveryOrderItems.length : 0;
+      const materialsCount = Array.isArray(tables.materials) ? tables.materials.length : 0;
+      const movementsCount = Array.isArray(tables.inventoryMovements) ? tables.inventoryMovements.length : 0;
+      const usersCount = Array.isArray(tables.users) ? tables.users.length : 0;
+      const blueprintsCount = Array.isArray(tables.cadBlueprints) ? tables.cadBlueprints.length : 0;
+      const totalRecords = ordersCount + itemsCount + materialsCount + movementsCount + usersCount + blueprintsCount;
+
+      setSnapshotPreFlight({
+        isOpen: true,
+        fileData: jsonData,
+        summary: {
+          exportDate: jsonData.exportedAt || jsonData.timestamp || new Date().toISOString(),
+          schemaVersion: jsonData.version || "1.0",
+          ordersCount,
+          itemsCount,
+          materialsCount,
+          movementsCount,
+          usersCount,
+          blueprintsCount,
+          totalRecords,
+        },
+      });
+    } catch (err: any) {
+      console.error("Failed to parse snapshot file:", err);
+      setActionFeedback({
+        type: "error",
+        message: isId ? `Format file snapshot tidak valid: ${err.message}` : `Invalid snapshot format: ${err.message}`,
+      });
+    } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
     }
+  };
+
+  const handleExecuteRestore = async () => {
+    if (!snapshotPreFlight?.fileData) return;
 
     setRestoring(true);
     setRestoreMessage(null);
     setActionFeedback(null);
 
     try {
-      const text = await file.text();
-      const jsonData = JSON.parse(text);
-
       const res = await fetch("/api/security/snapshot-restore", {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(jsonData),
+        body: JSON.stringify(snapshotPreFlight.fileData),
       });
 
       const json = await res.json();
@@ -480,6 +561,7 @@ export function SecurityDashboard({
         );
         fetchLogs();
         fetchUsers();
+        setSnapshotPreFlight(null);
       } else {
         setActionFeedback({ type: "error", message: json.error || "Gagal memulihkan database." });
       }
@@ -487,11 +569,10 @@ export function SecurityDashboard({
       console.error("Restore failed:", err);
       setActionFeedback({
         type: "error",
-        message: isId ? `Format file snapshot tidak valid: ${err.message}` : `Invalid snapshot format: ${err.message}`,
+        message: isId ? `Gagal memulihkan database: ${err.message}` : `Failed to restore database: ${err.message}`,
       });
     } finally {
       setRestoring(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -510,12 +591,20 @@ export function SecurityDashboard({
   });
 
   // Filtered Logs
-  const filteredLogs = logs.filter(
-    (l) =>
+  const filteredLogs = logs.filter((l) => {
+    const matchesSearch =
       l.userName.toLowerCase().includes(logFilter.toLowerCase()) ||
       l.action.toLowerCase().includes(logFilter.toLowerCase()) ||
-      (l.details && l.details.toLowerCase().includes(logFilter.toLowerCase()))
-  );
+      (l.details && l.details.toLowerCase().includes(logFilter.toLowerCase()));
+
+    const matchesEntity =
+      logEntityTypeFilter === "ALL" ||
+      l.entityType === logEntityTypeFilter ||
+      (logEntityTypeFilter === "DELIVERY_ORDER" && l.entityType === "DELIVERY_ORDERS") ||
+      (logEntityTypeFilter === "CAD" && l.entityType === "CAD_STUDIO");
+
+    return matchesSearch && matchesEntity;
+  });
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6">
@@ -587,11 +676,17 @@ export function SecurityDashboard({
       {/* Active User Card & Privileges */}
       <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <img
-            src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&h=120&fit=crop"}
-            alt={currentUser.name}
-            className="w-13 h-13 rounded-2xl object-cover border-2 border-red-700/20 shadow-xs"
-          />
+          {currentUser.avatarUrl ? (
+            <img
+              src={currentUser.avatarUrl}
+              alt={currentUser.name}
+              className="w-13 h-13 rounded-2xl object-cover border-2 border-red-700/20 shadow-xs shrink-0"
+            />
+          ) : (
+            <div className="w-13 h-13 rounded-2xl bg-[#8B0000] text-white flex items-center justify-center font-bold font-mono text-base border-2 border-red-700/20 shadow-xs shrink-0">
+              {getInitials(currentUser.name)}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
@@ -714,7 +809,7 @@ export function SecurityDashboard({
                       key={pm}
                       type="button"
                       onClick={() => setInspectedPermission(pm as Permission)}
-                      className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-red-100 dark:hover:bg-red-950 text-[8px] font-mono text-gray-600 dark:text-gray-400 hover:text-[#8B0000] transition cursor-pointer"
+                      className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[9px] font-mono text-gray-700 dark:text-gray-300 hover:text-[#8B0000] dark:hover:text-red-300 transition cursor-pointer"
                       title={isId ? "Klik untuk melihat detail hak akses" : "Click to inspect permission"}
                     >
                       {pm}
@@ -727,7 +822,7 @@ export function SecurityDashboard({
                         setSelectedCustomRole(role);
                         setIsCustomizerOpen(true);
                       }}
-                      className="text-[8px] font-bold text-gray-400 hover:text-gray-600"
+                      className="text-[9px] font-bold text-gray-400 hover:text-gray-600"
                     >
                       +{perms.length - 4}
                     </button>
@@ -967,11 +1062,17 @@ export function SecurityDashboard({
                     <tr key={u.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-2">
-                          <img
-                            src={u.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-                            alt={u.name}
-                            className="w-7 h-7 rounded-lg object-cover border shrink-0"
-                          />
+                          {u.avatarUrl ? (
+                            <img
+                              src={u.avatarUrl}
+                              alt={u.name}
+                              className="w-7 h-7 rounded-lg object-cover border shrink-0"
+                            />
+                          ) : (
+                            <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-950/80 text-[#8B0000] dark:text-red-300 flex items-center justify-center font-bold font-mono text-[10px] shrink-0 border border-red-200 dark:border-red-900/60">
+                              {getInitials(u.name)}
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-gray-900 dark:text-white block">{u.name}</span>
                             {u.username === currentUser.username && (
@@ -1065,12 +1166,20 @@ export function SecurityDashboard({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportSnapshot}
-              disabled={!canExport}
+              disabled={!canExport || exportingSnapshot}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition disabled:opacity-50"
               title={!canExport ? (isId ? "Izin Super Admin / Manajer Diperlukan" : "Admin / Manager Required") : ""}
             >
-              <Download className="h-4 w-4" />
-              <span>{isId ? "Unduh Backup Snapshot (.json)" : "Download Snapshot (.json)"}</span>
+              {exportingSnapshot ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span>
+                {exportingSnapshot
+                  ? isId ? "Mengunduh Snapshot..." : "Downloading..."
+                  : isId ? "Unduh Backup Snapshot (.json)" : "Download Snapshot (.json)"}
+              </span>
             </button>
 
             <button
@@ -1139,6 +1248,31 @@ export function SecurityDashboard({
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </button>
           </div>
+        </div>
+
+        {/* Entity Type Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          {[
+            { key: "ALL", label: isId ? "Semua Entitas" : "All Entities" },
+            { key: "DELIVERY_ORDER", label: isId ? "Surat Jalan" : "Delivery Orders" },
+            { key: "INVENTORY", label: isId ? "Inventori" : "Inventory" },
+            { key: "USER", label: isId ? "Pengguna" : "Users" },
+            { key: "CAD", label: isId ? "CAD Insole" : "CAD Studio" },
+            { key: "SECURITY", label: isId ? "Sistem & Keamanan" : "Security" },
+          ].map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setLogEntityTypeFilter(f.key as any)}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                logEntityTypeFilter === f.key
+                  ? "bg-[#8B0000] text-white shadow-xs"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
         {/* Logs Scrollable Table */}
@@ -1488,6 +1622,153 @@ export function SecurityDashboard({
                 className="px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] transition"
               >
                 {isId ? "Tutup Inspector" : "Close Inspector"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Confirmation Modal */}
+      {confirmModal && confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                <h3 className="font-bold text-sm">{confirmModal.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className="p-1 rounded-lg hover:bg-white/10 text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                {confirmModal.message}
+              </p>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmModal(null)}
+                  className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                >
+                  {isId ? "Batal" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmModal.onConfirm}
+                  className={`px-4 py-1.5 rounded-xl text-white text-xs font-bold shadow-xs transition ${
+                    confirmModal.isDestructive
+                      ? "bg-[#8B0000] hover:bg-[#A00000]"
+                      : "bg-emerald-700 hover:bg-emerald-800"
+                  }`}
+                >
+                  {confirmModal.confirmLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Snapshot Pre-Flight Inspection & Verification Modal */}
+      {snapshotPreFlight && snapshotPreFlight.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <HardDrive className="h-5 w-5" />
+                <div>
+                  <h3 className="font-bold text-sm">
+                    {isId ? "Verifikasi Pra-Pemulihan Snapshot Basis Data" : "Database Snapshot Pre-Flight Verification"}
+                  </h3>
+                  <p className="text-[10px] text-red-200 font-mono">
+                    Schema v{snapshotPreFlight.summary.schemaVersion} • {new Date(snapshotPreFlight.summary.exportDate).toLocaleString("id-ID")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSnapshotPreFlight(null)}
+                className="p-1 rounded-lg hover:bg-white/10 text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-950 dark:text-amber-200 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                  <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
+                  <span>{isId ? "Peringatan Tindakan Kritis" : "Critical Action Warning"}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  {isId
+                    ? "Memulihkan snapshot akan menimpa seluruh rekaman database pabrik saat ini dengan isi file backup ini. Pastikan Anda telah membuat cadangan snapshot terbaru sebelum melanjutkan."
+                    : "Restoring this snapshot will overwrite all existing factory database records with the contents of this backup file. Ensure you have exported a current snapshot before proceeding."}
+                </p>
+              </div>
+
+              {/* Table Breakdown Grid */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
+                  {isId ? "Ringkasan Rekaman Data dalam Snapshot" : "Snapshot Data Records Breakdown"}
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 text-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase block">{isId ? "Surat Jalan" : "Delivery Orders"}</span>
+                    <span className="text-base font-black font-mono text-gray-900 dark:text-white">{snapshotPreFlight.summary.ordersCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 text-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase block">{isId ? "Item Baris DO" : "Order Items"}</span>
+                    <span className="text-base font-black font-mono text-gray-900 dark:text-white">{snapshotPreFlight.summary.itemsCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 text-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase block">{isId ? "Bahan Baku" : "Materials"}</span>
+                    <span className="text-base font-black font-mono text-gray-900 dark:text-white">{snapshotPreFlight.summary.materialsCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 text-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase block">{isId ? "Mutasi Stok" : "Movements"}</span>
+                    <span className="text-base font-black font-mono text-gray-900 dark:text-white">{snapshotPreFlight.summary.movementsCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 text-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase block">{isId ? "Pengguna" : "Users"}</span>
+                    <span className="text-base font-black font-mono text-gray-900 dark:text-white">{snapshotPreFlight.summary.usersCount}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 text-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase block">{isId ? "Blueprint CAD" : "Blueprints"}</span>
+                    <span className="text-base font-black font-mono text-gray-900 dark:text-white">{snapshotPreFlight.summary.blueprintsCount}</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-red-50/50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 flex items-center justify-between text-xs font-bold">
+                  <span className="text-gray-700 dark:text-gray-300">{isId ? "Total Keseluruhan Rekaman:" : "Total Records:"}</span>
+                  <span className="font-mono text-[#8B0000] dark:text-red-400 text-sm">{snapshotPreFlight.summary.totalRecords} entitas</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSnapshotPreFlight(null)}
+                disabled={restoring}
+                className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                {isId ? "Batal" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteRestore}
+                disabled={restoring}
+                className="px-4 py-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {restoring ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <HardDrive className="h-3.5 w-3.5" />}
+                <span>{restoring ? (isId ? "Memulihkan Data..." : "Restoring Data...") : isId ? "Pulihkan Basis Data Sekarang" : "Restore Database Now"}</span>
               </button>
             </div>
           </div>
