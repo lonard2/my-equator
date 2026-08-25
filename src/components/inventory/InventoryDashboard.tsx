@@ -315,6 +315,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
     );
   };
 
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setCategoryFilter("ALL");
+    setOnlyLowStock(false);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
       {/* Toast Notification */}
@@ -496,18 +502,18 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             <table className="w-full text-xs text-left">
               <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="p-3">{isId ? "Bahan Baku" : "Material Requirement"}</th>
-                  <th className="p-3 text-right">{isId ? "Kebutuhan" : "Required"}</th>
-                  <th className="p-3 text-right">{isId ? "Stok Gudang" : "Current Stock"}</th>
-                  <th className="p-3 text-center">{isId ? "Kecukupan" : "Status"}</th>
-                  <th className="p-3 text-right">{isId ? "Estimasi Biaya" : "Est. Cost"}</th>
-                  <th className="p-3 text-center w-28">{isId ? "Aksi" : "Action"}</th>
+                  <th className="p-3.5">{isId ? "Bahan Baku" : "Material Requirement"}</th>
+                  <th className="p-3.5 text-right w-32">{isId ? "Kebutuhan" : "Required"}</th>
+                  <th className="p-3.5 text-right w-32">{isId ? "Stok Gudang" : "Current Stock"}</th>
+                  <th className="p-3.5 text-center w-36">{isId ? "Kecukupan" : "Status"}</th>
+                  <th className="p-3.5 text-right w-36">{isId ? "Estimasi Biaya" : "Est. Cost"}</th>
+                  <th className="p-3.5 text-center w-28">{isId ? "Aksi" : "Action"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
                 {bomResult.requirements.map((req, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
-                    <td className="p-3">
+                    <td className="p-3.5">
                       <p className="font-bold text-gray-900 dark:text-white">
                         {CATEGORY_NAMES[req.materialCategory]?.id || req.materialCategory}
                       </p>
@@ -515,17 +521,17 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                         {req.matchedMaterial ? req.matchedMaterial.name : `Cari bahan ${req.materialNamePattern}`}
                       </p>
                     </td>
-                    <td className="p-3 text-right font-mono font-black text-gray-900 dark:text-white tabular-nums">
+                    <td className="p-3.5 text-right font-mono font-black text-gray-900 dark:text-white tabular-nums">
                       {req.requiredQuantity.toLocaleString("id-ID")}{" "}
                       <span className="text-xs font-normal text-gray-500">{req.unit}</span>
                     </td>
-                    <td className="p-3 text-right font-mono tabular-nums">
+                    <td className="p-3.5 text-right font-mono tabular-nums">
                       <span className={req.isSufficient ? "text-gray-900 dark:text-white font-bold" : "text-red-600 font-black"}>
                         {req.currentStock.toLocaleString("id-ID")}
                       </span>{" "}
                       <span className="text-xs font-normal text-gray-500">{req.unit}</span>
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="p-3.5 text-center">
                       {req.isSufficient ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -538,10 +544,10 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                         </span>
                       )}
                     </td>
-                    <td className="p-3 text-right font-mono text-gray-900 dark:text-white tabular-nums">
+                    <td className="p-3.5 text-right font-mono text-gray-900 dark:text-white tabular-nums font-bold">
                       {formatIDR(req.estimatedCost)}
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="p-3.5 text-center">
                       {!req.isSufficient && req.matchedMaterial && (
                         <button
                           type="button"
@@ -557,13 +563,13 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               </tbody>
               <tfoot className="bg-gray-100 dark:bg-gray-800/80 font-bold border-t border-gray-200 dark:border-gray-700 text-xs">
                 <tr>
-                  <td colSpan={4} className="p-3 text-gray-700 dark:text-gray-300">
+                  <td colSpan={4} className="p-3.5 text-gray-700 dark:text-gray-300">
                     {isId ? `Total Estimasi Bahan Baku (${bomTargetPairs.toLocaleString("id-ID")} pasang)` : "Total Estimated Raw Material Cost"}
                     <span className="ml-2 font-normal text-[11px] text-gray-500">
                       (~{formatIDR(bomResult.costPerPairIDR)} / pasang)
                     </span>
                   </td>
-                  <td className="p-3 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
+                  <td className="p-3.5 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
                     {formatIDR(bomResult.totalEstimatedCostIDR)}
                   </td>
                   <td></td>
@@ -680,18 +686,24 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 placeholder={isId ? "Cari SKU, Nama, Lokasi... (Tekan /)" : "Search SKU, Name... (Press /)"}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-8 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-12 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
               />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                  aria-label="Clear Search"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
+              <div className="absolute right-2 top-2 flex items-center gap-1">
+                {searchTerm ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5"
+                    aria-label="Clear Search"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-400 font-mono text-[9px]">
+                    /
+                  </kbd>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -766,8 +778,20 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             {/* MOBILE TOUCH CARD FEED (md:hidden) */}
             <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
               {sortedAndFilteredMaterials.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 text-xs">
-                  {isId ? "Tidak ada bahan baku ditemukan." : "No materials found."}
+                <div className="p-8 text-center text-gray-400 space-y-2">
+                  <Boxes className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-700" />
+                  <p className="text-xs font-medium">
+                    {isId ? "Tidak ada bahan baku yang cocok dengan filter." : "No materials match the selected filters."}
+                  </p>
+                  {(searchTerm || categoryFilter !== "ALL" || onlyLowStock) && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs transition"
+                    >
+                      {isId ? "Reset Filter & Pencarian" : "Reset Filters & Search"}
+                    </button>
+                  )}
                 </div>
               ) : (
                 sortedAndFilteredMaterials.map((m) => {
@@ -814,12 +838,15 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                             {m.currentStock.toLocaleString("id-ID")}{" "}
                             <span className="text-xs font-normal text-gray-500">{m.unit}</span>
                           </span>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
+                            @ {formatIDR(m.unitCost)} / {m.unit}
+                          </p>
                         </div>
                         <div className="text-right">
                           <span className="text-[10px] text-gray-400 font-bold uppercase block">
                             {isId ? "Total Valuasi" : "Valuation"}
                           </span>
-                          <span className="font-mono font-bold text-xs text-[#8B0000] dark:text-red-400 tabular-nums">
+                          <span className="font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
                             {formatIDR(totalVal)}
                           </span>
                         </div>
@@ -938,7 +965,18 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     <tr>
                       <td colSpan={9} className="p-8 text-center text-gray-400">
                         <Boxes className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
-                        <p>{isId ? "Tidak ada bahan baku ditemukan" : "No materials found"}</p>
+                        <p className="text-xs font-medium">
+                          {isId ? "Tidak ada bahan baku yang cocok dengan filter." : "No materials match the selected filters."}
+                        </p>
+                        {(searchTerm || categoryFilter !== "ALL" || onlyLowStock) && (
+                          <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="mt-2 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs transition"
+                          >
+                            {isId ? "Reset Filter & Pencarian" : "Reset Filters & Search"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (

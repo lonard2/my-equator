@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { MaterialItem, MovementType } from "@/types";
 import { X, ArrowDownRight, AlertCircle, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
+import { formatIDR } from "@/lib/utils/formatters";
 
 interface StockMovementModalProps {
   isOpen: boolean;
@@ -166,6 +167,7 @@ export function StockMovementModal({
   const selectedMaterial = materials.find((m) => m.id === materialId);
   const currentStock = selectedMaterial ? selectedMaterial.currentStock : 0;
   const unit = selectedMaterial ? selectedMaterial.unit : "";
+  const unitCost = selectedMaterial ? selectedMaterial.unitCost : 0;
 
   // Projected stock preview
   let projectedStock = currentStock;
@@ -370,7 +372,7 @@ export function StockMovementModal({
                     type="button"
                     disabled={loading}
                     onClick={() => handleStepQuantity(step)}
-                    className="px-2.5 py-2 min-h-[38px] rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition active:scale-95 disabled:opacity-50"
+                    className="px-2.5 py-2 min-h-[38px] rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition-all active:scale-90 active:bg-gray-300 dark:active:bg-gray-600 disabled:opacity-50"
                   >
                     +{step}
                   </button>
@@ -379,35 +381,46 @@ export function StockMovementModal({
             </div>
           </div>
 
-          {/* Live Stock Projection Indicator */}
-          <div className={`p-3 rounded-2xl border flex items-center justify-between ${
+          {/* Live Stock Projection & Value Indicator */}
+          <div className={`p-3.5 rounded-2xl border space-y-2.5 ${
             isOutOfStockWarning
               ? "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900/60"
               : "bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-800"
           }`}>
-            <div>
-              <span className="text-[10px] text-gray-400 font-bold uppercase block">
-                {isId ? "Stok Sebelum Mutasi" : "Current Stock"}
-              </span>
-              <span className="font-mono font-black text-sm text-gray-900 dark:text-white tabular-nums">
-                {currentStock.toLocaleString("id-ID")} {unit}
-              </span>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                  {isId ? "Stok Sebelum Mutasi" : "Current Stock"}
+                </span>
+                <span className="font-mono font-black text-sm text-gray-900 dark:text-white tabular-nums">
+                  {currentStock.toLocaleString("id-ID")} {unit}
+                </span>
+              </div>
+
+              <div className="text-center">
+                <span className="text-gray-400 font-black">➔</span>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                  {isId ? "Estimasi Stok Akhir" : "Projected Stock"}
+                </span>
+                <span className={`font-mono font-black text-base tabular-nums ${
+                  isOutOfStockWarning ? "text-red-600" : "text-emerald-700 dark:text-emerald-400"
+                }`}>
+                  {projectedStock.toLocaleString("id-ID")} {unit}
+                </span>
+              </div>
             </div>
 
-            <div className="text-center">
-              <span className="text-gray-400 font-black">➔</span>
-            </div>
-
-            <div className="text-right">
-              <span className="text-[10px] text-gray-400 font-bold uppercase block">
-                {isId ? "Estimasi Stok Akhir" : "Projected Stock"}
-              </span>
-              <span className={`font-mono font-black text-base tabular-nums ${
-                isOutOfStockWarning ? "text-red-600" : "text-emerald-700 dark:text-emerald-400"
-              }`}>
-                {projectedStock.toLocaleString("id-ID")} {unit}
-              </span>
-            </div>
+            {selectedMaterial && (
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center justify-between pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
+                <span>{isId ? "Perkiraan Nilai Transaksi:" : "Estimated Transaction Value:"}</span>
+                <span className="font-mono font-bold text-gray-800 dark:text-gray-200 tabular-nums">
+                  {formatIDR(unitCost * (quantity || 0))} <span className="font-normal text-gray-500">(@ {formatIDR(unitCost)}/{unit})</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Reference & Operator Row */}
