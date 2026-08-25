@@ -6,7 +6,6 @@ import {
   Keyboard,
   Plus,
   Trash2,
-  Upload,
   Calendar,
   CheckCircle2,
   AlertCircle,
@@ -15,11 +14,8 @@ import {
   Undo2,
   FileSpreadsheet,
   RotateCcw,
-  Sparkles,
-  ArrowDown,
   Loader2,
   X,
-  Info,
 } from "lucide-react";
 
 interface ArchiveDigitizerProps {
@@ -70,6 +66,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
   const [invalidRowIds, setInvalidRowIds] = useState<string[]>([]);
+
+  // Refs for accessible focus return
+  const helpButtonRef = useRef<HTMLButtonElement | null>(null);
+  const clearButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
@@ -251,6 +251,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const handleClearAllRows = () => {
     setRows([]);
     setShowClearConfirm(false);
+    clearButtonRef.current?.focus();
     handleAddRow();
   };
 
@@ -476,6 +477,16 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   // Keyboard shortcut listener (memoized with stable handler)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (showShortcuts) {
+          setShowShortcuts(false);
+          helpButtonRef.current?.focus();
+        }
+        if (showClearConfirm) {
+          setShowClearConfirm(false);
+          clearButtonRef.current?.focus();
+        }
+      }
       if (e.altKey && (e.key === "n" || e.key === "N")) {
         e.preventDefault();
         handleAddRow();
@@ -487,7 +498,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleAddRow, handleSaveBatch]);
+  }, [handleAddRow, handleSaveBatch, showShortcuts, showClearConfirm]);
 
   return (
     <div
@@ -558,7 +569,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={() => setDateOffset(0)}
-              className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50"
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50 transition"
               title={isId ? "Atur tanggal ke hari ini" : "Set date to today"}
             >
               {isId ? "Hari Ini" : "Today"}
@@ -566,7 +577,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={() => setDateOffset(1)}
-              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
               title={isId ? "Atur tanggal ke kemarin (-1 hari)" : "Set date to yesterday"}
             >
               {isId ? "Kemarin" : "-1 Day"}
@@ -574,7 +585,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={() => setDateOffset(7)}
-              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
               title={isId ? "Atur tanggal ke 7 hari lalu" : "Set date to 7 days ago"}
             >
               {isId ? "Minggu Lalu" : "-7 Days"}
@@ -601,9 +612,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           </div>
 
           <button
+            ref={helpButtonRef}
             type="button"
             onClick={() => setShowShortcuts(true)}
-            className="p-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition"
+            className="p-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition focus-visible:ring-2 focus-visible:ring-[#8B0000]"
             title={isId ? "Buka Panduan Pintasan Keyboard" : "Open Keyboard Shortcuts"}
           >
             <HelpCircle className="h-4 w-4" />
@@ -611,9 +623,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
           {/* Start Clean Table Trigger */}
           <button
+            ref={clearButtonRef}
             type="button"
             onClick={() => setShowClearConfirm(true)}
-            className="px-3 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            className="px-3 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-[#8B0000]"
             title={isId ? "Kosongkan seluruh tabel dan mulai lembar baru" : "Clear all rows and start fresh"}
           >
             <RotateCcw className="h-3.5 w-3.5 inline mr-1" />
@@ -637,7 +650,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           <button
             type="button"
             onClick={() => setShowSpreadsheetTip(false)}
-            className="p-1 text-amber-600 hover:text-amber-900 dark:hover:text-amber-100"
+            className="p-1 text-amber-600 hover:text-amber-900 dark:hover:text-amber-100 transition"
             title={isId ? "Tutup petunjuk" : "Dismiss tip"}
           >
             <X className="h-3.5 w-3.5" />
@@ -658,8 +671,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               </div>
               <button
                 type="button"
-                onClick={() => setShowShortcuts(false)}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => {
+                  setShowShortcuts(false);
+                  helpButtonRef.current?.focus();
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -714,8 +730,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
             <button
               type="button"
-              onClick={() => setShowShortcuts(false)}
-              className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200"
+              onClick={() => {
+                setShowShortcuts(false);
+                helpButtonRef.current?.focus();
+              }}
+              className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
             >
               {isId ? "Tutup Panduan" : "Close"}
             </button>
@@ -730,7 +749,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
-          <button type="button" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-red-100 rounded-lg">
+          <button type="button" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -1031,7 +1050,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={handleAddRow}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition focus-visible:ring-2 focus-visible:ring-[#8B0000]"
               title={isId ? "Tambah baris surat jalan baru (Pintasan: Alt+N)" : "Add new row (Alt+N)"}
             >
               <Plus className="h-4 w-4 text-[#8B0000]" />
@@ -1048,7 +1067,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               type="button"
               onClick={handleSaveBatch}
               disabled={!!savingProgress || rows.length === 0}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#8B0000]"
               title={isId ? "Simpan seluruh baris surat jalan ke database (Pintasan: Ctrl+S)" : "Commit all orders to database (Ctrl+S)"}
             >
               {savingProgress ? (
@@ -1082,8 +1101,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setShowClearConfirm(false)}
-                className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                onClick={() => {
+                  setShowClearConfirm(false);
+                  clearButtonRef.current?.focus();
+                }}
+                className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               >
                 {isId ? "Batal, Lanjut Mengisi" : "Cancel"}
               </button>
