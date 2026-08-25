@@ -162,6 +162,9 @@ export function CommandPalette({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-label={isId ? "Cari perintah atau navigasi" : "Search command or navigation"}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);

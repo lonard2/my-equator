@@ -86,11 +86,11 @@ export function Header({
             <button
               onClick={onOpenCommandPalette}
               className="flex items-center gap-2 rounded-xl bg-red-950/50 px-3 py-1.5 text-xs font-semibold text-red-100 hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
-              title="Cari atau Buka Perintah (⌘K)"
+              title={isId ? "Cari atau Buka Perintah (⌘K)" : "Search or Open Commands (⌘K)"}
             >
               <Search className="h-3.5 w-3.5" />
-              <span>Cari...</span>
-              <kbd className="inline-flex items-center gap-0.5 rounded bg-red-900/80 px-1.5 py-0.2 text-[10px] font-mono text-red-200">
+              <span>{isId ? "Cari..." : "Search..."}</span>
+              <kbd className="inline-flex items-center gap-0.5 rounded bg-red-900/80 px-1.5 py-0.5 text-[10px] font-mono text-red-200">
                 ⌘K
               </kbd>
             </button>
@@ -101,7 +101,7 @@ export function Header({
             <button
               onClick={onOpenSecurity}
               className="flex items-center gap-2 rounded-xl bg-red-950/50 p-1 pr-2.5 text-xs font-semibold text-white hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
-              title="Ganti Pengguna & Hak Akses (RBAC)"
+              title={isId ? "Ganti Pengguna & Hak Akses (RBAC)" : "User & Security Settings (RBAC)"}
             >
               <img
                 src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
@@ -111,7 +111,7 @@ export function Header({
               <span className="font-bold text-[11px] truncate max-w-[120px]">
                 {currentUser.name}
               </span>
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-white/20 uppercase">
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-white/20 uppercase">
                 {currentUser.role.split("_")[0]}
               </span>
             </button>
@@ -210,7 +210,7 @@ export function Header({
                       {currentUser.name}
                     </h3>
                     <p className="text-xs text-red-300">@{currentUser.username}</p>
-                    <span className="inline-block mt-0.5 px-2 py-0.2 rounded text-[9px] font-bold bg-white/20 uppercase">
+                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[9px] font-bold bg-white/20 uppercase">
                       {roleInfo?.label}
                     </span>
                   </div>

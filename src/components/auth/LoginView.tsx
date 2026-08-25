@@ -210,7 +210,7 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
                       <p className="font-extrabold text-[11px] text-gray-900 dark:text-white truncate">
                         {acc.name.split(",")[0]}
                       </p>
-                      <span className={`inline-block px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase ${info.badgeBg}`}>
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase ${info.badgeBg}`}>
                         {acc.role.split("_")[0]}
                       </span>
                     </div>
