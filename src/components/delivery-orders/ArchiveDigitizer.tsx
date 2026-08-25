@@ -19,6 +19,7 @@ import {
   ArrowDown,
   Loader2,
   X,
+  Info,
 } from "lucide-react";
 
 interface ArchiveDigitizerProps {
@@ -67,6 +68,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
   const [invalidRowIds, setInvalidRowIds] = useState<string[]>([]);
 
   // Undo row deletion buffer
@@ -307,8 +309,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setRows((prev) => [...prev, ...newParsedRows]);
     setSuccessMessage(
       isId
-        ? `Berhasil mengimpor ${newParsedRows.length} baris dari clipboard spreadsheet!`
-        : `Successfully imported ${newParsedRows.length} rows from spreadsheet clipboard!`
+        ? `Berhasil mengimpor ${newParsedRows.length} baris Surat Jalan dari clipboard spreadsheet!`
+        : `Successfully imported ${newParsedRows.length} delivery orders from spreadsheet clipboard!`
     );
   };
 
@@ -321,24 +323,56 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setInvalidRowIds([]);
 
     if (rows.length === 0) {
-      setErrorMessage(isId ? "Tabel baris surat jalan masih kosong." : "Batch table is empty.");
+      setErrorMessage(
+        isId
+          ? "Tabel baris surat jalan masih kosong. Klik 'Tambah Baris' untuk memulai."
+          : "Batch table is empty. Click 'Add Row' to start."
+      );
       return;
     }
 
     const invalids: string[] = [];
-    rows.forEach((r) => {
-      if (!r.recipientName.trim() || getRowTotalPairs(r.sizes) === 0) {
+    const missingNameRows: number[] = [];
+    const zeroPairRows: number[] = [];
+
+    rows.forEach((r, idx) => {
+      const totalPairs = getRowTotalPairs(r.sizes);
+      let rowHasError = false;
+
+      if (!r.recipientName.trim()) {
+        rowHasError = true;
+        missingNameRows.push(idx + 1);
+      }
+      if (totalPairs === 0) {
+        rowHasError = true;
+        zeroPairRows.push(idx + 1);
+      }
+
+      if (rowHasError) {
         invalids.push(r.id);
       }
     });
 
     if (invalids.length > 0) {
       setInvalidRowIds(invalids);
-      setErrorMessage(
-        isId
-          ? `Terdapat ${invalids.length} baris dengan nama customer kosong atau total 0 pasang.`
-          : `There are ${invalids.length} rows with empty customer name or 0 total pairs.`
-      );
+      const errorDetails: string[] = [];
+      if (missingNameRows.length > 0) {
+        errorDetails.push(
+          isId
+            ? `Nama customer belum diisi pada baris: #${missingNameRows.join(", #")}`
+            : `Customer name missing in rows: #${missingNameRows.join(", #")}`
+        );
+      }
+      if (zeroPairRows.length > 0) {
+        errorDetails.push(
+          isId
+            ? `Jumlah ukuran masih 0 pasang pada baris: #${zeroPairRows.join(", #")}`
+            : `Zero pairs entered in rows: #${zeroPairRows.join(", #")}`
+        );
+      }
+
+      setErrorMessage(errorDetails.join(" • "));
+
       // Auto-scroll to first invalid row
       const firstInvalidEl = document.querySelector(`[data-row-id="${invalids[0]}"]`);
       firstInvalidEl?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -404,7 +438,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           remainingRows.push({
             ...row,
             status: "error",
-            errorMessage: json.error || "Gagal menyimpan",
+            errorMessage: json.error || (isId ? "Gagal menyimpan ke database" : "Failed to commit"),
           });
         }
       } catch (err: any) {
@@ -412,7 +446,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         remainingRows.push({
           ...row,
           status: "error",
-          errorMessage: err?.message || "Kesalahan jaringan",
+          errorMessage: err?.message || (isId ? "Kesalahan jaringan" : "Network error"),
         });
       }
     }
@@ -422,8 +456,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     if (failedCount === 0) {
       setSuccessMessage(
         isId
-          ? `✓ Berhasil menyimpan ${savedCount} Surat Jalan ke database!`
-          : `✓ Successfully committed ${savedCount} Delivery Orders!`
+          ? `✓ Berhasil menyimpan ${savedCount} Surat Jalan (Total ${totalBatchPairs.toLocaleString("id-ID")} pasang)! Mengalihkan ke daftar Surat Jalan...`
+          : `✓ Successfully saved ${savedCount} Delivery Orders (${totalBatchPairs.toLocaleString("id-ID")} pairs)! Redirecting...`
       );
       setTimeout(() => {
         onSuccess();
@@ -433,8 +467,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       setRows(remainingRows);
       setErrorMessage(
         isId
-          ? `${savedCount} baris berhasil disimpan. ${failedCount} baris gagal dan tetap dipertahankan untuk diperbaiki.`
-          : `${savedCount} saved successfully. ${failedCount} failed and retained in table for retry.`
+          ? `${savedCount} Surat Jalan berhasil disimpan. ${failedCount} baris gagal dan tetap dipertahankan pada lembar kerja untuk Anda periksa kembali.`
+          : `${savedCount} orders saved. ${failedCount} rows failed and are retained in the worksheet for retry.`
       );
     }
   };
@@ -479,15 +513,17 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       {deletedRowBuffer && (
         <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
           <span className="text-xs font-bold">
-            {isId ? `Baris ${deletedRowBuffer.row.orderNumber} dihapus` : `Row ${deletedRowBuffer.row.orderNumber} removed`}
+            {isId
+              ? `Baris ${deletedRowBuffer.row.orderNumber} (${deletedRowBuffer.row.recipientName || "Tanpa Nama"}) dihapus`
+              : `Row ${deletedRowBuffer.row.orderNumber} removed`}
           </span>
           <button
             type="button"
             onClick={handleUndoDelete}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs active:scale-95 transition"
           >
             <Undo2 className="h-3.5 w-3.5" />
-            <span>Undo</span>
+            <span>{isId ? "Batalkan Hapus" : "Undo"}</span>
           </button>
         </div>
       )}
@@ -509,8 +545,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </div>
             <p className="text-[11px] text-gray-500">
               {isId
-                ? "Input cepat tumpukan arsip fisik surat jalan & rekap batch harian dengan keyboard"
-                : "Keyboard-first batch intake for physical archive delivery slips and manifests"}
+                ? "Digitalisasi massal tumpukan arsip fisik surat jalan pabrik dengan keyboard-first grid"
+                : "Rapid keyboard-first batch entry for physical paper delivery slips and manifests"}
             </p>
           </div>
         </div>
@@ -522,21 +558,24 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={() => setDateOffset(0)}
-              className="px-2 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50"
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50"
+              title={isId ? "Atur tanggal ke hari ini" : "Set date to today"}
             >
               {isId ? "Hari Ini" : "Today"}
             </button>
             <button
               type="button"
               onClick={() => setDateOffset(1)}
-              className="px-2 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              title={isId ? "Atur tanggal ke kemarin (-1 hari)" : "Set date to yesterday"}
             >
               {isId ? "Kemarin" : "-1 Day"}
             </button>
             <button
               type="button"
               onClick={() => setDateOffset(7)}
-              className="px-2 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              title={isId ? "Atur tanggal ke 7 hari lalu" : "Set date to 7 days ago"}
             >
               {isId ? "Minggu Lalu" : "-7 Days"}
             </button>
@@ -555,6 +594,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               type="button"
               onClick={handleApplyGlobalDate}
               className="text-[10px] font-bold text-[#8B0000] dark:text-red-400 hover:underline ml-1"
+              title={isId ? "Terapkan tanggal ini ke seluruh baris tabel di bawah" : "Apply this date to all rows"}
             >
               {isId ? "Terapkan Semua" : "Apply All"}
             </button>
@@ -563,8 +603,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           <button
             type="button"
             onClick={() => setShowShortcuts(true)}
-            className="p-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 text-gray-600 dark:text-gray-300 transition"
-            title="Buka Pintasan Keyboard"
+            className="p-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition"
+            title={isId ? "Buka Panduan Pintasan Keyboard" : "Open Keyboard Shortcuts"}
           >
             <HelpCircle className="h-4 w-4" />
           </button>
@@ -574,13 +614,36 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             type="button"
             onClick={() => setShowClearConfirm(true)}
             className="px-3 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            title="Mulai lembar kosong baru"
+            title={isId ? "Kosongkan seluruh tabel dan mulai lembar baru" : "Clear all rows and start fresh"}
           >
             <RotateCcw className="h-3.5 w-3.5 inline mr-1" />
-            <span>{isId ? "Mulai Bersih" : "Clear"}</span>
+            <span>{isId ? "Mulai Bersih" : "Clear All"}</span>
           </button>
         </div>
       </div>
+
+      {/* Helpful Excel/Sheets Clipboard Import Tip Banner */}
+      {showSpreadsheetTip && (
+        <div className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>{isId ? "Impor Cepat Excel:" : "Fast Excel Import:"}</strong>{" "}
+              {isId
+                ? "Anda dapat meng-copy tabel dari Excel/Sheets lalu tekan Ctrl+V di halaman ini untuk auto-input baris."
+                : "You can copy a table range from Excel or Google Sheets and press Ctrl+V to auto-populate rows."}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSpreadsheetTip(false)}
+            className="p-1 text-amber-600 hover:text-amber-900 dark:hover:text-amber-100"
+            title={isId ? "Tutup petunjuk" : "Dismiss tip"}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Keyboard Shortcuts Cheat Sheet Modal */}
       {showShortcuts && (
@@ -603,7 +666,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-600 dark:text-gray-300">
                   {isId ? "Lompat vertikal ke baris bawah ukuran sama" : "Step vertically down in same size column"}
                 </span>
@@ -612,7 +675,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 </kbd>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-600 dark:text-gray-300">
                   {isId ? "Pindah ke kolom ukuran berikutnya" : "Move to next column/size"}
                 </span>
@@ -621,7 +684,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 </kbd>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-600 dark:text-gray-300">
                   {isId ? "Tambah baris surat jalan baru" : "Add new delivery order row"}
                 </span>
@@ -630,7 +693,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 </kbd>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-600 dark:text-gray-300">
                   {isId ? "Simpan seluruh batch ke database" : "Commit batch to database"}
                 </span>
@@ -639,7 +702,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 </kbd>
               </div>
 
-              <div className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-600 dark:text-gray-300">
                   {isId ? "Paste tabel dari Excel / Google Sheets" : "Paste table range from Excel"}
                 </span>
@@ -652,9 +715,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={() => setShowShortcuts(false)}
-              className="w-full py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200"
+              className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200"
             >
-              {isId ? "Mengerti" : "Close"}
+              {isId ? "Tutup Panduan" : "Close"}
             </button>
           </div>
         </div>
@@ -688,8 +751,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <div>
               <p className="text-xs font-bold">
                 {isId
-                  ? `Menyimpan ${savingProgress.current} dari ${savingProgress.total} Surat Jalan...`
-                  : `Saving ${savingProgress.current} of ${savingProgress.total} orders...`}
+                  ? `Menyimpan ${savingProgress.current} dari ${savingProgress.total} Surat Jalan ke database...`
+                  : `Saving ${savingProgress.current} of ${savingProgress.total} orders to database...`}
               </p>
               <p className="text-[10px] font-mono opacity-75">{savingProgress.orderNumber}</p>
             </div>
@@ -750,7 +813,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     list="customer-directory-suggestions"
                     value={row.recipientName}
                     onChange={(e) => handleRowChange(row.id, "recipientName", e.target.value)}
-                    placeholder={isId ? "Nama PT / Toko Sepatu" : "Customer Company"}
+                    placeholder={isId ? "Ketik nama PT / Toko Sepatu..." : "Customer Company..."}
                     className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
                   />
                 </div>
@@ -761,7 +824,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     <span className="text-[10px] font-bold text-gray-500 uppercase">
                       {isId ? "Matriks Ukuran (EU 36–45)" : "Size Breakdown"}
                     </span>
-                    <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-400">
+                    <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-400 tabular-nums">
                       {rowTotal} <span className="text-[10px] font-normal text-gray-500">psg</span>
                     </span>
                   </div>
@@ -857,7 +920,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         list="customer-directory-suggestions"
                         value={row.recipientName}
                         onChange={(e) => handleRowChange(row.id, "recipientName", e.target.value)}
-                        placeholder={isId ? "PT / CV Customer..." : "Customer name..."}
+                        placeholder={isId ? "Ketik PT / CV Customer..." : "Customer name..."}
                         className={`w-full rounded-lg border px-2.5 py-1 text-xs font-semibold focus:outline-none ${
                           isInvalid && !row.recipientName.trim()
                             ? "border-red-500 ring-2 ring-red-200 dark:ring-red-950 bg-red-50/50"
@@ -925,7 +988,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         onClick={() => handleDeleteRow(row.id)}
                         aria-label={`Hapus baris ${rIdx + 1}`}
                         className="p-1.5 rounded-lg text-gray-500 hover:text-red-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-                        title={isId ? "Hapus Baris" : "Delete Row"}
+                        title={isId ? "Hapus Baris Ini (Undo Tersedia)" : "Delete Row (Undo Available)"}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -939,7 +1002,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <tfoot className="bg-gray-100 dark:bg-gray-800/80 font-bold border-t-2 border-gray-300 dark:border-gray-700 text-xs">
               <tr>
                 <td colSpan={5} className="p-3 text-gray-700 dark:text-gray-300">
-                  {isId ? `Total Batch (${rows.length} Surat Jalan)` : `Batch Total (${rows.length} Orders)`}
+                  {isId ? `Total Batch Rekap (${rows.length} Surat Jalan)` : `Batch Manifest Total (${rows.length} Orders)`}
                 </td>
 
                 {STANDARD_SIZES.map((size) => {
@@ -952,7 +1015,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 })}
 
                 <td className="p-3 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
-                  {totalBatchPairs}
+                  {totalBatchPairs.toLocaleString("id-ID")}
                 </td>
                 <td></td>
               </tr>
@@ -967,13 +1030,14 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               type="button"
               onClick={handleAddRow}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition"
+              title={isId ? "Tambah baris surat jalan baru (Pintasan: Alt+N)" : "Add new row (Alt+N)"}
             >
               <Plus className="h-4 w-4 text-[#8B0000]" />
               <span>{isId ? "Tambah Baris (Alt+N)" : "Add Row (Alt+N)"}</span>
             </button>
 
-            <span className="text-[11px] text-gray-500 font-mono hidden sm:inline">
-              {rows.length} {isId ? "baris disiapkan" : "staged rows"} • {totalBatchPairs} psg
+            <span className="text-[11px] text-gray-500 font-mono hidden sm:inline tabular-nums">
+              {rows.length} {isId ? "baris disiapkan" : "staged rows"} • {totalBatchPairs.toLocaleString("id-ID")} psg
             </span>
           </div>
 
@@ -983,6 +1047,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               onClick={handleSaveBatch}
               disabled={!!savingProgress || rows.length === 0}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50"
+              title={isId ? "Simpan seluruh baris surat jalan ke database (Pintasan: Ctrl+S)" : "Commit all orders to database (Ctrl+S)"}
             >
               {savingProgress ? (
                 <>
@@ -992,7 +1057,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               ) : (
                 <>
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>{isId ? `Simpan Batch (${rows.length} DO)` : `Commit Batch (${rows.length} DO)`}</span>
+                  <span>{isId ? `Simpan Batch (${rows.length} Surat Jalan)` : `Commit Batch (${rows.length} Orders)`}</span>
                 </>
               )}
             </button>
@@ -1005,27 +1070,27 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
             <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
-              {isId ? "Kosongkan seluruh tabel digitizer?" : "Clear all digitizer rows?"}
+              {isId ? "Kosongkan seluruh lembar kerja?" : "Clear entire digitizer worksheet?"}
             </h4>
             <p className="text-xs text-gray-600 dark:text-gray-300">
               {isId
-                ? "Semua data baris yang belum disimpan akan dihapus dan digantikan lembar kosong baru."
-                : "All unsaved rows will be deleted and reset to a fresh blank sheet."}
+                ? `Semua data (${rows.length} baris, ${totalBatchPairs} pasang) yang belum disimpan akan dihapus. Lembar kerja akan direset ke 1 baris kosong baru.`
+                : `All unsaved data (${rows.length} rows, ${totalBatchPairs} pairs) will be discarded. The worksheet will be reset to a blank row.`}
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowClearConfirm(false)}
-                className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+                className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                {isId ? "Batal" : "Cancel"}
+                {isId ? "Batal, Lanjut Mengisi" : "Cancel"}
               </button>
               <button
                 type="button"
                 onClick={handleClearAllRows}
-                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs"
+                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
               >
-                {isId ? "Ya, Kosongkan" : "Clear All"}
+                {isId ? "Ya, Kosongkan Lembar Kerja" : "Clear All"}
               </button>
             </div>
           </div>
