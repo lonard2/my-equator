@@ -249,18 +249,28 @@ export function CadStudio({ language }: CadStudioProps) {
 
   // Apply Generative AI Insole Parameters
   const handleApplyAiGeneration = (aiData: any) => {
+    if (aiData.sizingSystem) setSizingSystem(aiData.sizingSystem);
+    if (aiData.rawSizeValue) setRawSizeValue(aiData.rawSizeValue);
+    if (aiData.customLengthMm) setCustomLengthMm(aiData.customLengthMm);
     if (aiData.archProfile) setArchProfile(aiData.archProfile);
-    if (aiData.archFactor) setArchFactor(aiData.archFactor);
+    if (aiData.archOffsetFactor !== undefined) setArchFactor(aiData.archOffsetFactor);
+    else if (aiData.archFactor !== undefined) setArchFactor(aiData.archFactor);
     if (aiData.toeShape) setToeShape(aiData.toeShape);
-    if (aiData.forefootThickness) setForefootThickness(aiData.forefootThickness);
-    if (aiData.heelThickness) setHeelThickness(aiData.heelThickness);
+    if (aiData.ballWidthMm) setBallWidth(aiData.ballWidthMm);
+    if (aiData.heelWidthMm) setHeelWidth(aiData.heelWidthMm);
+    if (aiData.waistWidthMm) setWaistWidth(aiData.waistWidthMm);
+    if (aiData.thicknessForefootMm) setForefootThickness(aiData.thicknessForefootMm);
+    if (aiData.thicknessHeelMm) setHeelThickness(aiData.thicknessHeelMm);
     if (aiData.materialType) setMaterialType(aiData.materialType);
     if (aiData.name) setBlueprintName(aiData.name);
     if (aiData.archPlateLengthFactor) setArchPlateLength(aiData.archPlateLengthFactor);
     if (aiData.archPlateWidthFactor) setArchPlateWidth(aiData.archPlateWidthFactor);
     if (aiData.archPlateLateralWing !== undefined) setArchPlateLateralWing(aiData.archPlateLateralWing);
-    if (aiData.heelCupDepth) setHeelCupDepth(aiData.heelCupDepth);
+    if (aiData.heelCupDepthProfile) setHeelCupDepth(aiData.heelCupDepthProfile);
+    else if (aiData.heelCupDepth) setHeelCupDepth(aiData.heelCupDepth);
+    if (aiData.heelCupRadiusFactor) setHeelCupRadius(aiData.heelCupRadiusFactor);
     if (aiData.metatarsalPadSizeFactor) setMetatarsalSize(aiData.metatarsalPadSizeFactor);
+    if (aiData.metatarsalPadYPosition) setMetatarsalYPos(aiData.metatarsalPadYPosition);
     setMobileCadView("CANVAS");
     showToast(isId ? "Desain AI berhasil diintegrasikan ke canvas CAD" : "AI Insole design loaded into CAD canvas");
   };
@@ -711,6 +721,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     min={70}
                     max={130}
                     value={ballWidth}
+                    aria-label={isId ? "Lebar Bola Kaki (mm)" : "Forefoot Ball Width (mm)"}
                     onChange={(e) => setBallWidth(Math.max(70, Math.min(130, parseFloat(e.target.value) || 70)))}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-amber-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
                   />
@@ -723,6 +734,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 max={130}
                 step={0.5}
                 value={ballWidth}
+                aria-label={isId ? "Slider Lebar Bola Kaki" : "Forefoot Ball Width Slider"}
                 onChange={(e) => setBallWidth(parseFloat(e.target.value))}
                 className="w-full accent-amber-500"
               />
@@ -741,6 +753,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     min={45}
                     max={95}
                     value={heelWidth}
+                    aria-label={isId ? "Lebar Mangkuk Tumit (mm)" : "Rearfoot Heel Width (mm)"}
                     onChange={(e) => setHeelWidth(Math.max(45, Math.min(95, parseFloat(e.target.value) || 45)))}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
                   />
@@ -753,6 +766,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 max={95}
                 step={0.5}
                 value={heelWidth}
+                aria-label={isId ? "Slider Lebar Mangkuk Tumit" : "Rearfoot Heel Width Slider"}
                 onChange={(e) => setHeelWidth(parseFloat(e.target.value))}
                 className="w-full accent-emerald-500"
               />
@@ -771,6 +785,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     min={0.75}
                     max={1.45}
                     value={archFactor}
+                    aria-label={isId ? "Faktor Tinggi Lekukan Arch" : "Arch Flange Height Factor"}
                     onChange={(e) => setArchFactor(Math.max(0.75, Math.min(1.45, parseFloat(e.target.value) || 1.0)))}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
                   />
@@ -783,6 +798,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 max={1.45}
                 step={0.05}
                 value={archFactor}
+                aria-label={isId ? "Slider Faktor Tinggi Lekukan Arch" : "Arch Flange Height Factor Slider"}
                 onChange={(e) => setArchFactor(parseFloat(e.target.value))}
                 className="w-full accent-[#8B0000]"
               />
