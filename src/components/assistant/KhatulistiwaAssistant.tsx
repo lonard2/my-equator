@@ -32,6 +32,8 @@ export function KhatulistiwaAssistant({
   const isId = language === "id";
   const [selectedModel, setSelectedModel] = useState<string>("google/gemini-3.5-flash-lite");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
+  const [appliedDrafts, setAppliedDrafts] = useState<Record<number, boolean>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -46,6 +48,77 @@ export function KhatulistiwaAssistant({
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Markdown Formatter Helper
+  const renderFormattedContent = (content: string, isUser: boolean) => {
+    const lines = content.split("\n");
+    return (
+      <div className="space-y-1.5 leading-relaxed">
+        {lines.map((line, lIdx) => {
+          if (!line.trim()) return <div key={lIdx} className="h-1" />;
+
+          // Bullet points
+          const isBullet = line.trim().startsWith("- ") || line.trim().startsWith("* ");
+          const text = isBullet ? line.trim().slice(2) : line;
+
+          // Header
+          const isHeader = line.trim().startsWith("### ") || line.trim().startsWith("## ");
+          const headerText = isHeader ? line.trim().replace(/^#+\s*/, "") : text;
+
+          // Format bold **text**
+          const parts = headerText.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+
+          const formattedLine = parts.map((part, pIdx) => {
+            if (part.startsWith("**") && part.endsWith("**")) {
+              return (
+                <strong
+                  key={pIdx}
+                  className={`font-black ${isUser ? "text-white underline decoration-white/30" : "text-gray-950 dark:text-white"}`}
+                >
+                  {part.slice(2, -2)}
+                </strong>
+              );
+            }
+            if (part.startsWith("`") && part.endsWith("`")) {
+              return (
+                <code
+                  key={pIdx}
+                  className={`px-1.5 py-0.5 rounded font-mono text-[11px] ${
+                    isUser
+                      ? "bg-red-950 text-red-100"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  {part.slice(1, -1)}
+                </code>
+              );
+            }
+            return <React.Fragment key={pIdx}>{part}</React.Fragment>;
+          });
+
+          if (isHeader) {
+            return (
+              <div key={lIdx} className="font-extrabold text-sm pt-1 tracking-tight">
+                {formattedLine}
+              </div>
+            );
+          }
+
+          if (isBullet) {
+            return (
+              <div key={lIdx} className="flex items-start gap-2 ml-1">
+                <span className={`text-xs mt-0.5 shrink-0 ${isUser ? "text-red-200" : "text-[#8B0000] dark:text-red-400"}`}>•</span>
+                <span className="flex-1">{formattedLine}</span>
+              </div>
+            );
+          }
+
+          return <p key={lIdx}>{formattedLine}</p>;
+        })}
+      </div>
+    );
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -144,7 +217,7 @@ export function KhatulistiwaAssistant({
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  const handleClearHistory = () => {
+  const handleConfirmClear = () => {
     setMessages([
       {
         role: "assistant",
@@ -154,6 +227,8 @@ export function KhatulistiwaAssistant({
       },
     ]);
     setStagedDrafts({});
+    setAppliedDrafts({});
+    setIsConfirmClearOpen(false);
   };
 
   return (
@@ -162,14 +237,14 @@ export function KhatulistiwaAssistant({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed bottom-20 md:bottom-6 right-6 z-40 flex items-center gap-3 rounded-full bg-[#8B0000] hover:bg-[#A00000] text-white px-4.5 py-3.5 shadow-2xl hover:shadow-red-900/40 active:scale-95 transition-all duration-200 group border-2 border-red-400/40"
+          className="fixed bottom-20 md:bottom-6 right-6 z-40 flex items-center gap-3 rounded-full bg-[#8B0000] hover:bg-[#A00000] text-white px-4.5 py-3.5 shadow-2xl hover:shadow-red-900/40 active:scale-95 transition-all duration-200 group border border-red-400/30"
           title="Buka Khatulistiwa AI Floating Copilot"
+          aria-label="Buka Khatulistiwa AI Floating Copilot"
         >
           <div className="relative">
-            <Compass className="h-6 w-6 animate-spin-slow group-hover:rotate-45 transition-transform" />
+            <Compass className={`h-6 w-6 text-white ${loading ? "animate-spin" : "group-hover:rotate-45 transition-transform"}`} />
             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-200 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border-2 border-[#8B0000]"></span>
             </span>
           </div>
           <div className="text-left hidden sm:block">
@@ -192,7 +267,7 @@ export function KhatulistiwaAssistant({
           <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between shrink-0 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-2xl bg-white/15 backdrop-blur-xs border border-white/20 shadow-xs">
-                <Compass className="h-5 w-5 text-white animate-spin-slow" />
+                <Compass className={`h-5 w-5 text-white ${loading ? "animate-spin" : ""}`} />
               </div>
               <div>
                 <h3 className="font-extrabold text-sm sm:text-base tracking-wide flex items-center gap-2">
@@ -211,22 +286,25 @@ export function KhatulistiwaAssistant({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="hidden sm:flex p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/15 active:scale-95 transition"
+                className="hidden sm:flex p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/15 active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 title={isExpanded ? (isId ? "Kecilkan Window" : "Contract") : isId ? "Perbesar Window" : "Expand"}
+                aria-label={isExpanded ? "Contract window" : "Expand window"}
               >
                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </button>
               <button
-                onClick={handleClearHistory}
-                className="p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/15 active:scale-95 transition"
+                onClick={() => setIsConfirmClearOpen(true)}
+                className="p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/15 active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 title={isId ? "Bersihkan Chat" : "Clear Chat"}
+                aria-label={isId ? "Bersihkan Chat" : "Clear Chat"}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
               <button
                 onClick={onToggle}
-                className="p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/15 active:scale-95 transition"
+                className="p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/15 active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 title={isId ? "Tutup Widget" : "Close"}
+                aria-label="Close Assistant"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -241,27 +319,40 @@ export function KhatulistiwaAssistant({
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
+              aria-label={isId ? "Pilih model AI" : "Select AI model"}
               className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-[#8B0000] focus:outline-none"
             >
-              {SUPPORTED_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.provider})
-                </option>
-              ))}
+              <option value="google/gemini-3.5-flash-lite">
+                ⚡ Gemini 3.5 Flash Lite ({isId ? "Cepat & Harian" : "Fast & Daily"})
+              </option>
+              <option value="google/gemini-3.7-flash">
+                📷 Gemini 3.7 Flash ({isId ? "Vision OCR & Ekstraksi" : "Vision OCR & Forms"})
+              </option>
+              <option value="deepseek/deepseek-v4-pro-0813">
+                🧠 DeepSeek V4 Pro ({isId ? "Analitik & SQL Logika" : "Analytics & Logic"})
+              </option>
+              <option value="qwen/qwen3.7-plus">
+                🌐 Qwen 3.7 Plus ({isId ? "Bilingual & Istilah Pabrik" : "Bilingual & Slang"})
+              </option>
+              <option value="openai/gpt-5.6-luna">
+                🎨 GPT-5.6 Luna ({isId ? "Generative CAD & Insole" : "CAD & Generative"})
+              </option>
             </select>
           </div>
 
           {/* Conversation Stream (Font-Conscious) */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4" aria-live="polite">
             {messages.map((msg, idx) => {
               const isUser = msg.role === "user";
               const staged = stagedDrafts[idx];
+              const isApplied = appliedDrafts[idx];
+
               return (
                 <div
                   key={idx}
                   className={`flex flex-col ${isUser ? "items-end" : "items-start"} space-y-1.5`}
                 >
-                  <div className="flex items-center gap-2 text-[10px] text-gray-400 px-1 font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400 px-1 font-bold uppercase tracking-wider">
                     <span>{isUser ? (isId ? "Anda" : "You") : "Khatulistiwa AI"}</span>
                   </div>
 
@@ -272,17 +363,18 @@ export function KhatulistiwaAssistant({
                         : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-xs border border-gray-200 dark:border-gray-700 text-xs sm:text-sm shadow-xs"
                     }`}
                   >
-                    {msg.content}
+                    {renderFormattedContent(msg.content, isUser)}
 
-                    {/* Copy Button */}
+                    {/* Copy Button (Accessible on mobile/touch & desktop) */}
                     {!isUser && (
                       <button
                         onClick={() => handleCopyMessage(msg.content, idx)}
-                        className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white dark:bg-gray-700 shadow-xs text-gray-500 hover:text-gray-900 transition active:scale-95"
-                        title="Salin Pesan"
+                        className="absolute top-2.5 right-2.5 opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 rounded-lg bg-white/80 dark:bg-gray-700/80 shadow-xs text-gray-500 hover:text-gray-900 dark:hover:text-white transition active:scale-95"
+                        title={isId ? "Salin Pesan" : "Copy Message"}
+                        aria-label={isId ? "Salin Pesan" : "Copy Message"}
                       >
                         {copiedIndex === idx ? (
-                          <Check className="h-3.5 w-3.5 text-green-600" />
+                          <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
                         )}
@@ -290,25 +382,66 @@ export function KhatulistiwaAssistant({
                     )}
                   </div>
 
-                  {/* Staged Draft Action Card if AI generated an order draft */}
+                  {/* Staged Draft Action Card with Footwear Size Matrix */}
                   {staged && (
-                    <div className="mt-2 w-full max-w-[92%] rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/50 p-4 space-y-2.5 shadow-sm animate-in zoom-in-95 duration-150">
-                      <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-300 font-bold text-xs sm:text-sm">
-                        <FileCheck2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                        <span>{isId ? "Draft Surat Jalan Siap Diterapkan!" : "Structured DO Draft Ready!"}</span>
+                    <div className="mt-2 w-full max-w-[92%] rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/50 p-4 space-y-3 shadow-sm animate-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-300 font-bold text-xs sm:text-sm">
+                        <div className="flex items-center gap-2">
+                          <FileCheck2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span>{isId ? "Draft Surat Jalan Terverifikasi" : "Verified DO Draft Ready"}</span>
+                        </div>
+                        {staged.total_pairs && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 font-mono text-[10px] font-bold">
+                            {Number(staged.total_pairs).toLocaleString("id-ID")} {isId ? "Pasang" : "Pairs"}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-emerald-800 dark:text-emerald-200 space-y-0.5 font-medium">
-                        <p>Penerima: <strong>{staged.recipient_name}</strong></p>
-                        <p>Alamat: {staged.destination_address}</p>
-                        <p>No. PO / SPK: {staged.po_number || "-"}</p>
+
+                      <div className="text-xs text-emerald-800 dark:text-emerald-200 space-y-1 font-medium bg-white/60 dark:bg-emerald-900/30 p-2.5 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+                        <p><strong>{isId ? "Penerima:" : "Recipient:"}</strong> {staged.recipient_name}</p>
+                        <p><strong>{isId ? "Alamat:" : "Address:"}</strong> {staged.destination_address}</p>
+                        <p><strong>{isId ? "No. PO / SPK:" : "PO / Work Order:"}</strong> {staged.po_number || "-"}</p>
                       </div>
-                      <button
-                        onClick={() => onApplyDraftOrder(staged)}
-                        className="w-full py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        <span>{isId ? "Terapkan ke Form Surat Jalan (1-Click)" : "Apply to Order Form"}</span>
-                      </button>
+
+                      {/* Footwear Size Breakdown Matrix Pills */}
+                      {staged.size_breakdown && Object.keys(staged.size_breakdown).length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-extrabold uppercase text-emerald-900 dark:text-emerald-300 block">
+                            {isId ? "Matriks Rincian Ukuran:" : "Footwear Size Breakdown:"}
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(staged.size_breakdown)
+                              .filter(([_, qty]) => Number(qty) > 0)
+                              .map(([size, qty]) => (
+                                <span
+                                  key={size}
+                                  className="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/90 text-emerald-900 dark:text-emerald-200 font-mono text-[10px] font-bold border border-emerald-300/80 dark:border-emerald-700"
+                                >
+                                  EU {size}: {Number(qty).toLocaleString("id-ID")} psg
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Apply Button State */}
+                      {isApplied ? (
+                        <div className="w-full py-2.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-2">
+                          <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>{isId ? "Telah Diterapkan ke Form Surat Jalan ✓" : "Applied to Order Form ✓"}</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            onApplyDraftOrder(staged);
+                            setAppliedDrafts((prev) => ({ ...prev, [idx]: true }));
+                          }}
+                          className="w-full py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          <span>{isId ? "Terapkan ke Form Surat Jalan (1-Click)" : "Apply to Order Form"}</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -316,8 +449,8 @@ export function KhatulistiwaAssistant({
             })}
 
             {loading && (
-              <div className="flex items-center gap-2.5 text-xs text-gray-500 p-2">
-                <Compass className="h-5 w-5 text-[#8B0000] animate-spin" />
+              <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 p-2">
+                <Compass className="h-5 w-5 text-[#8B0000] dark:text-red-400 animate-spin" />
                 <span className="italic font-medium">
                   {isId ? "Khatulistiwa AI sedang menganalisis data pabrik..." : "Analyzing factory data..."}
                 </span>
@@ -333,42 +466,97 @@ export function KhatulistiwaAssistant({
               <button
                 key={i}
                 onClick={() => handleSendMessage(qp.prompt)}
-                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] whitespace-nowrap active:scale-95 transition shadow-2xs"
+                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] whitespace-nowrap active:scale-95 transition shadow-2xs focus:outline-none focus-visible:ring-1 focus-visible:ring-[#8B0000]"
               >
                 {qp.label}
               </button>
             ))}
           </div>
 
-          {/* Input Bar */}
+          {/* Input Bar (Auto-Expanding Multiline Textarea) */}
           <div className="p-3.5 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
+                if (textareaRef.current) textareaRef.current.style.height = "auto";
               }}
-              className="flex items-center gap-2"
+              className="flex items-end gap-2"
             >
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
+                rows={1}
                 value={inputPrompt}
-                onChange={(e) => setInputPrompt(e.target.value)}
+                onChange={(e) => {
+                  setInputPrompt(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                    if (textareaRef.current) textareaRef.current.style.height = "auto";
+                  }
+                }}
                 placeholder={
                   isId
-                    ? "Tanyakan stok bahan, draft Surat Jalan, atau estimasi BOM..."
-                    : "Ask about inventory stock, draft orders, or BOM..."
+                    ? "Tanyakan stok, draft DO, atau BOM... (Enter = kirim, Shift+Enter = baris baru)"
+                    : "Ask stock, draft DO, or BOM... (Enter = send, Shift+Enter = newline)"
                 }
-                className="flex-1 rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none"
+                aria-label={isId ? "Pesan untuk Khatulistiwa AI" : "Message for Khatulistiwa AI"}
+                className="flex-1 rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none resize-none max-h-32"
               />
               <button
                 type="submit"
                 disabled={!inputPrompt.trim() || loading}
-                className="p-3 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white shadow-md disabled:opacity-40 active:scale-95 transition"
+                aria-label={isId ? "Kirim Pesan" : "Send Message"}
+                className="p-3 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white shadow-md disabled:opacity-40 active:scale-95 transition shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B0000]"
               >
                 <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </form>
           </div>
+
+          {/* In-App Focus-Trapped Clear Chat Confirmation Modal */}
+          {isConfirmClearOpen && (
+            <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+                    <Trash2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                      {isId ? "Bersihkan Percakapan?" : "Clear Chat History?"}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {isId
+                        ? "Seluruh riwayat chat dan draft yang belum disimpan akan dihapus."
+                        : "All chat messages and unapplied drafts will be permanently cleared."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmClearOpen(false)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                  >
+                    {isId ? "Batal" : "Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmClear}
+                    className="px-4 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition"
+                  >
+                    {isId ? "Ya, Bersihkan" : "Yes, Clear"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
