@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown } from "@/types";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
 import { getAvailableStatusRollbacks } from "@/lib/orders/status";
 import { TouchSizePad } from "./TouchSizePad";
+import { StatusBadge } from "./StatusBadge";
 import {
   Printer,
   FileDown,
@@ -21,9 +22,10 @@ import {
   Grid,
   Touchpad,
   RotateCcw,
-  Undo2,
   AlertTriangle,
   Ban,
+  MoreVertical,
+  ChevronDown,
 } from "lucide-react";
 
 interface OrderDetailProps {
@@ -58,14 +60,23 @@ export function OrderDetail({
   const isId = language === "id";
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
   const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
+
+  // More Actions Dropdown State
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // In-App Delete Confirmation State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Status Rollback / Cancellation Modal States
   const [isRollbackModalOpen, setIsRollbackModalOpen] = useState(false);
   const [rollbackTarget, setRollbackTarget] = useState<DeliveryOrderStatus>("DRAFT");
   const [rollbackReason, setRollbackReason] = useState("");
   const [rollbackSubmitting, setRollbackSubmitting] = useState(false);
+  const [rollbackError, setRollbackError] = useState<string | null>(null);
 
   // Edit form states
   const [recipientName, setRecipientName] = useState(order.recipientName);
@@ -77,6 +88,28 @@ export function OrderDetail({
   const [notes, setNotes] = useState(order.notes || "");
   const [editItems, setEditItems] = useState<EditableItem[]>([]);
 
+  // Close dropdown on outside click or Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMoreMenuOpen(false);
+      }
+    }
+    if (isMoreMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMoreMenuOpen]);
+
   // Sync edit state whenever order prop changes
   useEffect(() => {
     setRecipientName(order.recipientName);
@@ -86,6 +119,7 @@ export function OrderDetail({
     setDriverName(order.driverName || "");
     setDeliveryDate(order.deliveryDate);
     setNotes(order.notes || "");
+    setErrorMessage(null);
 
     const mapped = (order.items || []).map((item) => ({
       id: item.id,
@@ -99,9 +133,11 @@ export function OrderDetail({
     setEditItems(mapped);
     setIsEditing(false);
     setActiveItemIndex(0);
+    setIsMoreMenuOpen(false);
   }, [order]);
 
   const handleDownloadPrn = () => {
+    setIsMoreMenuOpen(false);
     window.open(`/api/orders/${order.id}/print-escp?format=binary`, "_blank");
   };
 
@@ -149,6 +185,7 @@ export function OrderDetail({
   };
 
   const handleSaveChanges = async () => {
+    setErrorMessage(null);
     setSaving(true);
     try {
       const res = await fetch(`/api/orders/${order.id}`, {
@@ -174,12 +211,15 @@ export function OrderDetail({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update order");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || (isId ? "Gagal menyimpan perubahan." : "Failed to update order."));
+      }
       setIsEditing(false);
       onOrderUpdated();
-    } catch (err) {
-      console.error(err);
-      alert(isId ? "Gagal menyimpan perubahan surat jalan." : "Failed to update order.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : (isId ? "Gagal menyimpan perubahan surat jalan." : "Failed to update order.");
+      setErrorMessage(message);
     } finally {
       setSaving(false);
     }
@@ -187,14 +227,18 @@ export function OrderDetail({
 
   const handleExecuteRollback = async () => {
     if (!rollbackReason.trim()) {
-      alert(isId ? "Wajib mengisi alasan rollback atau pembatalan status." : "Rollback reason is required.");
+      setRollbackError(isId ? "Wajib mengisi alasan rollback atau pembatalan status." : "Rollback reason is required.");
       return;
     }
+    setRollbackError(null);
     setRollbackSubmitting(true);
     try {
       await onStatusChange(order.id, rollbackTarget as DeliveryOrderStatus, rollbackReason);
       setIsRollbackModalOpen(false);
       setRollbackReason("");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : (isId ? "Gagal mengubah status." : "Failed to change status.");
+      setRollbackError(message);
     } finally {
       setRollbackSubmitting(false);
     }
@@ -224,66 +268,52 @@ export function OrderDetail({
     },
     CONFIRMED: {
       next: "PRINTED",
-      label: isId ? "Tandai Tercetak (Dot-Matrix)" : "Mark as Printed",
+      label: isId ? "Tandai Tercetak" : "Mark as Printed",
       icon: Printer,
     },
     PRINTED: {
       next: "DISPATCHED",
-      label: isId ? "Kirimkan ke Armada / Driver" : "Dispatch with Driver",
+      label: isId ? "Kirimkan ke Armada" : "Dispatch with Driver",
       icon: Truck,
     },
     DISPATCHED: {
       next: "DELIVERED",
-      label: isId ? "Selesai Diterima Customer" : "Mark as Delivered",
+      label: isId ? "Selesai Diterima" : "Mark as Delivered",
       icon: CheckCircle2,
     },
   };
 
   const nextAction = nextStatusMap[order.status];
   const currentEditItem = editItems[activeItemIndex] || editItems[0];
+  const canEdit = order.status === "DRAFT" || order.status === "CONFIRMED";
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto">
       {/* Top Header Banner */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 sm:p-6 sticky top-0 z-10 shadow-xs">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 sm:p-5 sticky top-0 z-20 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono">
                 {order.orderNumber}
               </h2>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                order.status === "DELIVERED"
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                  : order.status === "CANCELLED"
-                  ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                  : "bg-red-100 dark:bg-red-900/60 text-[#8B0000] dark:text-red-300"
-              }`}>
-                {order.status}
-              </span>
+              <StatusBadge status={order.status} size="md" language={language} />
               {isEditing && (
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                  {isId ? "Mode Edit Aktif" : "Editing Mode"}
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                  {isId ? "Mode Edit Aktif" : "Editing"}
                 </span>
               )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {isId ? "Dibuat pada" : "Created at"} {formatIndonesianDate(order.createdAt)}
+              {isId ? "Dibuat pada" : "Created on"} {formatIndonesianDate(order.createdAt)}
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Distilled Action Header */}
+          <div className="flex items-center gap-2">
             {!isEditing ? (
               <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 px-3 py-2 text-xs font-bold text-[#8B0000] dark:text-red-300 hover:bg-red-100 transition shadow-xs"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />
-                  <span>{isId ? "Edit Surat Jalan" : "Edit Order"}</span>
-                </button>
-
+                {/* 1. Primary Forward Action CTA */}
                 {nextAction && order.status !== "CANCELLED" && (
                   <button
                     onClick={() => onStatusChange(order.id, nextAction.next)}
@@ -294,86 +324,144 @@ export function OrderDetail({
                   </button>
                 )}
 
-                {/* Rollback / Status Reversal Button */}
-                {order.status !== "DRAFT" && (
+                {/* 2. Secondary Primary: Edit Order */}
+                {canEdit && (
                   <button
-                    onClick={() => {
-                      const rollbacks = getAvailableStatusRollbacks(order.status);
-                      if (rollbacks.length > 0) {
-                        setRollbackTarget(rollbacks[0]);
-                      } else {
-                        setRollbackTarget("DRAFT");
-                      }
-                      setIsRollbackModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition shadow-xs"
-                    title={isId ? "Kembalikan/Koreksi status jika salah input" : "Rollback or revert status"}
+                    onClick={() => setIsEditing(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition"
                   >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    <span>{isId ? "Rollback Status" : "Revert Status"}</span>
+                    <Edit3 className="h-3.5 w-3.5 text-gray-500" />
+                    <span>{isId ? "Edit" : "Edit"}</span>
                   </button>
                 )}
 
-                {/* Direct Cancellation Button */}
-                {order.status !== "CANCELLED" && (
-                  <button
-                    onClick={() => {
-                      setRollbackTarget("CANCELLED");
-                      setIsRollbackModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20 px-3 py-2 text-xs font-bold text-red-700 dark:text-red-300 hover:bg-red-100 transition shadow-xs"
-                    title={isId ? "Batalkan pesanan surat jalan" : "Cancel delivery order"}
-                  >
-                    <Ban className="h-3.5 w-3.5" />
-                    <span>{isId ? "Batalkan DO" : "Cancel DO"}</span>
-                  </button>
-                )}
-
+                {/* 3. Secondary Primary: Print Trigger */}
                 <button
                   onClick={() => onOpenPrint(order)}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition"
                 >
-                  <Printer className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
-                  <span>{isId ? "Pratinjau Cetak" : "Print Preview"}</span>
+                  <Printer className="h-3.5 w-3.5 text-gray-500" />
+                  <span>{isId ? "Cetak" : "Print"}</span>
                 </button>
 
-                <button
-                  onClick={handleDownloadPrn}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition"
-                  title="Download raw .prn binary stream for LX-300/310"
-                >
-                  <FileDown className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
-                  <span>.PRN</span>
-                </button>
+                {/* 4. Consolidated More Actions Menu (•••) */}
+                <div className="relative" ref={menuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                    aria-expanded={isMoreMenuOpen}
+                    aria-label={isId ? "Menu tindakan lainnya" : "More actions"}
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    if (confirm(isId ? "Yakin ingin menghapus surat jalan ini?" : "Delete this delivery order?")) {
-                      onDeleteOrder(order.id);
-                    }
-                  }}
-                  className="p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-                  title={isId ? "Hapus Surat Jalan" : "Delete Order"}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  {isMoreMenuOpen && (
+                    <div className="absolute right-0 mt-1.5 w-56 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
+                      {/* Download PRN Stream */}
+                      <button
+                        type="button"
+                        onClick={handleDownloadPrn}
+                        className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                      >
+                        <FileDown className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="font-semibold">{isId ? "Unduh Stream .PRN" : "Download .PRN File"}</p>
+                          <p className="text-[10px] text-gray-400">Epson LX-300/310 Dot-Matrix</p>
+                        </div>
+                      </button>
+
+                      {/* Rollback Status */}
+                      {order.status !== "DRAFT" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMoreMenuOpen(false);
+                            const rollbacks = getAvailableStatusRollbacks(order.status);
+                            setRollbackTarget(rollbacks.length > 0 ? rollbacks[0] : "DRAFT");
+                            setIsRollbackModalOpen(true);
+                          }}
+                          className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition"
+                        >
+                          <RotateCcw className="h-4 w-4 text-amber-600" />
+                          <div>
+                            <p className="font-semibold">{isId ? "Koreksi / Rollback Status" : "Revert Status"}</p>
+                            <p className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                              {isId ? "Kembalikan ke tahap sebelumnya" : "Step back to earlier status"}
+                            </p>
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Cancel Order */}
+                      {order.status !== "CANCELLED" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsMoreMenuOpen(false);
+                            setRollbackTarget("CANCELLED");
+                            setIsRollbackModalOpen(true);
+                          }}
+                          className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+                        >
+                          <Ban className="h-4 w-4 text-red-600" />
+                          <div>
+                            <p className="font-semibold">{isId ? "Batalkan Surat Jalan" : "Cancel Order"}</p>
+                            <p className="text-[10px] text-red-600/80 dark:text-red-400/80">
+                              {isId ? "Set status CANCELLED" : "Mark document as cancelled"}
+                            </p>
+                          </div>
+                        </button>
+                      )}
+
+                      <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+
+                      {/* Delete Order */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition font-semibold"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>{isId ? "Hapus Surat Jalan" : "Delete Order"}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
+              /* In-Place Editing Actions */
               <>
                 <button
-                  onClick={() => setIsEditing(false)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 transition"
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setErrorMessage(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <X className="h-3.5 w-3.5" />
-                  <span>{isId ? "Batal Edit" : "Cancel"}</span>
+                  <span>{isId ? "Batal" : "Cancel"}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleSaveChanges}
                   disabled={saving}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  <span>{saving ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Perubahan" : "Save Changes"}</span>
+                  <span>
+                    {saving
+                      ? isId
+                        ? "Menyimpan..."
+                        : "Saving..."
+                      : isId
+                      ? "Simpan Perubahan"
+                      : "Save Changes"}
+                  </span>
                 </button>
               </>
             )}
@@ -381,18 +469,34 @@ export function OrderDetail({
         </div>
       </div>
 
+      {/* Non-blocking Error Banner */}
+      {errorMessage && (
+        <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-xs text-red-800 dark:text-red-300 font-medium">
+            <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-xs text-red-600 hover:underline font-bold"
+          >
+            {isId ? "Tutup" : "Dismiss"}
+          </button>
+        </div>
+      )}
+
       {/* Cancelled Banner */}
       {order.status === "CANCELLED" && (
-        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Ban className="h-5 w-5 text-red-600 shrink-0" />
             <div>
               <p className="font-extrabold text-xs text-red-900 dark:text-red-300">
-                {isId ? "Surat Jalan Ini Berstatus Dibatalkan (CANCELLED)" : "This Delivery Order is CANCELLED"}
+                {isId ? "Surat Jalan Dibatalkan" : "Delivery Order Cancelled"}
               </p>
               <p className="text-[11px] text-red-700 dark:text-red-400">
                 {isId
-                  ? "Dokumen ini tidak aktif untuk pengiriman. Anda dapat membukanya kembali menjadi Draft jika diperlukan koreksi."
+                  ? "Dokumen ini tidak aktif. Anda dapat membukanya kembali menjadi Draft jika diperlukan koreksi."
                   : "This order is inactive. You can re-open it to Draft status if revisions are needed."}
               </p>
             </div>
@@ -402,9 +506,9 @@ export function OrderDetail({
               setRollbackTarget("DRAFT");
               setIsRollbackModalOpen(true);
             }}
-            className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-red-300 text-xs font-bold text-red-700 dark:text-red-300 shadow-xs hover:bg-red-50"
+            className="px-3.5 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-red-300 dark:border-red-800 text-xs font-bold text-red-700 dark:text-red-300 shadow-xs hover:bg-red-50"
           >
-            {isId ? "Buka Kembali Menjadi Draft" : "Re-open as Draft"}
+            {isId ? "Buka Menjadi Draft" : "Re-open as Draft"}
           </button>
         </div>
       )}
@@ -414,8 +518,8 @@ export function OrderDetail({
         {/* Info Cards (View / Edit Mode) */}
         {!isEditing ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <Building className="h-3.5 w-3.5" />
                 <span>{isId ? "Penerima / Customer" : "Customer / Recipient"}</span>
               </div>
@@ -426,8 +530,8 @@ export function OrderDetail({
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{isId ? "Jadwal & Referensi" : "Schedule & References"}</span>
               </div>
@@ -443,8 +547,8 @@ export function OrderDetail({
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <Truck className="h-3.5 w-3.5" />
                 <span>{isId ? "Armada & Pengemudi" : "Logistics & Driver"}</span>
               </div>
@@ -462,7 +566,7 @@ export function OrderDetail({
           </div>
         ) : (
           /* Interactive Edit Mode for Header Fields */
-          <div className="rounded-2xl border-2 border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-5 space-y-4 shadow-sm">
+          <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 sm:p-5 space-y-4 shadow-xs">
             <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
               <Edit3 className="h-4 w-4 text-[#8B0000]" />
               <span>{isId ? "Edit Informasi Surat Jalan" : "Edit Order Information"}</span>
@@ -531,7 +635,7 @@ export function OrderDetail({
           </div>
         )}
 
-        {/* Size Matrix Items Table (View or Interactive Edit) */}
+        {/* Size Matrix Items Table */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
@@ -589,7 +693,7 @@ export function OrderDetail({
               )}
 
               <div className="text-right">
-                <span className="text-xs text-gray-500 uppercase font-semibold block">
+                <span className="text-[11px] text-gray-500 uppercase font-semibold block">
                   {isId ? "Total Pasang" : "Total Pairs"}
                 </span>
                 <span className="text-base font-extrabold text-[#8B0000] dark:text-red-400">
@@ -691,7 +795,7 @@ export function OrderDetail({
                       key={item.id}
                       type="button"
                       onClick={() => setActiveItemIndex(idx)}
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition ${
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-bold whitespace-nowrap transition ${
                         activeItemIndex === idx
                           ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
                           : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
@@ -856,10 +960,53 @@ export function OrderDetail({
         )}
       </div>
 
+      {/* In-App Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 shrink-0">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                  {isId ? "Hapus Surat Jalan Ini?" : "Delete this Delivery Order?"}
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {isId
+                    ? `Surat jalan nomor ${order.orderNumber} akan dihapus secara permanen dari sistem. Tindakan ini tidak dapat dibatalkan.`
+                    : `Order ${order.orderNumber} will be permanently deleted from the database. This action cannot be undone.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                {isId ? "Batal" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  onDeleteOrder(order.id);
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition"
+              >
+                {isId ? "Ya, Hapus Dokumen" : "Yes, Delete Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status Rollback & Cancellation Modal */}
       {isRollbackModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <RotateCcw className="h-5 w-5" />
@@ -870,7 +1017,10 @@ export function OrderDetail({
                 </h3>
               </div>
               <button
-                onClick={() => setIsRollbackModalOpen(false)}
+                onClick={() => {
+                  setIsRollbackModalOpen(false);
+                  setRollbackError(null);
+                }}
                 className="p-1 rounded-lg hover:bg-white/10"
               >
                 ✕
@@ -878,7 +1028,13 @@ export function OrderDetail({
             </div>
 
             <div className="p-5 space-y-4">
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
+              {rollbackError && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300 font-medium">
+                  {rollbackError}
+                </div>
+              )}
+
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-900 dark:text-amber-300 space-y-0.5">
                   <p className="font-bold">
@@ -939,15 +1095,18 @@ export function OrderDetail({
                   }
                   value={rollbackReason}
                   onChange={(e) => setRollbackReason(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
                 />
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsRollbackModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
+                  onClick={() => {
+                    setIsRollbackModalOpen(false);
+                    setRollbackError(null);
+                  }}
+                  className="px-3.5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
                 >
                   {isId ? "Batal" : "Cancel"}
                 </button>
@@ -955,7 +1114,7 @@ export function OrderDetail({
                   type="button"
                   onClick={handleExecuteRollback}
                   disabled={rollbackSubmitting || !rollbackReason.trim()}
-                  className="px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] disabled:opacity-50 transition"
+                  className="px-4 py-2 rounded-lg bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] disabled:opacity-50 transition"
                 >
                   {rollbackSubmitting
                     ? isId ? "Memproses..." : "Processing..."

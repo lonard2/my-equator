@@ -1,8 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FootwearSize, SizeBreakdown } from "@/types";
-import { X, Plus, Trash2, Save, Calculator, Grid, Touchpad, Sparkles } from "lucide-react";
+import {
+  X,
+  Plus,
+  Trash2,
+  Save,
+  Calculator,
+  Grid,
+  Touchpad,
+  Sparkles,
+  AlertTriangle,
+  AlertCircle,
+  RotateCcw,
+} from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
 import { TouchSizePad } from "./TouchSizePad";
 
@@ -26,6 +38,16 @@ interface FormItem {
   notes: string;
 }
 
+const DEFAULT_INITIAL_ITEM: FormItem = {
+  id: "item-1",
+  articleCode: "EQ-SPORT-01",
+  articleName: "Insole EVA Ortho Sport EQ-01",
+  colorway: "Black / Red",
+  unitPrice: 18500,
+  sizes: { 38: 20, 39: 50, 40: 50, 41: 50, 42: 30 },
+  notes: "Laminasi BK Mesh",
+};
+
 export function OrderFormModal({
   isOpen,
   onClose,
@@ -34,6 +56,7 @@ export function OrderFormModal({
   language,
 }: OrderFormModalProps) {
   const isId = language === "id";
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const [recipientName, setRecipientName] = useState("");
   const [destinationAddress, setDestinationAddress] = useState("");
@@ -45,31 +68,48 @@ export function OrderFormModal({
   );
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
 
-  const [items, setItems] = useState<FormItem[]>([
-    {
-      id: "item-1",
-      articleCode: "EQ-SPORT-01",
-      articleName: "Insole EVA Ortho Sport EQ-01",
-      colorway: "Black / Red",
-      unitPrice: 18500,
-      sizes: { 38: 20, 39: 50, 40: 50, 41: 50, 42: 30 },
-      notes: "Laminasi BK Mesh",
-    },
-  ]);
-
+  const [items, setItems] = useState<FormItem[]>([DEFAULT_INITIAL_ITEM]);
   const [activeItemIndex, setActiveItemIndex] = useState<number>(0);
+
+  // Unsaved changes confirmation dialog state
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Track if user has made edits after opening
+  const markDirty = () => {
+    if (!isDirty) setIsDirty(true);
+  };
+
+  // Reset form to clean state
+  const resetForm = useCallback(() => {
+    setRecipientName("");
+    setDestinationAddress("");
+    setPoNumber("");
+    setVehicleNumber("");
+    setDriverName("");
+    setDeliveryDate(new Date().toISOString().split("T")[0]);
+    setNotes("");
+    setItems([{ ...DEFAULT_INITIAL_ITEM, id: `item-${Date.now()}` }]);
+    setActiveItemIndex(0);
+    setErrorMessage(null);
+    setFieldErrors({});
+    setIsDirty(false);
+    setShowDiscardConfirm(false);
+  }, []);
 
   // Sync initialDraftData if provided (e.g. from Khatulistiwa AI assistant)
   useEffect(() => {
     if (initialDraftData && isOpen) {
-      setRecipientName(initialDraftData.recipient_name || "");
-      setDestinationAddress(initialDraftData.destination_address || "");
-      setPoNumber(initialDraftData.po_number || "");
-      setVehicleNumber(initialDraftData.vehicle_number || "");
-      setDriverName(initialDraftData.driver_name || "");
-      setDeliveryDate(initialDraftData.delivery_date || new Date().toISOString().split("T")[0]);
+      setRecipientName(initialDraftData.recipient_name || initialDraftData.recipientName || "");
+      setDestinationAddress(initialDraftData.destination_address || initialDraftData.destinationAddress || "");
+      setPoNumber(initialDraftData.po_number || initialDraftData.poNumber || "");
+      setVehicleNumber(initialDraftData.vehicle_number || initialDraftData.vehicleNumber || "");
+      setDriverName(initialDraftData.driver_name || initialDraftData.driverName || "");
+      setDeliveryDate(initialDraftData.delivery_date || initialDraftData.deliveryDate || new Date().toISOString().split("T")[0]);
       setNotes(initialDraftData.notes || "");
 
       if (Array.isArray(initialDraftData.items) && initialDraftData.items.length > 0) {
@@ -79,50 +119,61 @@ export function OrderFormModal({
             Object.entries(it.sizes).forEach(([s, q]) => {
               const numS = parseInt(s, 10);
               const numQ = typeof q === "number" ? q : parseInt(q as string, 10);
-              if (!isNaN(numS) && !isNaN(numQ)) {
+              if (!isNaN(numS) && !isNaN(numQ) && numQ > 0) {
                 parsedSizes[numS as FootwearSize] = numQ;
               }
             });
           }
           return {
             id: `item-${Date.now()}-${idx}`,
-            articleCode: it.article_code || `EQ-ART-0${idx + 1}`,
-            articleName: it.article_name || "Insole Custom Moulded",
+            articleCode: it.article_code || it.articleCode || `EQ-ART-0${idx + 1}`,
+            articleName: it.article_name || it.articleName || "Insole Custom Moulded",
             colorway: it.colorway || "Black",
-            unitPrice: it.unit_price || 20000,
+            unitPrice: Math.max(0, it.unit_price || it.unitPrice || 20000),
             sizes: parsedSizes,
             notes: it.notes || "",
           };
         });
         setItems(mappedItems);
       }
+      setIsDirty(true);
     } else if (isOpen && !initialDraftData) {
-      // Default initial state
-      setRecipientName("");
-      setDestinationAddress("");
-      setPoNumber("");
-      setVehicleNumber("");
-      setDriverName("");
-      setDeliveryDate(new Date().toISOString().split("T")[0]);
-      setNotes("");
-      setItems([
-        {
-          id: "item-1",
-          articleCode: "EQ-SPORT-01",
-          articleName: "Insole EVA Ortho Sport EQ-01",
-          colorway: "Black / Red",
-          unitPrice: 18500,
-          sizes: { 38: 20, 39: 50, 40: 50, 41: 50, 42: 30 },
-          notes: "Laminasi BK Mesh",
-        },
-      ]);
+      resetForm();
     }
-  }, [initialDraftData, isOpen]);
+  }, [initialDraftData, isOpen, resetForm]);
+
+  // Safe dismiss handler
+  const handleRequestClose = useCallback(() => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+    } else {
+      resetForm();
+      onClose();
+    }
+  }, [isDirty, onClose, resetForm]);
+
+  // Handle escape key listener for safe dismiss
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && isOpen) {
+        if (showDiscardConfirm) {
+          setShowDiscardConfirm(false);
+        } else {
+          handleRequestClose();
+        }
+      }
+    }
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, showDiscardConfirm, handleRequestClose]);
 
   if (!isOpen) return null;
 
   const handleAddItem = () => {
-    const nextItem = {
+    markDirty();
+    const nextItem: FormItem = {
       id: `item-${Date.now()}`,
       articleCode: `EQ-ITEM-0${items.length + 1}`,
       articleName: "Insole EVA Custom Moulded",
@@ -137,13 +188,16 @@ export function OrderFormModal({
 
   const handleRemoveItem = (id: string) => {
     if (items.length <= 1) return;
+    markDirty();
     const newItems = items.filter((i) => i.id !== id);
     setItems(newItems);
     setActiveItemIndex(Math.max(0, activeItemIndex - 1));
   };
 
   const handleSizeChange = (itemId: string, size: FootwearSize, value: string) => {
-    const num = parseInt(value, 10);
+    markDirty();
+    const cleanVal = value.replace(/[^0-9]/g, "");
+    const num = parseInt(cleanVal, 10);
     setItems(
       items.map((item) => {
         if (item.id !== itemId) return item;
@@ -151,7 +205,7 @@ export function OrderFormModal({
         if (isNaN(num) || num <= 0) {
           delete newSizes[size];
         } else {
-          newSizes[size] = num;
+          newSizes[size] = Math.min(num, 99999); // Upper ceiling for safety
         }
         return { ...item, sizes: newSizes };
       })
@@ -159,6 +213,7 @@ export function OrderFormModal({
   };
 
   const handleTouchPadChange = (newSizes: SizeBreakdown) => {
+    markDirty();
     setItems(
       items.map((item, idx) => (idx === activeItemIndex ? { ...item, sizes: newSizes } : item))
     );
@@ -176,10 +231,29 @@ export function OrderFormModal({
     grandTotalAmount += itemPairs * (item.unitPrice || 0);
   });
 
+  const validateForm = (): boolean => {
+    const errors: { [key: string]: string } = {};
+    if (!recipientName.trim()) {
+      errors.recipientName = isId ? "Nama customer / penerima wajib diisi" : "Customer name is required";
+    }
+    if (!destinationAddress.trim()) {
+      errors.destinationAddress = isId ? "Alamat tujuan pengiriman wajib diisi" : "Destination address is required";
+    }
+    if (grandTotalPairs <= 0) {
+      errors.totalPairs = isId
+        ? "Wajib mengisi jumlah pasang minimal 1 pada salah satu ukuran"
+        : "Total pairs must be greater than 0";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientName.trim() || !destinationAddress.trim()) {
-      alert(isId ? "Mohon lengkapi Nama Penerima dan Alamat Tujuan." : "Please fill in recipient and destination address.");
+    setErrorMessage(null);
+
+    if (!validateForm()) {
       return;
     }
 
@@ -189,30 +263,36 @@ export function OrderFormModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipientName,
-          destinationAddress,
-          poNumber,
-          vehicleNumber,
-          driverName,
+          recipientName: recipientName.trim(),
+          destinationAddress: destinationAddress.trim(),
+          poNumber: poNumber.trim(),
+          vehicleNumber: vehicleNumber.trim(),
+          driverName: driverName.trim(),
           deliveryDate,
-          notes,
+          notes: notes.trim(),
           items: items.map((i) => ({
-            articleCode: i.articleCode,
-            articleName: i.articleName,
-            colorway: i.colorway,
-            unitPrice: i.unitPrice,
+            articleCode: (i.articleCode || "EQ-ITEM").trim(),
+            articleName: (i.articleName || "Insole").trim(),
+            colorway: i.colorway.trim(),
+            unitPrice: Math.max(0, Number(i.unitPrice) || 0),
             sizes: i.sizes,
-            notes: i.notes,
+            notes: i.notes.trim(),
           })),
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to create order");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || (isId ? "Gagal menyimpan surat jalan." : "Failed to create delivery order."));
+      }
+
+      setIsDirty(false);
+      resetForm();
       onSuccess();
       onClose();
-    } catch (err) {
-      console.error(err);
-      alert(isId ? "Gagal menyimpan surat jalan." : "Failed to create delivery order.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : (isId ? "Terjadi kesalahan saat menyimpan surat jalan." : "Failed to save order.");
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -221,47 +301,92 @@ export function OrderFormModal({
   const currentItem = items[activeItemIndex] || items[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      ref={modalRef}
+      onClick={(e) => {
+        // Prevent accidental dismiss on backdrop click when dirty
+        if (e.target === e.currentTarget) {
+          handleRequestClose();
+        }
+      }}
+    >
       <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
           <div>
-            <h3 className="font-bold text-base text-gray-900 dark:text-white flex items-center gap-2">
-              {isId ? "Buat Surat Jalan (Delivery Order) Baru" : "Create New Delivery Order"}
+            <div className="flex items-center gap-2">
+              <h3 id="modal-title" className="font-bold text-base text-gray-900 dark:text-white">
+                {isId ? "Buat Surat Jalan (Delivery Order) Baru" : "Create New Delivery Order"}
+              </h3>
               {initialDraftData && (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center gap-1 border border-emerald-300">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center gap-1 border border-emerald-300 dark:border-emerald-800">
                   <Sparkles className="h-3 w-3" />
-                  <span>Khatulistiwa AI Staged</span>
+                  <span>Khatulistiwa AI</span>
                 </span>
               )}
-            </h3>
-            <p className="text-xs text-gray-500">
-              {isId ? "Nomor surat jalan di-generate otomatis: SJ/EQ/YYYY/MM/XXXX" : "Standard auto-increment numbering"}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {isId ? "Format penomoran otomatis: SJ/EQ/YYYY/MM/XXXX" : "Standard factory numbering: SJ/EQ/YYYY/MM/XXXX"}
             </p>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            type="button"
+            onClick={handleRequestClose}
+            aria-label={isId ? "Tutup Form" : "Close Form"}
+            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Global Error Banner */}
+        {errorMessage && (
+          <div className="mx-4 sm:mx-6 mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-red-800 dark:text-red-300 font-medium">
+              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="text-xs text-red-600 font-bold hover:underline"
+            >
+              {isId ? "Tutup" : "Dismiss"}
+            </button>
+          </div>
+        )}
 
         {/* Modal Body Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* Metadata Fields Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {isId ? "Nama Penerima / Customer *" : "Recipient / Customer Name *"}
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                <span>{isId ? "Nama Penerima / Customer *" : "Recipient / Customer *"}</span>
+                {fieldErrors.recipientName && (
+                  <span className="text-[11px] text-red-600 font-medium">{fieldErrors.recipientName}</span>
+                )}
               </label>
               <input
                 type="text"
                 required
+                maxLength={150}
                 placeholder="e.g. PT INDO SEPATU MAJU"
                 value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                onChange={(e) => {
+                  setRecipientName(e.target.value);
+                  markDirty();
+                  if (fieldErrors.recipientName) setFieldErrors({ ...fieldErrors, recipientName: "" });
+                }}
+                className={`w-full rounded-xl border px-3 py-2 text-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800 transition ${
+                  fieldErrors.recipientName
+                    ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                    : "border-gray-300 dark:border-gray-700 focus:border-[#8B0000] focus:outline-none"
+                }`}
               />
             </div>
 
@@ -271,9 +396,13 @@ export function OrderFormModal({
               </label>
               <input
                 type="text"
+                maxLength={50}
                 placeholder="e.g. PO-8821 / SPK-04"
                 value={poNumber}
-                onChange={(e) => setPoNumber(e.target.value)}
+                onChange={(e) => {
+                  setPoNumber(e.target.value);
+                  markDirty();
+                }}
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
@@ -286,22 +415,37 @@ export function OrderFormModal({
                 type="date"
                 required
                 value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
+                onChange={(e) => {
+                  setDeliveryDate(e.target.value);
+                  markDirty();
+                }}
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
 
             <div className="sm:col-span-2 space-y-1">
-              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {isId ? "Alamat Tujuan Lengkap *" : "Destination Address *"}
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                <span>{isId ? "Alamat Tujuan Lengkap *" : "Destination Address *"}</span>
+                {fieldErrors.destinationAddress && (
+                  <span className="text-[11px] text-red-600 font-medium">{fieldErrors.destinationAddress}</span>
+                )}
               </label>
               <input
                 type="text"
                 required
+                maxLength={300}
                 placeholder="e.g. Kawasan Industri Jatake Blok C No. 12, Tangerang"
                 value={destinationAddress}
-                onChange={(e) => setDestinationAddress(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                onChange={(e) => {
+                  setDestinationAddress(e.target.value);
+                  markDirty();
+                  if (fieldErrors.destinationAddress) setFieldErrors({ ...fieldErrors, destinationAddress: "" });
+                }}
+                className={`w-full rounded-xl border px-3 py-2 text-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800 transition ${
+                  fieldErrors.destinationAddress
+                    ? "border-red-500 focus:ring-1 focus:ring-red-500"
+                    : "border-gray-300 dark:border-gray-700 focus:border-[#8B0000] focus:outline-none"
+                }`}
               />
             </div>
 
@@ -311,9 +455,13 @@ export function OrderFormModal({
               </label>
               <input
                 type="text"
+                maxLength={80}
                 placeholder="e.g. Asep Sunandar"
                 value={driverName}
-                onChange={(e) => setDriverName(e.target.value)}
+                onChange={(e) => {
+                  setDriverName(e.target.value);
+                  markDirty();
+                }}
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
@@ -324,9 +472,13 @@ export function OrderFormModal({
               </label>
               <input
                 type="text"
+                maxLength={30}
                 placeholder="e.g. D 8842 AB"
                 value={vehicleNumber}
-                onChange={(e) => setVehicleNumber(e.target.value)}
+                onChange={(e) => {
+                  setVehicleNumber(e.target.value);
+                  markDirty();
+                }}
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
@@ -337,9 +489,13 @@ export function OrderFormModal({
               </label>
               <input
                 type="text"
+                maxLength={300}
                 placeholder="e.g. Mohon stempel rangkap 3 & cek kualitas"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                  markDirty();
+                }}
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
               />
             </div>
@@ -348,10 +504,15 @@ export function OrderFormModal({
           {/* Size Matrix Items Section */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                <Calculator className="h-4 w-4 text-[#8B0000]" />
-                <span>{isId ? "Rincian Artikel & Matriks Ukuran Sepatu (EU 36–45)" : "Size Breakdown Matrix"}</span>
-              </h4>
+              <div>
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-[#8B0000]" />
+                  <span>{isId ? "Rincian Artikel & Matriks Ukuran Sepatu (EU 36–45)" : "Size Breakdown Matrix"}</span>
+                </h4>
+                {fieldErrors.totalPairs && (
+                  <p className="text-xs text-red-600 font-semibold mt-0.5">{fieldErrors.totalPairs}</p>
+                )}
+              </div>
 
               {/* View Switcher: Spreadsheet vs Touch Pad */}
               <div className="flex items-center space-x-2">
@@ -366,7 +527,7 @@ export function OrderFormModal({
                     }`}
                   >
                     <Grid className="h-3.5 w-3.5" />
-                    <span>Grid Spreadsheet</span>
+                    <span>Grid</span>
                   </button>
                   <button
                     type="button"
@@ -420,41 +581,47 @@ export function OrderFormModal({
                     <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Kode Artikel</label>
                     <input
                       type="text"
+                      maxLength={40}
                       value={currentItem.articleCode}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        markDirty();
                         setItems(
                           items.map((it, i) => (i === activeItemIndex ? { ...it, articleCode: e.target.value } : it))
-                        )
-                      }
-                      className="w-full rounded-lg border px-2 py-1 text-xs font-mono font-bold"
+                        );
+                      }}
+                      className="w-full rounded-lg border px-2 py-1 text-xs font-mono font-bold bg-white dark:bg-gray-800"
                     />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Nama Artikel</label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={currentItem.articleName}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        markDirty();
                         setItems(
                           items.map((it, i) => (i === activeItemIndex ? { ...it, articleName: e.target.value } : it))
-                        )
-                      }
-                      className="w-full rounded-lg border px-2 py-1 text-xs font-semibold"
+                        );
+                      }}
+                      className="w-full rounded-lg border px-2 py-1 text-xs font-semibold bg-white dark:bg-gray-800"
                     />
                   </div>
                   <div>
                     <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Harga Satuan (IDR)</label>
                     <input
                       type="number"
+                      min="0"
                       value={currentItem.unitPrice || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        markDirty();
                         setItems(
                           items.map((it, i) =>
-                            i === activeItemIndex ? { ...it, unitPrice: parseInt(e.target.value, 10) || 0 } : it
+                            i === activeItemIndex ? { ...it, unitPrice: Math.max(0, parseInt(e.target.value, 10) || 0) } : it
                           )
-                        )
-                      }
-                      className="w-full rounded-lg border px-2 py-1 text-xs font-semibold"
+                        );
+                      }}
+                      className="w-full rounded-lg border px-2 py-1 text-xs font-semibold bg-white dark:bg-gray-800"
                     />
                   </div>
                 </div>
@@ -496,24 +663,28 @@ export function OrderFormModal({
                             <input
                               type="text"
                               placeholder="Kode Art (e.g. EQ-01)"
+                              maxLength={40}
                               value={item.articleCode}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                markDirty();
                                 setItems(
                                   items.map((i) => (i.id === item.id ? { ...i, articleCode: e.target.value } : i))
-                                )
-                              }
-                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-[11px] font-mono"
+                                );
+                              }}
+                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-[11px] font-mono bg-white dark:bg-gray-800"
                             />
                             <input
                               type="text"
                               placeholder="Deskripsi Artikel"
+                              maxLength={100}
                               value={item.articleName}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                markDirty();
                                 setItems(
                                   items.map((i) => (i.id === item.id ? { ...i, articleName: e.target.value } : i))
-                                )
-                              }
-                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold"
+                                );
+                              }}
+                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs font-semibold bg-white dark:bg-gray-800"
                             />
                           </td>
                           <td className="p-2.5">
@@ -522,14 +693,15 @@ export function OrderFormModal({
                               min="0"
                               placeholder="Rp 0"
                               value={item.unitPrice || ""}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                markDirty();
                                 setItems(
                                   items.map((i) =>
-                                    i.id === item.id ? { ...i, unitPrice: parseInt(e.target.value, 10) || 0 } : i
+                                    i.id === item.id ? { ...i, unitPrice: Math.max(0, parseInt(e.target.value, 10) || 0) } : i
                                   )
-                                )
-                              }
-                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs"
+                                );
+                              }}
+                              className="w-full rounded border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs bg-white dark:bg-gray-800"
                             />
                           </td>
                           {STANDARD_SIZES.map((size) => {
@@ -541,12 +713,13 @@ export function OrderFormModal({
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   placeholder="-"
+                                  aria-label={`Ukuran ${size} untuk ${item.articleName || item.articleCode}`}
                                   value={val}
                                   onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
                                   className={`w-full text-center rounded border px-1 py-1 text-xs font-mono font-bold transition ${
                                     val && Number(val) > 0
                                       ? "bg-red-50 dark:bg-red-950/60 border-[#8B0000] text-[#8B0000] dark:text-red-300"
-                                      : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                                      : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800"
                                   }`}
                                 />
                               </td>
@@ -560,6 +733,7 @@ export function OrderFormModal({
                               type="button"
                               onClick={() => handleRemoveItem(item.id)}
                               disabled={items.length <= 1}
+                              aria-label={isId ? "Hapus baris artikel" : "Remove item row"}
                               className="p-1 text-gray-400 hover:text-red-600 disabled:opacity-30 transition"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -595,8 +769,8 @@ export function OrderFormModal({
           <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 active:scale-95 transition"
+              onClick={handleRequestClose}
+              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition"
             >
               {isId ? "Batal" : "Cancel"}
             </button>
@@ -606,11 +780,63 @@ export function OrderFormModal({
               className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
-              <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Surat Jalan" : "Save Order"}</span>
+              <span>
+                {loading
+                  ? isId
+                    ? "Menyimpan..."
+                    : "Saving..."
+                  : isId
+                  ? "Simpan Surat Jalan"
+                  : "Save Order"}
+              </span>
             </button>
           </div>
         </form>
       </div>
+
+      {/* Discard Unsaved Changes Confirmation Modal */}
+      {showDiscardConfirm && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl p-5 max-w-sm w-full space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white">
+                  {isId ? "Buang Perubahan?" : "Discard Unsaved Changes?"}
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {isId
+                    ? "Anda memiliki data surat jalan dan ukuran yang belum disimpan. Yakin ingin menutup form ini?"
+                    : "You have unsaved order details and size quantities. Are you sure you want to discard them?"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setShowDiscardConfirm(false)}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                {isId ? "Lanjut Mengisi" : "Keep Editing"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardConfirm(false);
+                  resetForm();
+                  onClose();
+                }}
+                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition"
+              >
+                {isId ? "Ya, Buang Perubahan" : "Discard"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

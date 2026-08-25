@@ -1,19 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DeliveryOrder, DeliveryOrderStatus } from "@/types";
-import { formatIndonesianDate, formatShortDate } from "@/lib/utils/formatters";
+import { formatShortDate } from "@/lib/utils/formatters";
+import { StatusBadge } from "./StatusBadge";
 import {
   Search,
   Plus,
   Printer,
-  ChevronRight,
-  Filter,
-  CheckCircle2,
-  Clock,
-  Truck,
   FileText,
-  Boxes,
 } from "lucide-react";
 
 interface OrderListProps {
@@ -57,24 +52,33 @@ export function OrderList({
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: DeliveryOrderStatus) => {
-    switch (status) {
-      case "DRAFT":
-        return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-300";
-      case "CONFIRMED":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200";
-      case "PRINTED":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200";
-      case "DISPATCHED":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-200";
-      case "DELIVERED":
-        return "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 border-green-200";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800";
+  // Keyboard navigation between orders (ArrowUp / ArrowDown)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+      if (filteredOrders.length === 0) return;
+
+      const currentIndex = filteredOrders.findIndex((o) => o.id === selectedOrderId);
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIndex = currentIndex < filteredOrders.length - 1 ? currentIndex + 1 : 0;
+        onSelectOrder(filteredOrders[nextIndex]);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : filteredOrders.length - 1;
+        onSelectOrder(filteredOrders[prevIndex]);
+      }
     }
-  };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [filteredOrders, selectedOrderId, onSelectOrder]);
 
   // Calculate live counts for filter chips
   const countByStatus = (st: string) => {
@@ -98,9 +102,9 @@ export function OrderList({
 
           <button
             onClick={onCreateNew}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] px-3.5 py-2 text-xs font-bold text-white shadow-md hover:shadow-lg hover:shadow-red-900/20 active:scale-95 transition-all duration-150"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:shadow-sm active:scale-95 transition-all duration-150"
           >
-            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
             <span>{isId ? "Buat DO" : "New DO"}</span>
           </button>
         </div>
@@ -113,7 +117,7 @@ export function OrderList({
             placeholder={isId ? "Cari No. SJ, Customer, PO..." : "Search Order, Client, PO..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none transition-shadow"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none transition-shadow"
           />
         </div>
 
@@ -166,10 +170,15 @@ export function OrderList({
                 onClick={() => onSelectOrder(order)}
                 className={`group p-3.5 cursor-pointer transition-all duration-150 relative ${
                   isSelected
-                    ? "bg-red-50/80 dark:bg-red-950/40 border-l-4 border-[#8B0000]"
+                    ? "bg-red-50/70 dark:bg-red-950/40"
                     : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 }`}
               >
+                {/* Active Indicator Bar without layout box-sizing shift */}
+                {isSelected && (
+                  <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#8B0000]" />
+                )}
+
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
@@ -186,13 +195,7 @@ export function OrderList({
                   </div>
 
                   <div className="flex flex-col items-end space-y-1.5 shrink-0">
-                    <span
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-transform ${getStatusBadge(
-                        order.status
-                      )}`}
-                    >
-                      {order.status}
-                    </span>
+                    <StatusBadge status={order.status} size="sm" language={language} />
                     <span className="font-extrabold text-xs text-[#8B0000] dark:text-red-400">
                       {order.totalQuantity.toLocaleString("id-ID")} psg
                     </span>
