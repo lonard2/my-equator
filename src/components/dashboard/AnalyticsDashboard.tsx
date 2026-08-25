@@ -28,45 +28,74 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
   const isId = language === "id";
   const [data, setData] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<"30D" | "Q" | "YTD" | "ALL">("ALL");
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = async (targetPeriod: "30D" | "Q" | "YTD" | "ALL" = period) => {
     try {
       setLoading(true);
-      const res = await fetch("/api/analytics");
+      setError(null);
+      const res = await fetch(`/api/analytics?period=${targetPeriod}`);
       const json = await res.json();
       if (json.success && json.data) {
         setData(json.data);
+      } else {
+        throw new Error(json.error || "Gagal memuat data analitik.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load analytics:", err);
+      setError(err?.message || (isId ? "Gagal memuat data analitik server." : "Failed to load analytics from server."));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    fetchAnalytics(period);
+  }, [period]);
 
   const handleExportCsv = () => {
     if (!data) return;
 
-    let csv = "Bulan,Omzet IDR,Volume Pasang,Jumlah Surat Jalan\n";
+    const periodLabel = period === "30D" ? "30 Hari Terakhir" : period === "Q" ? "Kuartal (90 Hari)" : period === "YTD" ? "Year-to-Date" : "Semua Data";
+
+    let csv = `Laporan Analitik Bisnis & Produksi Equator Insole\n`;
+    csv += `Periode: ${periodLabel}\n`;
+    csv += `Tanggal Export: ${new Date().toLocaleString("id-ID")}\n\n`;
+
+    // 1. Monthly Trends
+    csv += "--- TREN PENDAPATAN & VOLUME BULANAN ---\n";
+    csv += "Bulan,Omzet IDR,Volume Pasang,Jumlah Surat Jalan\n";
     data.monthlyTrends.forEach((m) => {
       csv += `"${m.monthLabel}",${m.revenueIdr},${m.volumePairs},${m.orderCount}\n`;
     });
 
-    csv += "\nUkuran Sepatu (EU),Total Pasang,Persentase\n";
+    // 2. Size Matrix Bell Curve Breakdown
+    csv += "\n--- DISTRIBUSI UKURAN SEPATU (EU 35-48) ---\n";
+    csv += "Ukuran Sepatu (EU),Total Pasang,Persentase,Status Puncak\n";
     data.sizeDistribution.forEach((s) => {
-      csv += `EU ${s.size},${s.totalPairs},${s.percentage}%\n`;
+      csv += `EU ${s.size},${s.totalPairs},${s.percentage}%,${s.isPeak ? "Puncak Tooling" : "Normal"}\n`;
+    });
+
+    // 3. Customer Market Share
+    csv += "\n--- PANGSA PASAR PELANGGAN (BUYER MITRA) ---\n";
+    csv += "Nama Pelanggan,Total Omzet IDR,Volume Pasang,Jumlah DO,Persentase Omzet\n";
+    data.customerMarketShare.forEach((c) => {
+      csv += `"${c.customerName}",${c.totalRevenueIdr},${c.totalPairs},${c.orderCount},${c.percentage}%\n`;
+    });
+
+    // 4. Material Inventory Runaway & DSI
+    csv += "\n--- KETAHANAN STOK MATERIAL (DSI) ---\n";
+    csv += "Nama Material,Kategori,Stok Saat Ini,Satuan,Burn Rate Bulanan,Sisa Hari (DSI),Status Kesehatan\n";
+    data.materialBurnRate.forEach((mat) => {
+      csv += `"${mat.name}","${mat.category}",${mat.currentStock},${mat.unit},${mat.estimatedMonthlyBurn},${mat.projectedDaysRemaining},${mat.healthStatus}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Equator_Analytics_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Equator_Analytics_${period}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -77,6 +106,31 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
         <div className="flex flex-col items-center gap-2">
           <RefreshCw className="h-6 w-6 animate-spin text-[#8B0000]" />
           <p className="text-xs font-semibold">{isId ? "Memuat visualisasi analitik..." : "Loading analytics visualizer..."}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/60 shadow-xl text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400 flex items-center justify-center">
+            <BarChart3 className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+              {isId ? "Gagal Memuat Analitik" : "Failed to Load Analytics"}
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">{error}</p>
+          </div>
+          <button
+            onClick={() => fetchAnalytics(period)}
+            className="w-full py-2.5 rounded-2xl bg-[#8B0000] text-white font-bold text-xs hover:bg-[#A30000] transition active:scale-95 shadow-md flex items-center justify-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>{isId ? "Coba Lagi" : "Try Again"}</span>
+          </button>
         </div>
       </div>
     );
@@ -134,7 +188,7 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
 
           {/* Refresh */}
           <button
-            onClick={fetchAnalytics}
+            onClick={() => fetchAnalytics(period)}
             className="p-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-[#8B0000] active:scale-95 transition shadow-xs"
             title="Refresh Data"
           >
@@ -142,6 +196,19 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
           </button>
         </div>
       </div>
+
+      {/* Network / Temporary Warning Banner if any */}
+      {error && (
+        <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between text-xs text-red-900 dark:text-red-300">
+          <p className="font-semibold">{error}</p>
+          <button
+            onClick={() => fetchAnalytics(period)}
+            className="px-2.5 py-1 rounded-xl bg-[#8B0000] text-white text-[11px] font-bold hover:bg-[#A30000] transition"
+          >
+            {isId ? "Coba Lagi" : "Retry"}
+          </button>
+        </div>
+      )}
 
       {/* Top Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

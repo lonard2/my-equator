@@ -50,19 +50,46 @@ export interface AnalyticsSummary {
   }[];
 }
 
-export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
-  const allOrders = await db.select().from(deliveryOrders).orderBy(desc(deliveryOrders.deliveryDate));
+export async function getAnalyticsSummary(period: "30D" | "Q" | "YTD" | "ALL" = "ALL"): Promise<AnalyticsSummary> {
+  const rawOrders = await db.select().from(deliveryOrders).orderBy(desc(deliveryOrders.deliveryDate));
   const allItems = await db.select().from(deliveryOrderItems);
   const allMaterials = await db.select().from(materials);
+
+  // Date filtering logic based on period
+  const now = new Date();
+  let cutoffDateStr: string | null = null;
+
+  if (period === "30D") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 30);
+    cutoffDateStr = d.toISOString().slice(0, 10);
+  } else if (period === "Q") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 90);
+    cutoffDateStr = d.toISOString().slice(0, 10);
+  } else if (period === "YTD") {
+    cutoffDateStr = `${now.getFullYear()}-01-01`;
+  }
+
+  // Filter orders by period if specified
+  const allOrders = cutoffDateStr
+    ? rawOrders.filter((o) => (o.deliveryDate || "") >= cutoffDateStr!)
+    : rawOrders;
+
+  // Filter order items matching filtered orders
+  const filteredOrderIds = new Set(allOrders.map((o) => o.id));
+  const filteredItems = cutoffDateStr
+    ? allItems.filter((i) => filteredOrderIds.has(i.deliveryOrderId))
+    : allItems;
 
   let totalRevenueIdr = 0;
   let totalVolumePairs = 0;
   let completedPairs = 0;
   let deliveredOrdersCount = 0;
 
-  // Size distribution tracker (EU 35 to EU 46)
+  // Size distribution tracker (EU 35 to EU 48)
   const sizeMap: Record<number, number> = {};
-  for (let s = 35; s <= 46; s++) {
+  for (let s = 35; s <= 48; s++) {
     sizeMap[s] = 0;
   }
 
@@ -104,8 +131,8 @@ export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
     customerMap[cust].count += 1;
   });
 
-  // Aggregate Size Breakdown from all order items
-  allItems.forEach((item) => {
+  // Aggregate Size Breakdown from filtered order items (EU 35 to EU 48)
+  filteredItems.forEach((item) => {
     if (item.sizeBreakdown) {
       let breakdown: Record<string, number> = {};
       try {
@@ -117,7 +144,7 @@ export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
       Object.entries(breakdown).forEach(([sizeStr, qty]) => {
         const sz = parseInt(sizeStr, 10);
         const q = Number(qty) || 0;
-        if (sz >= 35 && sz <= 46) {
+        if (sz >= 35 && sz <= 48) {
           sizeMap[sz] = (sizeMap[sz] || 0) + q;
         }
       });

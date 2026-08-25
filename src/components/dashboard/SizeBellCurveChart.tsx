@@ -55,7 +55,7 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
         <div>
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
             <Compass className="h-4 w-4 text-[#8B0000]" />
-            <span>{isId ? "Kurva Distribusi Ukuran Sepatu (EU 35–46)" : "Size Matrix Bell Curve (EU 35–46)"}</span>
+            <span>{isId ? "Kurva Distribusi Ukuran Sepatu (EU 35–48)" : "Size Matrix Bell Curve (EU 35–48)"}</span>
           </h3>
           <p className="text-[11px] text-gray-500">
             {isId
@@ -66,7 +66,7 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
 
         {peakItem && (
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-300 text-xs font-bold shadow-xs">
-            <Flame className="h-3.5 w-3.5 text-amber-500 animate-bounce" />
+            <Flame className="h-3.5 w-3.5 text-amber-500" />
             <span>
               {isId ? `Puncak: Size EU ${peakItem.size}` : `Peak: EU ${peakItem.size}`}
             </span>
@@ -117,9 +117,14 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
             return (
               <g
                 key={idx}
-                className="cursor-pointer"
+                tabIndex={0}
+                role="graphics-symbol"
+                aria-label={`Ukuran EU ${p.data.size}: ${p.data.totalPairs} pasang (${p.data.percentage}%)${p.data.isPeak ? ", Puncak Produksi" : ""}`}
+                className="cursor-pointer focus:outline-none"
                 onMouseEnter={() => setHoveredSize(p.data)}
                 onMouseLeave={() => setHoveredSize(null)}
+                onFocus={() => setHoveredSize(p.data)}
+                onBlur={() => setHoveredSize(null)}
               >
                 {/* Subtle vertical bar */}
                 <rect

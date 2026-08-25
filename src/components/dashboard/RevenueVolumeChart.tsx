@@ -150,9 +150,14 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
           {points.map((p, idx) => (
             <g
               key={idx}
-              className="cursor-pointer"
+              tabIndex={0}
+              role="graphics-symbol"
+              aria-label={`${p.data.monthLabel}: ${metric === "REVENUE" ? p.data.revenueFormatted : `${p.data.volumePairs} pasang`} (${p.data.orderCount} Surat Jalan)`}
+              className="cursor-pointer focus:outline-none"
               onMouseEnter={() => setHoveredIndex(idx)}
               onMouseLeave={() => setHoveredIndex(null)}
+              onFocus={() => setHoveredIndex(idx)}
+              onBlur={() => setHoveredIndex(null)}
             >
               <circle
                 cx={p.x}

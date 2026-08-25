@@ -33,16 +33,22 @@ export function MaterialBurnRateHeatmap({ data, language }: MaterialBurnRateHeat
   return (
     <div className="p-4 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
       {/* Header */}
-      <div>
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-          <Boxes className="h-4 w-4 text-[#8B0000]" />
-          <span>{isId ? "Proyeksi Konsumsi & Ketahanan Stok (DSI)" : "Material Burn Rate & Stock Runaway"}</span>
-        </h3>
-        <p className="text-[11px] text-gray-500">
-          {isId
-            ? "Estimasi sisa hari persediaan berdasarkan ritme pemotongan & produksi"
-            : "Estimated days of inventory remaining based on factory burn rate"}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+            <Boxes className="h-4 w-4 text-[#8B0000]" />
+            <span>{isId ? "Proyeksi Konsumsi & Ketahanan Stok (DSI)" : "Material Burn Rate & Stock Runaway"}</span>
+          </h3>
+          <p className="text-[11px] text-gray-500">
+            {isId
+              ? "Estimasi sisa hari persediaan berdasarkan ritme pemotongan & produksi"
+              : "Estimated days of inventory remaining based on factory burn rate"}
+          </p>
+        </div>
+
+        <div className="px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-[10px] font-bold text-gray-600 dark:text-gray-400 font-mono">
+          {isId ? "Skala 60 Hari Pasokan" : "60-Day Supply Scale"}
+        </div>
       </div>
 
       {/* Material Progress Grid */}

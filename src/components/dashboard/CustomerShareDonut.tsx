@@ -83,9 +83,14 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
                   strokeWidth={hoveredIdx === idx ? strokeWidth + 4 : strokeWidth}
                   strokeDasharray={strokeDasharray}
                   strokeDashoffset={strokeDashoffset}
-                  className="transition-all duration-200 cursor-pointer"
+                  tabIndex={0}
+                  role="graphics-symbol"
+                  aria-label={`${cust.customerName}: ${cust.percentage}% pangsa omzet (${cust.totalRevenueFormatted})`}
+                  className="transition-all duration-200 cursor-pointer focus:outline-none"
                   onMouseEnter={() => setHoveredIdx(idx)}
                   onMouseLeave={() => setHoveredIdx(null)}
+                  onFocus={() => setHoveredIdx(idx)}
+                  onBlur={() => setHoveredIdx(null)}
                 />
               );
             })}
