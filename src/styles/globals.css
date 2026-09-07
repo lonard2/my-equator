@@ -1,28 +1,46 @@
 @import "tailwindcss";
 
+/* Dark mode follows the in-app theme toggle (data-theme attribute), not OS preference. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Brand token system. One accent (darkred family); emerald/amber/blue are
+   semantic status colors only (success/warning/info), never decorative.
+   Radius rule: controls/sm=lg, surfaces/inputs/cards/buttons/modals=xl,
+   hero surfaces=2xl, pills/avatars=full. No rounded-3xl anywhere. */
+@theme {
+  --color-brand: #8B0000;
+  --color-brand-strong: #A00000;
+  --color-brand-ink: #4A0000;
+}
+
+/* Entrance-motion utilities (tailwindcss-animate is not installed; these
+   replace its no-op classes used across modals, banners and sheets). */
+@keyframes enter-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes enter-zoom {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes enter-slide-bottom {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.fade-in { animation-name: enter-fade; }
+.zoom-in-95 { animation-name: enter-zoom; }
+.slide-in-from-bottom { animation-name: enter-slide-bottom; }
+
 @layer base {
-  :root {
-    --brand-primary: #8B0000; /* Darkred */
-    --brand-primary-hover: #A00000;
-    --brand-accent: #DC2626; /* Equator Insole Red */
-    --brand-surface: #FFFFFF;
-    --brand-subtle: #F9FAFB;
-    --brand-border: #E5E7EB;
-    --brand-text: #111827;
-    --brand-text-muted: #6B7280;
-  }
-
-  [data-theme="dark"] {
-    --brand-primary: #DC2626;
-    --brand-primary-hover: #EF4444;
-    --brand-accent: #F87171;
-    --brand-surface: #111827;
-    --brand-subtle: #1F2937;
-    --brand-border: #374151;
-    --brand-text: #F9FAFB;
-    --brand-text-muted: #9CA3AF;
-  }
-
   /* 5-Step Granular Typography & Density Scale Engine */
   html {
     font-size: 16px;
@@ -51,8 +69,8 @@
   }
 
   body {
-    background-color: var(--brand-subtle);
-    color: var(--brand-text);
+    background-color: var(--color-gray-50);
+    color: var(--color-gray-900);
     font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     min-height: 100vh;
     margin: 0;
@@ -61,6 +79,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  [data-theme="dark"] body {
+    background-color: var(--color-gray-950);
+    color: var(--color-gray-100);
+  }
+
 
   code, kbd, samp, pre, .font-mono {
     font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -73,11 +96,6 @@
   0% { transform: scale(1); }
   50% { transform: scale(1.04); }
   100% { transform: scale(1); }
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.65; }
 }
 
 @keyframes paper-feed {
@@ -103,10 +121,6 @@
 
 .animate-bump {
   animation: bump 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.animate-pulse-slow {
-  animation: pulse-subtle 3s ease-in-out infinite;
 }
 
 .animate-paper-feed {

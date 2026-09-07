@@ -17,9 +17,9 @@ const monoFont = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyEquator — Footwear Insole Factory ERP & CAD Platform",
+  title: "MyEquator | Factory ERP & Insole CAD",
   description:
-    "Internal manufacturing ERP, Delivery Order (Surat Jalan) dot-matrix print automation, Materials Inventory, and Insole CAD design platform for Equator Insole, Bandung, Indonesia.",
+    "Internal factory ERP for Equator Insole, Bandung: delivery orders (Surat Jalan) with dot-matrix printing, material inventory, and parametric insole CAD.",
 };
 
 export default function RootLayout({
