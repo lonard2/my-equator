@@ -312,11 +312,11 @@ export function OrderFormModal({
       ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
     >
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/40">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
               <Calculator className="h-5 w-5" />
             </div>
             <div>
@@ -345,7 +345,7 @@ export function OrderFormModal({
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* Non-blocking Global Error Banner */}
           {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between animate-in fade-in">
+            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between animate-in fade-in">
               <div className="flex items-center gap-2.5 text-xs text-red-800 dark:text-red-300 font-medium">
                 <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
                 <span>{errorMessage}</span>
@@ -383,7 +383,7 @@ export function OrderFormModal({
                 className={`w-full rounded-xl border px-3 py-2 text-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800 transition ${
                   fieldErrors.recipientName
                     ? "border-red-500 focus:ring-1 focus:ring-red-500"
-                    : "border-gray-300 dark:border-gray-700 focus:border-[#8B0000] focus:outline-none"
+                    : "border-gray-300 dark:border-gray-700 focus:border-brand focus:outline-none"
                 }`}
               />
             </div>
@@ -401,7 +401,7 @@ export function OrderFormModal({
                   setPoNumber(e.target.value);
                   markDirty();
                 }}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
               />
             </div>
 
@@ -417,7 +417,7 @@ export function OrderFormModal({
                   setDeliveryDate(e.target.value);
                   markDirty();
                 }}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
               />
             </div>
 
@@ -442,7 +442,7 @@ export function OrderFormModal({
                 className={`w-full rounded-xl border px-3 py-2 text-xs text-gray-900 dark:text-white bg-white dark:bg-gray-800 transition ${
                   fieldErrors.destinationAddress
                     ? "border-red-500 focus:ring-1 focus:ring-red-500"
-                    : "border-gray-300 dark:border-gray-700 focus:border-[#8B0000] focus:outline-none"
+                    : "border-gray-300 dark:border-gray-700 focus:border-brand focus:outline-none"
                 }`}
               />
             </div>
@@ -460,7 +460,7 @@ export function OrderFormModal({
                   setDriverName(e.target.value);
                   markDirty();
                 }}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
               />
             </div>
 
@@ -477,7 +477,7 @@ export function OrderFormModal({
                   setVehicleNumber(e.target.value);
                   markDirty();
                 }}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
               />
             </div>
 
@@ -494,7 +494,7 @@ export function OrderFormModal({
                   setNotes(e.target.value);
                   markDirty();
                 }}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
               />
             </div>
           </div>
@@ -505,13 +505,13 @@ export function OrderFormModal({
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                    <Calculator className="h-4 w-4 text-[#8B0000]" />
+                    <Calculator className="h-4 w-4 text-brand" />
                     <span>{isId ? "Rincian Artikel & Matriks Ukuran Sepatu" : "Size Breakdown Matrix"}</span>
                   </h4>
                   <button
                     type="button"
                     onClick={() => setShowOversized(!showOversized)}
-                    className="text-[11px] font-semibold text-gray-500 hover:text-[#8B0000] dark:hover:text-red-400 flex items-center gap-0.5"
+                    className="text-[11px] font-semibold text-gray-500 hover:text-brand dark:hover:text-red-400 flex items-center gap-0.5"
                   >
                     <span>{showOversized ? (isId ? "Sembunyikan 46-48" : "Hide 46-48") : (isId ? "+ Jumbo EU 46-48" : "+ Oversize 46-48")}</span>
                     {showOversized ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -530,7 +530,7 @@ export function OrderFormModal({
                     onClick={() => setInputMode("GRID")}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "GRID"
-                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
                         : "text-gray-500"
                     }`}
                   >
@@ -542,7 +542,7 @@ export function OrderFormModal({
                     onClick={() => setInputMode("TOUCH_PAD")}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "TOUCH_PAD"
-                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
                         : "text-gray-500"
                     }`}
                   >
@@ -554,7 +554,7 @@ export function OrderFormModal({
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#8B0000] dark:text-red-400 hover:underline active:scale-95"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-brand dark:text-red-400 hover:underline active:scale-95"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>{isId ? "+ Baris Baru" : "+ Add Row"}</span>
@@ -574,7 +574,7 @@ export function OrderFormModal({
                       onClick={() => setActiveItemIndex(idx)}
                       className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition active:scale-95 ${
                         activeItemIndex === idx
-                          ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
+                          ? "bg-brand text-white border-brand shadow-xs"
                           : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
                       }`}
                     >
@@ -584,7 +584,7 @@ export function OrderFormModal({
                 </div>
 
                 {/* Item Details Form */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
                   <div>
                     <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">Kode Artikel</label>
                     <input
@@ -643,7 +643,7 @@ export function OrderFormModal({
               </div>
             ) : (
               /* Spreadsheet Grid View */
-              <div className="border border-gray-200 dark:border-gray-800 rounded-2xl overflow-x-auto bg-gray-50/50 dark:bg-gray-800/30">
+              <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-x-auto bg-gray-50/50 dark:bg-gray-800/30">
                 <table className="w-full text-xs">
                   <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
                     <tr>
@@ -733,14 +733,14 @@ export function OrderFormModal({
                                   onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
                                   className={`w-full text-center rounded border px-1 py-1 text-xs font-mono font-bold transition ${
                                     val && Number(val) > 0
-                                      ? "bg-red-50 dark:bg-red-950/60 border-[#8B0000] text-[#8B0000] dark:text-red-300"
+                                      ? "bg-red-50 dark:bg-red-950/60 border-brand text-brand dark:text-red-300"
                                       : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800"
                                   }`}
                                 />
                               </td>
                             );
                           })}
-                          <td className="p-2.5 text-right font-extrabold text-xs text-[#8B0000] dark:text-red-400">
+                          <td className="p-2.5 text-right font-extrabold text-xs text-brand dark:text-red-400">
                             {itemPairs} psg
                           </td>
                           <td className="p-2.5 text-center">
@@ -763,12 +763,12 @@ export function OrderFormModal({
             )}
 
             {/* Live Summary Bar */}
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40">
               <span className="text-xs font-semibold text-red-900 dark:text-red-200">
                 {isId ? "Total Pasang Siap Kirim:" : "Total Pairs to Ship:"}
               </span>
               <div className="text-right">
-                <span className="text-sm font-extrabold text-[#8B0000] dark:text-red-400">
+                <span className="text-sm font-extrabold text-brand dark:text-red-400">
                   {grandTotalPairs.toLocaleString("id-ID")} pasang
                 </span>
                 {grandTotalAmount > 0 && (
@@ -792,7 +792,7 @@ export function OrderFormModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-brand hover:bg-brand-strong text-xs font-bold text-white shadow-md active:scale-95 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               <span>
@@ -812,9 +812,9 @@ export function OrderFormModal({
       {/* Discard Unsaved Changes Confirmation Modal */}
       {showDiscardConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl p-5 max-w-sm w-full space-y-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl p-5 max-w-sm w-full space-y-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 shrink-0">
+              <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 shrink-0">
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div className="space-y-1">

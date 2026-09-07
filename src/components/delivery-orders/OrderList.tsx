@@ -155,7 +155,7 @@ export function OrderList({
               title={isId ? "Lihat rekap total pasang per ukuran sepatu" : "View aggregate size breakdown"}
               className={`p-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 ${
                 showAggregateSummary
-                  ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
+                  ? "bg-brand text-white border-brand shadow-xs"
                   : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
@@ -166,7 +166,7 @@ export function OrderList({
             <button
               type="button"
               onClick={onCreateNew}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] px-3 py-1.5 text-xs font-bold text-white shadow-xs active:scale-95 transition-all duration-150"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-3 py-1.5 text-xs font-bold text-white shadow-xs active:scale-95 transition-all duration-150"
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
               <span>{isId ? "Buat DO" : "New DO"}</span>
@@ -176,13 +176,13 @@ export function OrderList({
 
         {/* Aggregate Sizing Breakdown Drawer (For Pak Hendra / Factory Production Staging) */}
         {showAggregateSummary && (
-          <div className="p-3 rounded-2xl bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 space-y-2 animate-in fade-in zoom-in-95 duration-100">
+          <div className="p-3 rounded-xl bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 space-y-2 animate-in fade-in zoom-in-95 duration-100">
             <div className="flex items-center justify-between text-[11px] font-bold text-red-900 dark:text-red-300">
               <span className="flex items-center gap-1">
-                <Layers className="h-3.5 w-3.5 text-[#8B0000]" />
+                <Layers className="h-3.5 w-3.5 text-brand" />
                 <span>{isId ? "Rekap Total Pasang per Size (Filter Aktif)" : "Total Pairs per Size (Active Filter)"}</span>
               </span>
-              <span className="font-mono text-xs font-black text-[#8B0000] dark:text-red-400 tabular-nums">
+              <span className="font-mono text-xs font-black text-brand dark:text-red-400 tabular-nums">
                 {sizeAggregates.total.toLocaleString("id-ID")} psg
               </span>
             </div>
@@ -195,7 +195,7 @@ export function OrderList({
                     key={size}
                     className={`p-1 rounded-xl border text-[11px] transition ${
                       qty > 0
-                        ? "bg-white dark:bg-gray-800 border-red-300 dark:border-red-900 text-[#8B0000] dark:text-red-300 font-bold shadow-2xs"
+                        ? "bg-white dark:bg-gray-800 border-red-300 dark:border-red-900 text-brand dark:text-red-300 font-bold shadow-2xs"
                         : "bg-transparent border-red-100/60 dark:border-red-950/60 text-gray-400 dark:text-gray-600"
                     }`}
                   >
@@ -216,7 +216,7 @@ export function OrderList({
             placeholder={isId ? "Cari No. SJ, Customer, PO..." : "Search Order, Client, PO..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none transition-shadow"
+            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition-shadow"
           />
         </div>
 
@@ -232,7 +232,7 @@ export function OrderList({
                 onClick={() => setStatusFilter(f.id)}
                 className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1 active:scale-95 ${
                   isSelected
-                    ? "bg-[#8B0000] text-white shadow-xs"
+                    ? "bg-brand text-white shadow-xs"
                     : "bg-gray-200/80 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300/80 dark:hover:bg-gray-700"
                 }`}
               >
@@ -278,7 +278,7 @@ export function OrderList({
                 onClick={handleResetFilters}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition shadow-2xs"
               >
-                <RotateCcw className="h-3.5 w-3.5 text-[#8B0000]" />
+                <RotateCcw className="h-3.5 w-3.5 text-brand" />
                 <span>{isId ? "Reset Filter & Pencarian" : "Reset Filters"}</span>
               </button>
             )}
@@ -300,7 +300,7 @@ export function OrderList({
                     onSelectOrder(order);
                   }
                 }}
-                className={`group p-3.5 cursor-pointer transition-all duration-150 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B0000] focus-visible:ring-inset ${
+                className={`group p-3.5 cursor-pointer transition-all duration-150 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset ${
                   isSelected
                     ? "bg-red-50/80 dark:bg-red-950/40"
                     : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -308,13 +308,13 @@ export function OrderList({
               >
                 {/* Active Inset Indicator Bar without box-sizing layout shift */}
                 {isSelected && (
-                  <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#8B0000]" />
+                  <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-brand" />
                 )}
 
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-mono font-bold text-xs text-gray-900 dark:text-white group-hover:text-[#8B0000] dark:group-hover:text-red-400 transition-colors">
+                      <span className="font-mono font-bold text-xs text-gray-900 dark:text-white group-hover:text-brand dark:group-hover:text-red-400 transition-colors">
                         {order.orderNumber}
                       </span>
                     </div>
@@ -328,7 +328,7 @@ export function OrderList({
 
                   <div className="flex flex-col items-end space-y-1.5 shrink-0">
                     <StatusBadge status={order.status} size="sm" language={language} />
-                    <span className="font-extrabold text-xs text-[#8B0000] dark:text-red-400 tabular-nums">
+                    <span className="font-extrabold text-xs text-brand dark:text-red-400 tabular-nums">
                       {order.totalQuantity.toLocaleString("id-ID")} psg
                     </span>
                   </div>

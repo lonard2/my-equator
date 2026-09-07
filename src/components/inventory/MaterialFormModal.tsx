@@ -181,11 +181,11 @@ export function MaterialFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-      <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <div className="w-full max-w-xl rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
               <Boxes className="h-5 w-5" />
             </div>
             <div>
@@ -211,7 +211,7 @@ export function MaterialFormModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs">
           {validationError && (
-            <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-red-700 dark:text-red-300 font-bold">
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-red-700 dark:text-red-300 font-bold">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>{validationError}</span>
             </div>
@@ -219,7 +219,7 @@ export function MaterialFormModal({
 
           {/* Quick Factory Insole Presets (When creating new item) */}
           {!isEditing && (
-            <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 space-y-2">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 space-y-2">
               <div className="flex items-center justify-between text-[11px] text-gray-500 font-bold">
                 <span className="flex items-center gap-1">
                   <Sparkles className="h-3 w-3 text-amber-500" />
@@ -241,7 +241,7 @@ export function MaterialFormModal({
                       setCategory(p.cat);
                       handleApplyPresetName(p.name, p.unit, p.cost);
                     }}
-                    className="px-2.5 py-1 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] transition"
+                    className="px-2.5 py-1 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-semibold text-gray-700 dark:text-gray-300 hover:border-brand hover:text-brand transition"
                   >
                     {p.name.split(" ")[0]} {p.name.split(" ")[1]}
                   </button>
@@ -262,7 +262,7 @@ export function MaterialFormModal({
                 onChange={(e) => setSku(e.target.value.toUpperCase())}
                 disabled={isEditing}
                 maxLength={40}
-                className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 font-mono font-bold text-xs uppercase focus:outline-none focus:border-[#8B0000] ${
+                className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 font-mono font-bold text-xs uppercase focus:outline-none focus:border-brand ${
                   isEditing ? "bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed" : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 }`}
                 placeholder="e.g. RAW-EVA-4MM-BLK"
@@ -277,7 +277,7 @@ export function MaterialFormModal({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as MaterialCategory)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -299,7 +299,7 @@ export function MaterialFormModal({
               onChange={(e) => setName(e.target.value)}
               maxLength={120}
               placeholder={isId ? "e.g. EVA Foam 4mm High-Density 40° Hitam (1.2m x 2.4m)" : "e.g. EVA Foam Sheet 4mm Black"}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
               required
             />
           </div>
@@ -317,7 +317,7 @@ export function MaterialFormModal({
                   max={999999}
                   value={currentStock}
                   onChange={(e) => setCurrentStock(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand tabular-nums"
                 />
               </div>
             )}
@@ -329,7 +329,7 @@ export function MaterialFormModal({
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-semibold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
               >
                 {UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -349,7 +349,7 @@ export function MaterialFormModal({
                 max={999999}
                 value={safetyThreshold}
                 onChange={(e) => setSafetyThreshold(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand tabular-nums"
                 required
               />
             </div>
@@ -368,7 +368,7 @@ export function MaterialFormModal({
                   step={500}
                   value={unitCost}
                   onChange={(e) => setUnitCost(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand tabular-nums"
                   required
                 />
                 <span className="absolute right-3 top-2 text-[10px] text-gray-400 font-mono pointer-events-none">
@@ -387,7 +387,7 @@ export function MaterialFormModal({
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Gudang Utama - Rak EVA B-03"
                 maxLength={60}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
               />
             </div>
           </div>
@@ -403,7 +403,7 @@ export function MaterialFormModal({
               rows={2}
               maxLength={250}
               placeholder={isId ? "Spesifikasi density, supplier PO, dimensi lembaran..." : "Density specs, supplier, sheet dimensions..."}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
             />
           </div>
 
@@ -419,7 +419,7 @@ export function MaterialFormModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan SKU" : "Save SKU"}</span>
@@ -431,7 +431,7 @@ export function MaterialFormModal({
       {/* Discard Confirmation Dialog */}
       {showDiscardConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-5 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-5 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
             <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
               {isId ? "Tutup tanpa menyimpan?" : "Discard unsaved changes?"}
             </h4>

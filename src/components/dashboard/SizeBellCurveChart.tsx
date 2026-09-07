@@ -49,13 +49,13 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
   const peakItem = data.find((d) => d.isPeak) || data[0];
 
   return (
-    <div className="p-4 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
+    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-            <Compass className="h-4 w-4 text-[#8B0000]" />
-            <span>{isId ? "Kurva Distribusi Ukuran Sepatu (EU 35–48)" : "Size Matrix Bell Curve (EU 35–48)"}</span>
+            <Compass className="h-4 w-4 text-brand" />
+            <span>{isId ? "Kurva Distribusi Ukuran Sepatu (EU 35-48)" : "Size Matrix Bell Curve (EU 35-48)"}</span>
           </h3>
           <p className="text-[11px] text-gray-500">
             {isId
@@ -150,7 +150,7 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
                   className={`${
                     p.data.isPeak
                       ? "fill-red-600 stroke-white stroke-2"
-                      : "fill-white stroke-[#8B0000] stroke-2"
+                      : "fill-white stroke-brand stroke-2"
                   }`}
                 />
 
@@ -162,7 +162,7 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
                   fontSize="8"
                   className={`font-mono font-bold ${
                     p.data.isPeak
-                      ? "fill-[#8B0000] dark:fill-red-400 font-extrabold text-[9px]"
+                      ? "fill-brand dark:fill-red-400 font-extrabold text-[9px]"
                       : "fill-gray-600 dark:fill-gray-400"
                   }`}
                 >
@@ -175,7 +175,7 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
 
         {/* Hover Tooltip */}
         {hoveredSize && (
-          <div className="absolute top-2 right-4 p-2.5 rounded-2xl bg-gray-900 text-white text-xs shadow-xl pointer-events-none border border-gray-700 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute top-2 right-4 p-2.5 rounded-xl bg-gray-900 text-white text-xs shadow-xl pointer-events-none border border-gray-700 animate-in fade-in zoom-in-95 duration-100">
             <p className="font-extrabold text-sm text-red-300">
               EU {hoveredSize.size}
             </p>

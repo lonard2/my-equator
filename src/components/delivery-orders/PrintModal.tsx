@@ -70,11 +70,11 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+            <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
               <Printer className="h-4 w-4" />
             </div>
             <div>
@@ -82,7 +82,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                 <h3 className="font-bold text-sm text-gray-900 dark:text-white">
                   {isId ? "Pratinjau Cetak Surat Jalan" : "Print Preview & Spooler"}
                 </h3>
-                <span className="text-xs font-mono font-bold text-[#8B0000] dark:text-red-400">
+                <span className="text-xs font-mono font-bold text-brand dark:text-red-400">
                   {order.orderNumber}
                 </span>
               </div>
@@ -102,7 +102,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                 onClick={() => setActiveTab("DOT_MATRIX")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeTab === "DOT_MATRIX"
-                    ? "bg-[#8B0000] text-white shadow-xs"
+                    ? "bg-brand text-white shadow-xs"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
               >
@@ -114,7 +114,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                 onClick={() => setActiveTab("HTML_SHEET")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeTab === "HTML_SHEET"
-                    ? "bg-[#8B0000] text-white shadow-xs"
+                    ? "bg-brand text-white shadow-xs"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
               >
@@ -135,7 +135,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
 
         {/* Live Override Bar */}
         <div className="bg-red-50/70 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900/40 px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5 text-[#8B0000] dark:text-red-300 font-bold">
+          <div className="flex items-center gap-1.5 text-brand dark:text-red-300 font-bold">
             <Edit3 className="h-3.5 w-3.5" />
             <span>{isId ? "Tweak Cetak Sementara:" : "Temporary Print Tweak:"}</span>
           </div>
@@ -146,7 +146,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
               placeholder="Nama Sopir"
               value={customDriver}
               onChange={(e) => setCustomDriver(e.target.value)}
-              className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+              className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
             />
           </div>
           <div className="flex items-center gap-1">
@@ -156,7 +156,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
               placeholder="No Kendaraan"
               value={customVehicle}
               onChange={(e) => setCustomVehicle(e.target.value)}
-              className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+              className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
             />
           </div>
           <div className="flex items-center gap-1 flex-1 min-w-[200px]">
@@ -166,7 +166,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
               placeholder="Catatan tambahan di kertas"
               value={customNotes}
               onChange={(e) => setCustomNotes(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
             />
           </div>
           <span className="text-[10px] text-gray-400 italic">
@@ -201,7 +201,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                   <button
                     type="button"
                     onClick={handleDownloadPrn}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-xs transition active:scale-95"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-strong text-xs font-bold text-white shadow-xs transition active:scale-95"
                   >
                     <FileDown className="h-3.5 w-3.5" />
                     <span>Download Binary .PRN</span>
@@ -210,7 +210,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
               </div>
 
               {/* Simulated Dot-Matrix Continuous Terminal Sheet */}
-              <div className="rounded-2xl border-2 border-emerald-900/40 bg-[#091510] p-4 sm:p-6 overflow-x-auto shadow-2xl text-[#34d399] font-mono text-xs sm:text-[13px] leading-relaxed selection:bg-emerald-600/40 selection:text-white animate-paper-feed relative">
+              <div className="rounded-xl border-2 border-emerald-900/40 bg-[#091510] p-4 sm:p-6 overflow-x-auto shadow-2xl text-[#34d399] font-mono text-xs sm:text-[13px] leading-relaxed selection:bg-emerald-600/40 selection:text-white animate-paper-feed relative">
                 {/* Visual Tractor-Feed Perforation Margin Simulation */}
                 <div className="absolute left-1.5 top-0 bottom-0 flex flex-col justify-around opacity-25 pointer-events-none">
                   {Array.from({ length: 12 }).map((_, i) => (
@@ -236,7 +236,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                 <button
                   type="button"
                   onClick={handleBrowserPrint}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-sm transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand hover:bg-brand-strong text-xs font-bold text-white shadow-sm transition active:scale-95"
                 >
                   <Printer className="h-3.5 w-3.5" />
                   <span>{isId ? "Cetak Dokumen Sekarang" : "Print Document"}</span>
@@ -244,11 +244,11 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
               </div>
 
               {/* Printable HTML Sheet */}
-              <div className="bg-white text-gray-900 border border-gray-300 rounded-2xl p-8 shadow-md space-y-6 print-page max-w-4xl mx-auto">
+              <div className="bg-white text-gray-900 border border-gray-300 rounded-xl p-8 shadow-md space-y-6 print-page max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="border-b-2 border-gray-900 pb-4 flex justify-between items-start">
                   <div>
-                    <h2 className="text-xl font-extrabold tracking-tight text-[#8B0000]">
+                    <h2 className="text-xl font-extrabold tracking-tight text-brand">
                       EQUATOR INSOLE BANDUNG
                     </h2>
                     <p className="text-xs text-gray-700 font-medium">
@@ -262,7 +262,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                     <h3 className="text-base font-black uppercase tracking-wider">
                       SURAT JALAN
                     </h3>
-                    <p className="font-mono font-bold text-sm text-[#8B0000]">{previewOrder.orderNumber}</p>
+                    <p className="font-mono font-bold text-sm text-brand">{previewOrder.orderNumber}</p>
                   </div>
                 </div>
 
@@ -325,7 +325,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                             {item.sizes?.[s] || "-"}
                           </td>
                         ))}
-                        <td className="p-2 text-right font-extrabold text-[#8B0000]">{item.totalPairs} psg</td>
+                        <td className="p-2 text-right font-extrabold text-brand">{item.totalPairs} psg</td>
                       </tr>
                     ))}
                   </tbody>
@@ -343,7 +343,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                           </td>
                         );
                       })}
-                      <td className="p-2 text-right font-extrabold text-[#8B0000]">
+                      <td className="p-2 text-right font-extrabold text-brand">
                         {previewOrder.totalQuantity} psg
                       </td>
                     </tr>
@@ -354,7 +354,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
                 {previewOrder.totalAmount && previewOrder.totalAmount > 0 && (
                   <div className="text-xs bg-red-50/50 p-3 rounded-xl border border-red-200">
                     <span className="font-semibold text-red-900 uppercase">Terbilang:</span>{" "}
-                    <span className="italic font-bold text-[#8B0000]">"{terbilang(previewOrder.totalAmount)}"</span>
+                    <span className="italic font-bold text-brand">"{terbilang(previewOrder.totalAmount)}"</span>
                   </div>
                 )}
 

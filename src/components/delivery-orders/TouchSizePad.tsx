@@ -37,10 +37,10 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
   };
 
   return (
-    <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 space-y-3 shadow-xs">
+    <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 space-y-3 shadow-xs">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#8B0000]" />
+          <span className="h-2 w-2 rounded-full bg-brand" />
           <span className="font-bold text-xs text-gray-800 dark:text-gray-200 uppercase tracking-wide">
             {isId ? "Touch Sizing Pad (Tablet & Touch)" : "Touch Sizing Pad (Tablet Optimized)"}
           </span>
@@ -49,12 +49,12 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           <button
             type="button"
             onClick={() => setShowOversized(!showOversized)}
-            className="text-[11px] font-semibold text-gray-500 hover:text-[#8B0000] dark:hover:text-red-400 flex items-center gap-0.5 transition"
+            className="text-[11px] font-semibold text-gray-500 hover:text-brand dark:hover:text-red-400 flex items-center gap-0.5 transition"
           >
             <span>{showOversized ? (isId ? "Sembunyikan 46-48" : "Hide 46-48") : (isId ? "+ Jumbo EU 46-48" : "+ Oversize 46-48")}</span>
             {showOversized ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900/60 text-xs font-semibold text-[#8B0000] dark:text-red-300">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900/60 text-xs font-semibold text-brand dark:text-red-300">
             <span>EU {activeSize}:</span>
             <span className="font-mono font-extrabold text-sm">{currentQty}</span>
             <span className="text-[10px] text-gray-500">psg</span>
@@ -75,16 +75,16 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
               onClick={() => setActiveSize(size)}
               className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition min-h-[52px] active:scale-95 ${
                 isCurrent
-                  ? "bg-[#8B0000] text-white border-[#8B0000] shadow-md ring-2 ring-red-300 dark:ring-red-900"
+                  ? "bg-brand text-white border-brand shadow-md ring-2 ring-red-300 dark:ring-red-900"
                   : qty > 0
-                  ? "bg-red-50/90 dark:bg-red-950/60 border-red-300 dark:border-red-900 text-[#8B0000] dark:text-red-300 font-bold"
+                  ? "bg-red-50/90 dark:bg-red-950/60 border-red-300 dark:border-red-900 text-brand dark:text-red-300 font-bold"
                   : isOversize
                   ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
                   : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               <span className="font-mono font-extrabold text-xs">{size}</span>
-              <span className={`text-[10px] font-semibold ${isCurrent ? "text-red-100" : qty > 0 ? "text-[#8B0000] dark:text-red-300 font-mono font-bold" : "text-gray-400"}`}>
+              <span className={`text-[10px] font-semibold ${isCurrent ? "text-red-100" : qty > 0 ? "text-brand dark:text-red-300 font-mono font-bold" : "text-gray-400"}`}>
                 {qty > 0 ? `${qty}` : "-"}
               </span>
             </button>
@@ -120,7 +120,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
               handleSetQty(parseInt(clean, 10) || 0);
             }}
             placeholder="0"
-            className="w-16 text-center font-extrabold text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-1 font-mono text-[#8B0000] dark:text-red-400 focus:border-[#8B0000] focus:outline-none"
+            className="w-16 text-center font-extrabold text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-1 font-mono text-brand dark:text-red-400 focus:border-brand focus:outline-none"
           />
           <button
             type="button"
@@ -158,7 +158,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           <button
             type="button"
             onClick={() => handleAdjust(200)}
-            className="px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900 text-xs font-bold text-[#8B0000] dark:text-red-300 hover:bg-red-100 active:scale-95 transition"
+            className="px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900 text-xs font-bold text-brand dark:text-red-300 hover:bg-red-100 active:scale-95 transition"
           >
             +200 psg
           </button>

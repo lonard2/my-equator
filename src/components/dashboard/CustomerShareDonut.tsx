@@ -33,7 +33,7 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-5 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 h-full flex flex-col items-center justify-center text-xs text-gray-400">
+      <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 h-full flex flex-col items-center justify-center text-xs text-gray-400">
         {isId ? "Belum ada data pelanggan." : "No customer data available."}
       </div>
     );
@@ -49,11 +49,11 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
   const topBuyer = topCustomers[0];
 
   return (
-    <div className="p-5 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs flex flex-col justify-between h-full space-y-4">
+    <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs flex flex-col justify-between h-full space-y-4">
       {/* Header */}
       <div>
         <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-          <Users className="h-4 w-4 text-[#8B0000]" />
+          <Users className="h-4 w-4 text-brand" />
           <span>{isId ? "Pangsa Pasar & Konsentrasi Pelanggan" : "Customer Market Share & Concentration"}</span>
         </h3>
         <p className="text-[11px] text-gray-500">
@@ -149,14 +149,14 @@ export function CustomerShareDonut({ data, language }: CustomerShareDonutProps) 
 
       {/* Bottom Insights Strip to Fill Card Height Naturally */}
       {topBuyer && (
-        <div className="p-2.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 flex items-center justify-between text-xs">
+        <div className="p-2.5 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <Award className="h-4 w-4 text-[#8B0000] dark:text-red-400 shrink-0" />
+            <Award className="h-4 w-4 text-brand dark:text-red-400 shrink-0" />
             <span className="text-gray-600 dark:text-gray-300 text-[11px]">
               {isId ? "Kontributor Utama:" : "Top Contributor:"} <strong className="text-gray-900 dark:text-white">{topBuyer.customerName}</strong>
             </span>
           </div>
-          <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-300">
+          <span className="font-mono font-black text-xs text-brand dark:text-red-300">
             {topBuyer.percentage}% {isId ? "Omzet" : "Share"}
           </span>
         </div>

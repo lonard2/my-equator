@@ -52,12 +52,12 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
   const areaD = `${pathD} L ${points[points.length - 1].x} ${chartHeight - paddingY} L ${points[0].x} ${chartHeight - paddingY} Z`;
 
   return (
-    <div className="p-4 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
+    <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
       {/* Header & Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-[#8B0000]" />
+            <TrendingUp className="h-4 w-4 text-brand" />
             <span>{isId ? "Tren Pendapatan & Volume Bulanan" : "Monthly Revenue & Volume Trends"}</span>
           </h3>
           <p className="text-[11px] text-gray-500">
@@ -71,7 +71,7 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
             onClick={() => setMetric("REVENUE")}
             className={`px-3 py-1 rounded-lg transition ${
               metric === "REVENUE"
-                ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
                 : "text-gray-600 dark:text-gray-400"
             }`}
           >
@@ -81,7 +81,7 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
             onClick={() => setMetric("VOLUME")}
             className={`px-3 py-1 rounded-lg transition ${
               metric === "VOLUME"
-                ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
                 : "text-gray-600 dark:text-gray-400"
             }`}
           >
@@ -163,7 +163,7 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
                 cx={p.x}
                 cy={p.y}
                 r={hoveredIndex === idx ? 6 : 4}
-                className="fill-white stroke-[#8B0000] stroke-2 transition-all duration-150"
+                className="fill-white stroke-brand stroke-2 transition-all duration-150"
               />
               {/* X-Axis Month Label */}
               <text

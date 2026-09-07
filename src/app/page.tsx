@@ -272,8 +272,8 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               {/* Top KPI Micro Strip */}
               <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
-                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-red-50/70 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 hover:shadow-xs transition">
-                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-[#8B0000] dark:text-red-400 shadow-xs">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-red-50/70 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-brand dark:text-red-400 shadow-xs">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div>
@@ -286,7 +286,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 hover:shadow-xs transition">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 hover:shadow-xs transition">
                   <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 shadow-xs">
                     <Boxes className="h-4 w-4" />
                   </div>
@@ -301,7 +301,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 hover:shadow-xs transition">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 hover:shadow-xs transition">
                   <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 shadow-xs">
                     <Truck className="h-4 w-4" />
                   </div>
@@ -328,7 +328,7 @@ export default function HomePage() {
                   }`}
                 >
                   {/* Mobile Header Card */}
-                  <div className="md:hidden p-3.5 bg-[#8B0000] text-white flex items-center justify-between shadow-xs">
+                  <div className="md:hidden p-3.5 bg-brand text-white flex items-center justify-between shadow-xs">
                     <div>
                       <h2 className="font-bold text-sm">Surat Jalan (Warehouse)</h2>
                       <p className="text-[10px] text-red-200">{orders.length} DO Aktif di Sistem</p>
@@ -338,7 +338,7 @@ export default function HomePage() {
                         setStagedDraftData(null);
                         setIsFormOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-[#8B0000] font-bold text-xs shadow-xs active:scale-95 transition"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-brand font-bold text-xs shadow-xs active:scale-95 transition"
                     >
                       <Plus className="h-4 w-4" />
                       <span>Buat DO</span>
@@ -354,10 +354,10 @@ export default function HomePage() {
                           setSelectedOrder(order);
                           setIsMobileDetailOpen(true);
                         }}
-                        className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
+                        className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-[#8B0000] dark:text-red-400 font-mono">
+                          <span className="font-bold text-xs text-brand dark:text-red-400 font-mono">
                             {order.orderNumber}
                           </span>
                           <StatusBadge status={order.status} size="sm" language={language} />
@@ -391,7 +391,7 @@ export default function HomePage() {
                               e.stopPropagation();
                               setPrintOrder(order);
                             }}
-                            className="py-2.5 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
+                            className="py-2.5 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
                           >
                             <Printer className="h-4 w-4" />
                             <span>Cetak Slip</span>
@@ -463,7 +463,7 @@ export default function HomePage() {
                   <div className="absolute top-4 left-4 z-20">
                     <button
                       onClick={() => setIsListRailCollapsed(!isListRailCollapsed)}
-                      className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 hover:text-[#8B0000] active:scale-95 transition"
+                      className="p-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 hover:text-brand active:scale-95 transition"
                       title={isListRailCollapsed ? "Buka Daftar Surat Jalan" : "Tutup Panel Samping"}
                     >
                       {isListRailCollapsed ? (
@@ -525,7 +525,7 @@ export default function HomePage() {
       {/* Mobile Slide-Up Bottom Sheet Detail Viewer */}
       {isMobileDetailOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-gray-900 rounded-t-3xl border-t border-gray-200 dark:border-gray-800 shadow-2xl h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+          <div className="bg-white dark:bg-gray-900 rounded-t-2xl border-t border-gray-200 dark:border-gray-800 shadow-2xl h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
             <div className="p-3.5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/60">
               <span className="font-bold text-sm text-gray-900 dark:text-white font-mono">
                 {selectedOrder.orderNumber}
@@ -561,7 +561,7 @@ export default function HomePage() {
           }}
           className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "DELIVERY_ORDERS"
-              ? "text-[#8B0000] dark:text-red-400"
+              ? "text-brand dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
@@ -576,7 +576,7 @@ export default function HomePage() {
           }}
           className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "INVENTORY"
-              ? "text-[#8B0000] dark:text-red-400"
+              ? "text-brand dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
@@ -591,7 +591,7 @@ export default function HomePage() {
           }}
           className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "CAD_STUDIO"
-              ? "text-[#8B0000] dark:text-red-400"
+              ? "text-brand dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
@@ -606,7 +606,7 @@ export default function HomePage() {
           }}
           className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "ANALYTICS"
-              ? "text-[#8B0000] dark:text-red-400"
+              ? "text-brand dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
@@ -621,7 +621,7 @@ export default function HomePage() {
           }}
           className={`flex flex-col items-center text-[10px] font-bold active:scale-95 transition ${
             currentTab === "SECURITY"
-              ? "text-[#8B0000] dark:text-red-400"
+              ? "text-brand dark:text-red-400"
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
