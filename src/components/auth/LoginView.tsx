@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Compass, Lock, User, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { FACTORY_DEMO_ACCOUNTS, FactoryUser } from "@/lib/auth/types";
 import { getRoleBadgeInfo } from "@/lib/auth/rbac";
+import { Avatar } from "@/components/common/Avatar";
 
 interface LoginViewProps {
   onLoginSuccess: (user: FactoryUser) => void;
@@ -75,14 +76,14 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-[#4A0000] to-black flex items-center justify-center p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
+    <div className="min-h-screen w-full bg-gray-950 flex items-center justify-center p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
         {/* Left Side: Brand Narrative */}
-        <div className="lg:col-span-5 bg-[#8B0000] text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-5 bg-brand text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
           <div className="space-y-4 relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-md">
-                <Compass className="h-6 w-6 text-[#8B0000] stroke-[2.5] animate-pulse-slow" />
+              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-md">
+                <Compass className="h-6 w-6 text-brand stroke-[2.5]" />
               </div>
               <div>
                 <h1 className="text-xl font-black tracking-wide">MyEquator</h1>
@@ -91,25 +92,21 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
             </div>
 
             <div className="pt-4 space-y-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-red-950/60 border border-red-800 text-red-200">
-                PT Equator Insole Bandung
-              </span>
               <h2 className="text-lg sm:text-xl font-extrabold leading-tight">
                 {isId
-                  ? "Sistem Operasional Pabrik & Desain Insole Terpadu"
-                  : "Integrated Footwear Manufacturing & CAD Operations"}
+                  ? "Sistem operasional pabrik insole: surat jalan, stok material, dan CAD."
+                  : "Insole factory operations: delivery orders, material stock, and CAD."}
               </h2>
               <p className="text-xs text-red-200 leading-relaxed">
                 {isId
-                  ? "Otomasi surat jalan dot-matrix, manajemen inventori EVA/Latex/PU, kalkulasi kurva insole, dan asisten cerdas Khatulistiwa AI."
-                  : "ESC/P dot-matrix printing, raw material stock tracking, parametric vector CAD, and Khatulistiwa AI assistant."}
+                  ? "Cetak surat jalan dot-matrix (ESC/P), stok bahan EVA/Latex/PU, kalkulasi kurva insole, dan asisten Khatulistiwa AI."
+                  : "ESC/P dot-matrix delivery orders, EVA/Latex/PU stock, parametric insole CAD, and the Khatulistiwa AI assistant."}
               </p>
             </div>
           </div>
 
-          <div className="pt-6 relative z-10 text-[11px] text-red-300 border-t border-red-800/80 flex items-center justify-between">
-            <span>Versi 1.0.0 (Production)</span>
-            <span>Bandung, Jawa Barat</span>
+          <div className="pt-6 relative z-10 text-[11px] text-red-300 border-t border-red-800/80">
+            <span>Equator Insole &middot; Bandung, Jawa Barat</span>
           </div>
         </div>
 
@@ -128,7 +125,7 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
             </div>
 
             {error && (
-              <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-300 text-xs font-semibold flex items-center gap-2 mb-4 animate-in fade-in">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-300 text-xs font-semibold flex items-center gap-2 mb-4 animate-in fade-in">
                 <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -147,7 +144,7 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="superadmin / manager / gudang / sales"
-                    className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 pl-10 pr-4 py-2.5 text-xs font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none transition"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 pl-10 pr-4 py-2.5 text-xs font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition"
                   />
                 </div>
               </div>
@@ -164,7 +161,7 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 pl-10 pr-10 py-2.5 text-xs font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none transition"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 pl-10 pr-10 py-2.5 text-xs font-semibold text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition"
                   />
                   <button
                     type="button"
@@ -180,7 +177,7 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white font-extrabold text-xs shadow-md transition active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-extrabold text-xs shadow-md transition active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <span>{loading ? (isId ? "Memverifikasi..." : "Authenticating...") : isId ? "Masuk ke Sistem" : "Sign In"}</span>
                 <ArrowRight className="h-4 w-4" />
@@ -191,7 +188,7 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
           {/* Quick Demo Role Cards */}
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
             <span className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider block">
-              {isId ? "Akses Cepat 4 Peran Pabrik (1-Klik Masuk):" : "Quick Role Access (1-Click Demo Login):"}
+              {isId ? "Akun Demo Peran Pabrik (1 klik)" : "Factory Role Demo Accounts (1 click)"}
             </span>
 
             <div className="grid grid-cols-2 gap-2">
@@ -202,13 +199,9 @@ export function LoginView({ onLoginSuccess, language }: LoginViewProps) {
                     key={acc.id}
                     onClick={() => handleQuickDemoLogin(acc)}
                     disabled={loading}
-                    className="p-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-950/40 text-left transition flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                    className="p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-950/40 text-left transition flex items-center gap-2 active:scale-95 disabled:opacity-50"
                   >
-                    <img
-                      src={acc.avatarUrl}
-                      alt={acc.name}
-                      className="w-8 h-8 rounded-xl object-cover border shrink-0"
-                    />
+                    <Avatar name={acc.name} className="w-8 h-8 text-[10px]" />
                     <div className="min-w-0">
                       <p className="font-extrabold text-[11px] text-gray-900 dark:text-white truncate">
                         {acc.name.split(",")[0]}

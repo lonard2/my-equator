@@ -31,6 +31,7 @@ import {
   Sparkles,
   Check,
   RotateCcw,
+  X,
 } from "lucide-react";
 import {
   FACTORY_DEMO_ACCOUNTS,
@@ -51,6 +52,7 @@ import {
   resetRolePermissions,
 } from "@/lib/auth/rbac";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
+import { Avatar } from "@/components/common/Avatar";
 
 interface SecurityDashboardProps {
   currentUser: FactoryUser;
@@ -162,13 +164,6 @@ export function SecurityDashboard({
       totalRecords: number;
     };
   } | null>(null);
-
-  // Helper for SVG Initials Avatar
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    return name.slice(0, 2).toUpperCase();
-  };
 
   // New User Form State
   const [newUsername, setNewUsername] = useState("");
@@ -611,17 +606,17 @@ export function SecurityDashboard({
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+          <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
             <h2 className="font-extrabold text-lg sm:text-xl text-gray-900 dark:text-white tracking-wide">
-              {isId ? "Otorisasi RBAC, Manajemen Akun & Keamanan Data" : "RBAC Security, User Directory & System Backups"}
+              {isId ? "Keamanan & Pengguna" : "Security & Users"}
             </h2>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Kontrol hak akses 4 peran pabrik, otentikasi PBKDF2, log audit jejak operasional, dan snapshot JSON offline"
-                : "Role-based access matrix, PBKDF2 authentication, immutable audit logging, and JSON offline snapshot"}
+                ? "Hak akses peran pabrik, otentikasi, log audit, dan snapshot JSON"
+                : "Role access, authentication, audit log, and JSON snapshots"}
             </p>
           </div>
         </div>
@@ -629,16 +624,16 @@ export function SecurityDashboard({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSwitchingUser(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 hover:border-[#8B0000] shadow-xs active:scale-95 transition"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 hover:border-brand shadow-xs active:scale-95 transition"
           >
-            <UserCheck className="h-4 w-4 text-[#8B0000]" />
+            <UserCheck className="h-4 w-4 text-brand" />
             <span>{isId ? "Ganti Profil Demo" : "Switch Demo Profile"}</span>
           </button>
 
           {onLogout && (
             <button
               onClick={onLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs font-bold text-[#8B0000] dark:text-red-300 hover:bg-red-100 active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-xs font-bold text-brand dark:text-red-300 hover:bg-red-100 active:scale-95 transition"
             >
               <LogOut className="h-4 w-4" />
               <span>{isId ? "Keluar" : "Log Out"}</span>
@@ -650,7 +645,7 @@ export function SecurityDashboard({
       {/* Global Action Feedback Alert */}
       {actionFeedback && (
         <div
-          className={`p-3.5 rounded-2xl border flex items-center justify-between text-xs font-semibold animate-in fade-in ${
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold animate-in fade-in ${
             actionFeedback.type === "success"
               ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
               : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900 text-red-800 dark:text-red-300"
@@ -668,25 +663,15 @@ export function SecurityDashboard({
             onClick={() => setActionFeedback(null)}
             className="text-xs opacity-60 hover:opacity-100 p-1"
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
       {/* Active User Card & Privileges */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {currentUser.avatarUrl ? (
-            <img
-              src={currentUser.avatarUrl}
-              alt={currentUser.name}
-              className="w-13 h-13 rounded-2xl object-cover border-2 border-red-700/20 shadow-xs shrink-0"
-            />
-          ) : (
-            <div className="w-13 h-13 rounded-2xl bg-[#8B0000] text-white flex items-center justify-center font-bold font-mono text-base border-2 border-red-700/20 shadow-xs shrink-0">
-              {getInitials(currentUser.name)}
-            </div>
-          )}
+          <Avatar name={currentUser.name} className="w-13 h-13 text-base" />
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
@@ -701,7 +686,7 @@ export function SecurityDashboard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
           <span className="text-[10px] font-extrabold uppercase text-gray-400 mr-1 block sm:inline">
             {isId ? "Izin Aktif (Klik untuk detail):" : "Active Permissions (Click for info):"}
           </span>
@@ -710,7 +695,7 @@ export function SecurityDashboard({
               key={p}
               type="button"
               onClick={() => setInspectedPermission(p as Permission)}
-              className="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[9px] font-mono font-bold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] transition flex items-center gap-1 shadow-2xs cursor-pointer"
+              className="px-2 py-0.5 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[9px] font-mono font-bold text-gray-700 dark:text-gray-300 hover:border-brand hover:text-brand transition flex items-center gap-1 shadow-2xs cursor-pointer"
               title={isId ? "Klik untuk melihat detail hak akses" : "Click to view permission details"}
             >
               <span>{p}</span>
@@ -729,7 +714,7 @@ export function SecurityDashboard({
       <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
         <div>
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-[#8B0000]" />
+            <ShieldCheck className="h-4 w-4 text-brand" />
             <span>{isId ? "Matriks Hak Akses Peran Pabrik" : "Factory Role Permission Matrix"}</span>
           </h3>
           <p className="text-xs text-gray-500">
@@ -745,7 +730,7 @@ export function SecurityDashboard({
             onClick={() => setIsCustomizerOpen(!isCustomizerOpen)}
             className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
               isCustomizerOpen
-                ? "bg-[#8B0000] text-white"
+                ? "bg-brand text-white"
                 : "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50"
             }`}
           >
@@ -765,7 +750,7 @@ export function SecurityDashboard({
           return (
             <div
               key={role}
-              className={`p-4 rounded-3xl border transition flex flex-col justify-between space-y-3 ${
+              className={`p-4 rounded-xl border transition flex flex-col justify-between space-y-3 ${
                 isUserRole
                   ? "bg-red-50/40 dark:bg-red-950/20 border-red-300 dark:border-red-900/60 shadow-xs"
                   : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
@@ -777,7 +762,7 @@ export function SecurityDashboard({
                     {info.label}
                   </span>
                   {isUserRole && (
-                    <span className="text-[9px] font-black uppercase text-[#8B0000] dark:text-red-400 bg-red-100 dark:bg-red-950 px-1.5 py-0.2 rounded">
+                    <span className="text-[9px] font-black uppercase text-brand dark:text-red-400 bg-red-100 dark:bg-red-950 px-1.5 py-0.2 rounded">
                       {isId ? "Peran Anda" : "Your Role"}
                     </span>
                   )}
@@ -797,7 +782,7 @@ export function SecurityDashboard({
                         setSelectedCustomRole(role);
                         setIsCustomizerOpen(true);
                       }}
-                      className="text-[9px] font-bold text-[#8B0000] dark:text-red-400 hover:underline"
+                      className="text-[9px] font-bold text-brand dark:text-red-400 hover:underline"
                     >
                       {isId ? "Ubah" : "Edit"}
                     </button>
@@ -809,7 +794,7 @@ export function SecurityDashboard({
                       key={pm}
                       type="button"
                       onClick={() => setInspectedPermission(pm as Permission)}
-                      className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[9px] font-mono text-gray-700 dark:text-gray-300 hover:text-[#8B0000] dark:hover:text-red-300 transition cursor-pointer"
+                      className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[9px] font-mono text-gray-700 dark:text-gray-300 hover:text-brand dark:hover:text-red-300 transition cursor-pointer"
                       title={isId ? "Klik untuk melihat detail hak akses" : "Click to inspect permission"}
                     >
                       {pm}
@@ -836,10 +821,10 @@ export function SecurityDashboard({
 
       {/* Role Permission Customizer Panel (Super Admin Exclusive) */}
       {isCustomizerOpen && isAdmin && (
-        <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border-2 border-[#8B0000]/30 shadow-md space-y-5 animate-in fade-in-50 duration-200">
+        <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border-2 border-brand/30 shadow-md space-y-5 animate-in fade-in-50 duration-200">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800 pb-3">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+              <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
                 <Sliders className="h-4 w-4" />
               </div>
               <div>
@@ -866,7 +851,7 @@ export function SecurityDashboard({
               <button
                 type="button"
                 onClick={handleSaveCustomRolePermissions}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000]"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-strong"
               >
                 <Check className="h-3.5 w-3.5" />
                 <span>{isId ? "Simpan Hak Akses" : "Save Permissions"}</span>
@@ -886,9 +871,9 @@ export function SecurityDashboard({
                   key={role}
                   type="button"
                   onClick={() => setSelectedCustomRole(role)}
-                  className={`px-3.5 py-2 rounded-2xl text-xs font-extrabold transition flex items-center gap-2 ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-2 ${
                     isSelected
-                      ? "bg-[#8B0000] text-white shadow-xs"
+                      ? "bg-brand text-white shadow-xs"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                   }`}
                 >
@@ -913,7 +898,7 @@ export function SecurityDashboard({
               return (
                 <div
                   key={group.category}
-                  className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-3.5 space-y-2.5"
+                  className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 p-3.5 space-y-2.5"
                 >
                   <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
                     <h5 className="font-extrabold text-xs text-gray-900 dark:text-white">
@@ -943,7 +928,7 @@ export function SecurityDashboard({
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => handleTogglePermission(selectedCustomRole, perm)}
-                              className="mt-0.5 h-3.5 w-3.5 rounded text-[#8B0000] focus:ring-[#8B0000]"
+                              className="mt-0.5 h-3.5 w-3.5 rounded text-brand focus:ring-brand"
                             />
                             <div>
                               <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
@@ -956,7 +941,7 @@ export function SecurityDashboard({
                           <button
                             type="button"
                             onClick={() => setInspectedPermission(perm)}
-                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-[#8B0000] transition shrink-0"
+                            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-brand transition shrink-0"
                             title={isId ? "Lihat detail izin" : "Inspect permission"}
                           >
                             <Info className="h-3.5 w-3.5" />
@@ -973,11 +958,11 @@ export function SecurityDashboard({
       )}
 
       {/* Factory Users Management CRUD (Scrollable Directory & Role Assignment) */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+      <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-              <Users className="h-4 w-4 text-[#8B0000]" />
+              <Users className="h-4 w-4 text-brand" />
               <span>{isId ? "Manajemen Akun & Pengguna Pabrik" : "Factory User Management"}</span>
               <span className="text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                 {filteredUsers.length} / {userList.length} {isId ? "Pengguna" : "Users"}
@@ -999,21 +984,21 @@ export function SecurityDashboard({
                 value={userSearchTerm}
                 onChange={(e) => setUserSearchTerm(e.target.value)}
                 placeholder={isId ? "Cari nama, email, username..." : "Search users..."}
-                className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:outline-none"
               />
             </div>
 
             {isAdmin ? (
               <button
                 onClick={() => setIsAddUserOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] active:scale-95 transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-strong active:scale-95 transition"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span>{isId ? "+ Tambah Pengguna" : "+ Add User"}</span>
               </button>
             ) : (
               <div
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-[11px] font-semibold border border-gray-200 dark:border-gray-700 cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-[11px] font-semibold border border-gray-200 dark:border-gray-700 cursor-not-allowed"
                 title={isId ? "Hanya Super Admin yang berwenang menambah pengguna" : "Super Admin privileges required"}
               >
                 <Lock className="h-3 w-3" />
@@ -1025,7 +1010,7 @@ export function SecurityDashboard({
 
         {/* Read-Only Notice for Non-Admins */}
         {!isAdmin && (
-          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-300 flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
             <span>
               {isId
@@ -1036,7 +1021,7 @@ export function SecurityDashboard({
         )}
 
         {/* User Management Scrollable Table Container */}
-        <div className="overflow-x-auto max-h-[440px] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
+        <div className="overflow-x-auto max-h-[440px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
           <table className="w-full text-left text-xs">
             <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
               <tr>
@@ -1062,21 +1047,11 @@ export function SecurityDashboard({
                     <tr key={u.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-2">
-                          {u.avatarUrl ? (
-                            <img
-                              src={u.avatarUrl}
-                              alt={u.name}
-                              className="w-7 h-7 rounded-lg object-cover border shrink-0"
-                            />
-                          ) : (
-                            <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-950/80 text-[#8B0000] dark:text-red-300 flex items-center justify-center font-bold font-mono text-[10px] shrink-0 border border-red-200 dark:border-red-900/60">
-                              {getInitials(u.name)}
-                            </div>
-                          )}
+                          <Avatar name={u.name} className="w-7 h-7 text-[10px]" />
                           <div>
                             <span className="font-bold text-gray-900 dark:text-white block">{u.name}</span>
                             {u.username === currentUser.username && (
-                              <span className="text-[9px] font-bold text-[#8B0000] dark:text-red-400">
+                              <span className="text-[9px] font-bold text-brand dark:text-red-400">
                                 ({isId ? "Sesi Aktif" : "Current Session"})
                               </span>
                             )}
@@ -1093,7 +1068,7 @@ export function SecurityDashboard({
                             <select
                               value={u.role}
                               onChange={(e) => handleRoleChange(u, e.target.value as UserRole)}
-                              className={`text-[10px] font-bold uppercase rounded-lg border py-1 pl-2 pr-6 appearance-none bg-white dark:bg-gray-800 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#8B0000] ${info.badgeBg}`}
+                              className={`text-[10px] font-bold uppercase rounded-lg border py-1 pl-2 pr-6 appearance-none bg-white dark:bg-gray-800 cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand ${info.badgeBg}`}
                             >
                               <option value="SUPER_ADMIN">SUPER ADMIN</option>
                               <option value="FACTORY_MANAGER">FACTORY MANAGER</option>
@@ -1149,11 +1124,11 @@ export function SecurityDashboard({
       </div>
 
       {/* 1-Click Offline Database Snapshot Export & Restore */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+      <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-[#8B0000]" />
+              <HardDrive className="h-4 w-4 text-brand" />
               <span>{isId ? "Ketahanan Offline & Snapshot Backup JSON" : "Offline Resiliency & JSON Snapshot Backup"}</span>
             </h3>
             <p className="text-xs text-gray-500">
@@ -1167,7 +1142,7 @@ export function SecurityDashboard({
             <button
               onClick={handleExportSnapshot}
               disabled={!canExport || exportingSnapshot}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#8B0000] text-white text-xs font-bold shadow-md hover:bg-[#A00000] active:scale-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-md hover:bg-brand-strong active:scale-95 transition disabled:opacity-50"
               title={!canExport ? (isId ? "Izin Super Admin / Manajer Diperlukan" : "Admin / Manager Required") : ""}
             >
               {exportingSnapshot ? (
@@ -1185,10 +1160,10 @@ export function SecurityDashboard({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={restoring || !canRestore}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-800 dark:text-gray-200 hover:bg-gray-50 active:scale-95 transition shadow-xs disabled:opacity-50"
               title={!canRestore ? (isId ? "Izin Super Admin Diperlukan" : "Super Admin Required") : ""}
             >
-              <Upload className="h-4 w-4 text-[#8B0000]" />
+              <Upload className="h-4 w-4 text-brand" />
               <span>
                 {restoring
                   ? isId ? "Memulihkan..." : "Restoring..."
@@ -1206,7 +1181,7 @@ export function SecurityDashboard({
         </div>
 
         {restoreMessage && (
-          <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>{restoreMessage}</span>
           </div>
@@ -1214,11 +1189,11 @@ export function SecurityDashboard({
       </div>
 
       {/* Real-Time Factory Security Audit Trail Table */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+      <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-              <History className="h-4 w-4 text-[#8B0000]" />
+              <History className="h-4 w-4 text-brand" />
               <span>{isId ? "Log Audit Aktivitas & Jejak Operasional" : "Factory Audit Trail & Security Logs"}</span>
             </h3>
             <p className="text-xs text-gray-500">
@@ -1242,7 +1217,7 @@ export function SecurityDashboard({
 
             <button
               onClick={fetchLogs}
-              className="p-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-[#8B0000] active:scale-95 transition shadow-xs"
+              className="p-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-brand active:scale-95 transition shadow-xs"
               title="Refresh Logs"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -1266,7 +1241,7 @@ export function SecurityDashboard({
               onClick={() => setLogEntityTypeFilter(f.key as any)}
               className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer ${
                 logEntityTypeFilter === f.key
-                  ? "bg-[#8B0000] text-white shadow-xs"
+                  ? "bg-brand text-white shadow-xs"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               }`}
             >
@@ -1276,7 +1251,7 @@ export function SecurityDashboard({
         </div>
 
         {/* Logs Scrollable Table */}
-        <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
+        <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
           <table className="w-full text-left text-xs">
             <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
               <tr>
@@ -1333,8 +1308,8 @@ export function SecurityDashboard({
       {/* Add New Factory User Modal */}
       {isAddUserOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5" />
                 <h3 className="font-bold text-sm">
@@ -1345,7 +1320,7 @@ export function SecurityDashboard({
                 onClick={() => setIsAddUserOpen(false)}
                 className="p-1 rounded-lg hover:bg-white/10"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -1435,7 +1410,7 @@ export function SecurityDashboard({
                 <button
                   type="submit"
                   disabled={creatingUser}
-                  className="px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs disabled:opacity-50"
                 >
                   {creatingUser ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Pengguna" : "Create User"}
                 </button>
@@ -1448,8 +1423,8 @@ export function SecurityDashboard({
       {/* Switch Demo User Account Modal */}
       {isSwitchingUser && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-base">
                   {isId ? "Ganti Profil Peran Demo Pabrik" : "Switch Demo Factory Profile"}
@@ -1464,7 +1439,7 @@ export function SecurityDashboard({
                 onClick={() => setIsSwitchingUser(false)}
                 className="p-1 rounded-lg hover:bg-white/10"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -1483,23 +1458,18 @@ export function SecurityDashboard({
                         name: acc.name,
                         email: acc.email,
                         role: acc.role,
-                        avatarUrl: acc.avatarUrl,
                         isActive: 1,
                       });
                       setIsSwitchingUser(false);
                     }}
-                    className={`p-3.5 rounded-2xl border-2 flex items-center justify-between cursor-pointer transition active:scale-[0.98] ${
+                    className={`p-3.5 rounded-xl border-2 flex items-center justify-between cursor-pointer transition active:scale-[0.98] ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50/50 dark:bg-red-950/30 shadow-xs"
+                        ? "border-brand bg-red-50/50 dark:bg-red-950/30 shadow-xs"
                         : "border-gray-200 dark:border-gray-800 hover:border-red-200 bg-white dark:bg-gray-800/50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        src={acc.avatarUrl}
-                        alt={acc.name}
-                        className="w-11 h-11 rounded-xl object-cover border"
-                      />
+                      <Avatar name={acc.name} className="w-11 h-11 text-sm" />
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-extrabold text-sm text-gray-900 dark:text-white">
@@ -1513,7 +1483,7 @@ export function SecurityDashboard({
                       </div>
                     </div>
 
-                    <button className="px-3 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs flex items-center gap-1">
+                    <button className="px-3 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs flex items-center gap-1">
                       <span>{isId ? "Pilih" : "Select"}</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </button>
@@ -1528,9 +1498,9 @@ export function SecurityDashboard({
       {/* Permission Detail Inspector Pop-up Modal */}
       {inspectedPermission && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+            <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-1.5 rounded-lg bg-white/10 text-white">
                   <ShieldCheck className="h-5 w-5" />
@@ -1548,7 +1518,7 @@ export function SecurityDashboard({
                 onClick={() => setInspectedPermission(null)}
                 className="p-1 rounded-lg hover:bg-white/10 text-white transition"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -1575,8 +1545,8 @@ export function SecurityDashboard({
               </div>
 
               {/* Detail 1: What it does */}
-              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-1">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B0000] dark:text-red-400">
+              <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand dark:text-red-400">
                   {isId ? "1. Apa yang Dilakukan (Fungsi & Hak Akses)" : "1. What It Does (Function & Scope)"}
                 </p>
                 <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
@@ -1587,8 +1557,8 @@ export function SecurityDashboard({
               </div>
 
               {/* Detail 2: Who can do it */}
-              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-1">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B0000] dark:text-red-400">
+              <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand dark:text-red-400">
                   {isId ? "2. Peran Standar Berwenang (Default Roles)" : "2. Authorized Roles (Default Configuration)"}
                 </p>
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -1607,7 +1577,7 @@ export function SecurityDashboard({
               </div>
 
               {/* Detail 3: Operational Effect */}
-              <div className="p-3.5 rounded-2xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 space-y-1">
+              <div className="p-3.5 rounded-xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 space-y-1">
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-900 dark:text-red-300">
                   {isId ? "3. Dampak Operasional Pabrik" : "3. Factory Operational Impact"}
                 </p>
@@ -1624,7 +1594,7 @@ export function SecurityDashboard({
               <button
                 type="button"
                 onClick={() => setInspectedPermission(null)}
-                className="px-4 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] transition"
+                className="px-4 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-strong transition"
               >
                 {isId ? "Tutup Inspector" : "Close Inspector"}
               </button>
@@ -1636,8 +1606,8 @@ export function SecurityDashboard({
       {/* In-App Confirmation Modal */}
       {confirmModal && confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
                 <h3 className="font-bold text-sm">{confirmModal.title}</h3>
@@ -1647,7 +1617,7 @@ export function SecurityDashboard({
                 onClick={() => setConfirmModal(null)}
                 className="p-1 rounded-lg hover:bg-white/10 text-white"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="p-5 space-y-4">
@@ -1667,8 +1637,8 @@ export function SecurityDashboard({
                   onClick={confirmModal.onConfirm}
                   className={`px-4 py-1.5 rounded-xl text-white text-xs font-bold shadow-xs transition ${
                     confirmModal.isDestructive
-                      ? "bg-[#8B0000] hover:bg-[#A00000]"
-                      : "bg-emerald-700 hover:bg-emerald-800"
+                      ? "bg-brand hover:bg-brand-strong"
+                      : "bg-brand hover:bg-brand-strong"
                   }`}
                 >
                   {confirmModal.confirmLabel}
@@ -1682,8 +1652,8 @@ export function SecurityDashboard({
       {/* Snapshot Pre-Flight Inspection & Verification Modal */}
       {snapshotPreFlight && snapshotPreFlight.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <HardDrive className="h-5 w-5" />
                 <div>
@@ -1700,12 +1670,12 @@ export function SecurityDashboard({
                 onClick={() => setSnapshotPreFlight(null)}
                 className="p-1 rounded-lg hover:bg-white/10 text-white"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-950 dark:text-amber-200 space-y-1">
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-950 dark:text-amber-200 space-y-1">
                 <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
                   <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
                   <span>{isId ? "Peringatan Tindakan Kritis" : "Critical Action Warning"}</span>
@@ -1751,7 +1721,7 @@ export function SecurityDashboard({
 
                 <div className="p-2.5 rounded-xl bg-red-50/50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 flex items-center justify-between text-xs font-bold">
                   <span className="text-gray-700 dark:text-gray-300">{isId ? "Total Keseluruhan Rekaman:" : "Total Records:"}</span>
-                  <span className="font-mono text-[#8B0000] dark:text-red-400 text-sm">{snapshotPreFlight.summary.totalRecords} entitas</span>
+                  <span className="font-mono text-brand dark:text-red-400 text-sm">{snapshotPreFlight.summary.totalRecords} entitas</span>
                 </div>
               </div>
             </div>
@@ -1770,7 +1740,7 @@ export function SecurityDashboard({
                 type="button"
                 onClick={handleExecuteRestore}
                 disabled={restoring}
-                className="px-4 py-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+                className="px-4 py-1.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
               >
                 {restoring ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <HardDrive className="h-3.5 w-3.5" />}
                 <span>{restoring ? (isId ? "Memulihkan Data..." : "Restoring Data...") : isId ? "Pulihkan Basis Data Sekarang" : "Restore Database Now"}</span>

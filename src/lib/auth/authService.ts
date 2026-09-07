@@ -34,7 +34,6 @@ export async function ensureDemoUsersSeeded(): Promise<void> {
         passwordHash: hash,
         salt,
         role: acc.role,
-        avatarUrl: acc.avatarUrl,
         isActive: 1,
         createdAt: now,
         updatedAt: now,

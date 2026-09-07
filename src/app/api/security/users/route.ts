@@ -61,7 +61,6 @@ export async function POST(req: Request) {
       passwordHash,
       salt,
       role: role || "SALES_OPERATOR",
-      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
       isActive: 1,
       createdAt: now,
       updatedAt: now,

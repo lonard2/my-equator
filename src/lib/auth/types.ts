@@ -11,7 +11,7 @@ export interface FactoryUser {
   lastLoginAt?: string | null;
 }
 
-export const FACTORY_DEMO_ACCOUNTS: (FactoryUser & { plainPassword: string; avatarUrl: string })[] = [
+export const FACTORY_DEMO_ACCOUNTS: (FactoryUser & { plainPassword: string })[] = [
   {
     id: "usr-super-admin-01",
     username: "superadmin",
@@ -19,7 +19,6 @@ export const FACTORY_DEMO_ACCOUNTS: (FactoryUser & { plainPassword: string; avat
     email: "budi.hartono@equatorinsole.co.id",
     role: "SUPER_ADMIN",
     plainPassword: "equator2026!",
-    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
     isActive: 1,
   },
   {
@@ -29,7 +28,6 @@ export const FACTORY_DEMO_ACCOUNTS: (FactoryUser & { plainPassword: string; avat
     email: "hendra.wijaya@equatorinsole.co.id",
     role: "FACTORY_MANAGER",
     plainPassword: "equator2026!",
-    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
     isActive: 1,
   },
   {
@@ -39,7 +37,6 @@ export const FACTORY_DEMO_ACCOUNTS: (FactoryUser & { plainPassword: string; avat
     email: "asep.sunandar@equatorinsole.co.id",
     role: "WAREHOUSE_STAFF",
     plainPassword: "equator2026!",
-    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
     isActive: 1,
   },
   {
@@ -49,7 +46,6 @@ export const FACTORY_DEMO_ACCOUNTS: (FactoryUser & { plainPassword: string; avat
     email: "siti.rahmawati@equatorinsole.co.id",
     role: "SALES_OPERATOR",
     plainPassword: "equator2026!",
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
     isActive: 1,
   },
 ];

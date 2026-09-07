@@ -22,6 +22,7 @@ import {
 import { ThemeMode, Language, UserRole } from "@/types";
 import { FactoryUser } from "@/lib/auth/types";
 import { getRoleBadgeInfo } from "@/lib/auth/rbac";
+import { Avatar } from "./Avatar";
 import { NavTab } from "./Sidebar";
 
 interface HeaderProps {
@@ -61,12 +62,12 @@ export function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#8B0000] text-white shadow-md transition-colors">
+    <header className="sticky top-0 z-40 bg-brand text-white shadow-md transition-colors">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-3.5 sm:px-6">
         {/* Brand Compass Logo & Name */}
         <div className="flex items-center space-x-2.5 sm:space-x-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-md">
-            <Compass className="h-5 w-5 text-[#8B0000] stroke-[2.2] animate-pulse-slow" />
+            <Compass className="h-5 w-5 text-brand stroke-[2.2]" />
           </div>
           <div>
             <h1 className="font-bold leading-tight text-sm sm:text-base tracking-wide flex items-center gap-1.5 sm:gap-2">
@@ -103,11 +104,7 @@ export function Header({
               className="flex items-center gap-2 rounded-xl bg-red-950/50 p-1 pr-2.5 text-xs font-semibold text-white hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
               title={isId ? "Ganti Pengguna & Hak Akses (RBAC)" : "User & Security Settings (RBAC)"}
             >
-              <img
-                src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-                alt={currentUser.name}
-                className="w-6 h-6 rounded-lg object-cover border border-red-400"
-              />
+              <Avatar name={currentUser.name} className="w-6 h-6 text-[9px]" />
               <span className="font-bold text-[11px] truncate max-w-[120px]">
                 {currentUser.name}
               </span>
@@ -165,11 +162,7 @@ export function Header({
               onClick={() => setIsMobileMenuOpen(true)}
               className="flex items-center gap-1.5 p-1 rounded-xl bg-red-950/50 border border-red-800/60"
             >
-              <img
-                src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-                alt={currentUser.name}
-                className="w-6 h-6 rounded-lg object-cover"
-              />
+              <Avatar name={currentUser.name} className="w-6 h-6 text-[9px]" />
               <span className="text-[10px] font-bold pr-1 text-red-200 uppercase">
                 {currentUser.role.split("_")[0]}
               </span>
@@ -189,7 +182,7 @@ export function Header({
       {/* MOBILE SLIDE-DOWN DRAWER MENU (md:hidden) */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 top-14 z-50 bg-black/70 backdrop-blur-xs flex flex-col justify-start animate-in fade-in duration-150">
-          <div className="bg-[#8B0000] border-b border-red-800 text-white p-5 rounded-b-3xl shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="bg-brand border-b border-red-800 text-white p-5 rounded-b-2xl shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
             {/* Active User Card in Drawer */}
             {currentUser && (
               <div
@@ -197,14 +190,10 @@ export function Header({
                   if (onOpenSecurity) onOpenSecurity();
                   setIsMobileMenuOpen(false);
                 }}
-                className="p-3.5 rounded-2xl bg-red-950/60 border border-red-800/80 flex items-center justify-between cursor-pointer active:scale-98 transition"
+                className="p-3.5 rounded-xl bg-red-950/60 border border-red-800/80 flex items-center justify-between cursor-pointer active:scale-98 transition"
               >
                 <div className="flex items-center gap-3">
-                  <img
-                    src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-                    alt={currentUser.name}
-                    className="w-11 h-11 rounded-xl object-cover border border-red-400"
-                  />
+                  <Avatar name={currentUser.name} className="w-11 h-11 text-sm" />
                   <div>
                     <h3 className="font-extrabold text-sm text-white leading-tight">
                       {currentUser.name}
@@ -259,10 +248,10 @@ export function Header({
 
               {[
                 { id: "DELIVERY_ORDERS", label: isId ? "Surat Jalan (DO)" : "Delivery Orders", icon: FileText },
-                { id: "DIGITIZER", label: isId ? "Archive Digitizer" : "Quick Digitizer", icon: Keyboard },
-                { id: "INVENTORY", label: isId ? "Inventori Bahan Baku" : "Stock Inventory", icon: Boxes },
+                { id: "DIGITIZER", label: isId ? "Digitizer Cepat" : "Quick Digitizer", icon: Keyboard },
+                { id: "INVENTORY", label: isId ? "Stok Material" : "Stock Inventory", icon: Boxes },
                 { id: "CAD_STUDIO", label: isId ? "Insole CAD Studio" : "CAD Studio", icon: Compass },
-                { id: "ANALYTICS", label: isId ? "Pusat Analitik Bisnis" : "Analytics Suite", icon: BarChart3 },
+                { id: "ANALYTICS", label: isId ? "Analitik Bisnis" : "Business Analytics", icon: BarChart3 },
                 { id: "SECURITY", label: isId ? "Keamanan & Pengguna" : "Security & Users", icon: ShieldCheck },
               ].map((item) => {
                 const Icon = item.icon;
@@ -274,7 +263,7 @@ export function Header({
                     onClick={() => handleNavClick(item.id as NavTab)}
                     className={`w-full p-2.5 rounded-xl flex items-center justify-between text-xs font-bold transition active:scale-98 ${
                       isActive
-                        ? "bg-white text-[#8B0000] shadow-sm"
+                        ? "bg-white text-brand shadow-sm"
                         : "bg-red-950/40 text-red-100 hover:bg-red-900/60 border border-red-800/40"
                     }`}
                   >
@@ -282,7 +271,7 @@ export function Header({
                       <Icon className="h-4 w-4" />
                       <span>{item.label}</span>
                     </div>
-                    {isActive && <span className="w-2 h-2 rounded-full bg-[#8B0000]" />}
+                    {isActive && <span className="w-2 h-2 rounded-full bg-brand" />}
                   </button>
                 );
               })}
