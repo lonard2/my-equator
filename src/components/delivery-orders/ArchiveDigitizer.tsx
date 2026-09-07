@@ -457,8 +457,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     if (failedCount === 0) {
       setSuccessMessage(
         isId
-          ? `✓ Berhasil menyimpan ${savedCount} Surat Jalan (Total ${totalBatchPairs.toLocaleString("id-ID")} pasang)! Mengalihkan ke daftar Surat Jalan...`
-          : `✓ Successfully saved ${savedCount} Delivery Orders (${totalBatchPairs.toLocaleString("id-ID")} pairs)! Redirecting...`
+          ? `Berhasil menyimpan ${savedCount} Surat Jalan (Total ${totalBatchPairs.toLocaleString("id-ID")} pasang)! Mengalihkan ke daftar Surat Jalan...`
+          : `Successfully saved ${savedCount} Delivery Orders (${totalBatchPairs.toLocaleString("id-ID")} pairs)! Redirecting...`
       );
       setTimeout(() => {
         onSuccess();
@@ -522,7 +522,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Undo Deleted Row Toast Notification */}
       {deletedRowBuffer && (
-        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
           <span className="text-xs font-bold">
             {isId
               ? `Baris ${deletedRowBuffer.row.orderNumber} (${deletedRowBuffer.row.recipientName || "Tanpa Nama"}) dihapus`
@@ -540,9 +540,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       )}
 
       {/* Header & Date Batch Control */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+          <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
             <Keyboard className="h-6 w-6" />
           </div>
           <div>
@@ -550,7 +550,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-tight">
                 {isId ? "Archive & Paper Quick Digitizer" : "Archive & Paper Quick Digitizer"}
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-300 border border-red-200 dark:border-red-900/60">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 border border-red-200 dark:border-red-900/60">
                 BATCH
               </span>
             </div>
@@ -565,7 +565,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         {/* Global Date & Action Tools */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Quick Date Offset Chips */}
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setDateOffset(0)}
@@ -592,7 +592,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-2.5 py-1">
+          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1">
             <Calendar className="h-3.5 w-3.5 text-gray-400" />
             <input
               type="date"
@@ -604,7 +604,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={handleApplyGlobalDate}
-              className="text-[10px] font-bold text-[#8B0000] dark:text-red-400 hover:underline ml-1"
+              className="text-[10px] font-bold text-brand dark:text-red-400 hover:underline ml-1"
               title={isId ? "Terapkan tanggal ini ke seluruh baris tabel di bawah" : "Apply this date to all rows"}
             >
               {isId ? "Terapkan Semua" : "Apply All"}
@@ -615,7 +615,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             ref={helpButtonRef}
             type="button"
             onClick={() => setShowShortcuts(true)}
-            className="p-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition focus-visible:ring-2 focus-visible:ring-[#8B0000]"
+            className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition focus-visible:ring-2 focus-visible:ring-brand"
             title={isId ? "Buka Panduan Pintasan Keyboard" : "Open Keyboard Shortcuts"}
           >
             <HelpCircle className="h-4 w-4" />
@@ -626,7 +626,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             ref={clearButtonRef}
             type="button"
             onClick={() => setShowClearConfirm(true)}
-            className="px-3 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-[#8B0000]"
+            className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand"
             title={isId ? "Kosongkan seluruh tabel dan mulai lembar baru" : "Clear all rows and start fresh"}
           >
             <RotateCcw className="h-3.5 w-3.5 inline mr-1" />
@@ -637,7 +637,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Helpful Excel/Sheets Clipboard Import Tip Banner */}
       {showSpreadsheetTip && (
-        <div className="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 animate-in fade-in">
+        <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 animate-in fade-in">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4 text-amber-600 shrink-0" />
             <span>
@@ -661,10 +661,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       {/* Keyboard Shortcuts Cheat Sheet Modal */}
       {showShortcuts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <Command className="h-5 w-5 text-[#8B0000]" />
+                <Command className="h-5 w-5 text-brand" />
                 <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
                   {isId ? "Pintasan Keyboard Digitizer" : "Digitizer Keyboard Shortcuts"}
                 </h3>
@@ -744,7 +744,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Notifications & Progress Banners */}
       {errorMessage && (
-        <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center justify-between gap-2 text-red-700 dark:text-red-300 text-xs font-bold shadow-xs">
+        <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center justify-between gap-2 text-red-700 dark:text-red-300 text-xs font-bold shadow-xs">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMessage}</span>
@@ -756,7 +756,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       )}
 
       {successMessage && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-xs animate-in fade-in">
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-xs animate-in fade-in">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{successMessage}</span>
         </div>
@@ -764,7 +764,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Live Saving Progress Banner */}
       {savingProgress && (
-        <div className="p-4 rounded-2xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xl flex items-center justify-between gap-3 animate-in fade-in">
+        <div className="p-4 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xl flex items-center justify-between gap-3 animate-in fade-in">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />
             <div>
@@ -786,7 +786,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       )}
 
       {/* Main Grid Container */}
-      <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs overflow-hidden flex flex-col flex-1">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs overflow-hidden flex flex-col flex-1">
         {/* MOBILE VIEW (< md) Touch Card Feed */}
         <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-3">
           {rows.map((row, idx) => {
@@ -797,7 +797,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               <div
                 key={row.id}
                 data-row-id={row.id}
-                className={`p-3.5 rounded-2xl border bg-white dark:bg-gray-900 shadow-xs space-y-3 transition ${
+                className={`p-3.5 rounded-xl border bg-white dark:bg-gray-900 shadow-xs space-y-3 transition ${
                   isInvalid
                     ? "border-red-500 ring-2 ring-red-200 dark:ring-red-950"
                     : "border-gray-200 dark:border-gray-800"
@@ -808,7 +808,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                       #{idx + 1}
                     </span>
-                    <span className="font-mono font-bold text-xs text-[#8B0000] dark:text-red-400">
+                    <span className="font-mono font-bold text-xs text-brand dark:text-red-400">
                       {row.orderNumber}
                     </span>
                   </div>
@@ -833,7 +833,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     value={row.recipientName}
                     onChange={(e) => handleRowChange(row.id, "recipientName", e.target.value)}
                     placeholder={isId ? "Ketik nama PT / Toko Sepatu..." : "Customer Company..."}
-                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
                   />
                 </div>
 
@@ -841,9 +841,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] font-bold text-gray-500 uppercase">
-                      {isId ? "Matriks Ukuran (EU 36–45)" : "Size Breakdown"}
+                      {isId ? "Matriks Ukuran (EU 36-45)" : "Size Breakdown"}
                     </span>
-                    <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-400 tabular-nums">
+                    <span className="font-mono font-black text-xs text-brand dark:text-red-400 tabular-nums">
                       {rowTotal} <span className="text-[10px] font-normal text-gray-500">psg</span>
                     </span>
                   </div>
@@ -857,7 +857,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           key={size}
                           className={`rounded-xl border p-1 text-center transition ${
                             hasQty
-                              ? "border-[#8B0000] bg-red-50/80 dark:bg-red-950/60"
+                              ? "border-brand bg-red-50/80 dark:bg-red-950/60"
                               : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40"
                           }`}
                         >
@@ -897,9 +897,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 <th className="p-2.5 w-28">{isId ? "Tanggal" : "Date"}</th>
                 <th className="p-2.5 min-w-[160px]">{isId ? "Model Artikel" : "Insole Article"}</th>
 
-                {/* Sizing Columns (EU 36–45) with minimum 50px width */}
+                {/* Sizing Columns (EU 36-45) with minimum 50px width */}
                 {STANDARD_SIZES.map((size) => (
-                  <th key={size} className="p-2 text-center min-w-[50px] bg-red-50/60 dark:bg-red-950/40 text-[#8B0000] dark:text-red-300 font-mono font-extrabold border-l border-red-100 dark:border-red-900/40">
+                  <th key={size} className="p-2 text-center min-w-[50px] bg-red-50/60 dark:bg-red-950/40 text-brand dark:text-red-300 font-mono font-extrabold border-l border-red-100 dark:border-red-900/40">
                     {size}
                   </th>
                 ))}
@@ -931,7 +931,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         type="text"
                         value={row.orderNumber}
                         onChange={(e) => handleRowChange(row.id, "orderNumber", e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-mono font-bold text-xs text-[#8B0000] dark:text-red-400 focus:outline-none focus:border-[#8B0000]"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-mono font-bold text-xs text-brand dark:text-red-400 focus:outline-none focus:border-brand"
                       />
                     </td>
 
@@ -945,7 +945,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         className={`w-full rounded-lg border px-2.5 py-1 text-xs font-semibold focus:outline-none ${
                           isInvalid && !row.recipientName.trim()
                             ? "border-red-500 ring-2 ring-red-200 dark:ring-red-950 bg-red-50/50"
-                            : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-[#8B0000]"
+                            : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-brand"
                         }`}
                       />
                     </td>
@@ -956,7 +956,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         aria-label={`Tanggal surat jalan baris ${rIdx + 1}`}
                         value={row.deliveryDate}
                         onChange={(e) => handleRowChange(row.id, "deliveryDate", e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-1.5 py-1 font-mono text-[11px] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-[#8B0000]"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-1.5 py-1 font-mono text-[11px] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-brand"
                       />
                     </td>
 
@@ -966,7 +966,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         list="article-catalog-suggestions"
                         value={row.articleCode}
                         onChange={(e) => handleRowChange(row.id, "articleCode", e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
                       />
                     </td>
 
@@ -987,9 +987,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                             onChange={(e) => handleSizeChange(row.id, size, e.target.value)}
                             onKeyDown={(e) => handleSizeKeyDown(e, rIdx, size)}
                             placeholder="·"
-                            className={`w-full min-w-[48px] text-center rounded-lg border px-1.5 py-1 font-mono font-extrabold text-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B0000] tabular-nums ${
+                            className={`w-full min-w-[48px] text-center rounded-lg border px-1.5 py-1 font-mono font-extrabold text-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand tabular-nums ${
                               hasQty
-                                ? "bg-red-50/90 dark:bg-red-950/70 border-[#8B0000] text-[#8B0000] dark:text-red-300"
+                                ? "bg-red-50/90 dark:bg-red-950/70 border-brand text-brand dark:text-red-300"
                                 : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-400"
                             }`}
                           />
@@ -1035,7 +1035,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                   );
                 })}
 
-                <td className="p-3 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums border-l border-gray-200 dark:border-gray-700">
+                <td className="p-3 text-right font-mono font-black text-sm text-brand dark:text-red-400 tabular-nums border-l border-gray-200 dark:border-gray-700">
                   {totalBatchPairs.toLocaleString("id-ID")}
                 </td>
                 <td></td>
@@ -1050,10 +1050,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={handleAddRow}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition focus-visible:ring-2 focus-visible:ring-[#8B0000]"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand"
               title={isId ? "Tambah baris surat jalan baru (Pintasan: Alt+N)" : "Add new row (Alt+N)"}
             >
-              <Plus className="h-4 w-4 text-[#8B0000]" />
+              <Plus className="h-4 w-4 text-brand" />
               <span>{isId ? "Tambah Baris (Alt+N)" : "Add Row (Alt+N)"}</span>
             </button>
 
@@ -1067,7 +1067,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               type="button"
               onClick={handleSaveBatch}
               disabled={!!savingProgress || rows.length === 0}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#8B0000]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand"
               title={isId ? "Simpan seluruh baris surat jalan ke database (Pintasan: Ctrl+S)" : "Commit all orders to database (Ctrl+S)"}
             >
               {savingProgress ? (
@@ -1089,7 +1089,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       {/* Clear Table Confirmation Dialog */}
       {showClearConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
             <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
               {isId ? "Kosongkan seluruh lembar kerja?" : "Clear entire digitizer worksheet?"}
             </h4>

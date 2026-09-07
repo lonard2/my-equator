@@ -456,7 +456,7 @@ export function CadStudio({ language }: CadStudioProps) {
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-950 text-gray-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-60 px-4 py-2.5 rounded-2xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
+        <div className="fixed top-5 right-5 z-60 px-4 py-2.5 rounded-xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -465,7 +465,7 @@ export function CadStudio({ language }: CadStudioProps) {
       {/* Top Header Bar */}
       <div className="p-3 sm:p-4 border-b border-gray-800 bg-gray-900/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2.5 z-30">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-2xl bg-[#8B0000]/20 text-[#8B0000] dark:text-red-400 border border-[#8B0000]/30 shrink-0">
+          <div className="p-2 rounded-xl bg-brand/20 text-brand dark:text-red-400 border border-brand/30 shrink-0">
             <Compass className="h-6 w-6" />
           </div>
           <div>
@@ -490,7 +490,7 @@ export function CadStudio({ language }: CadStudioProps) {
           <button
             type="button"
             onClick={() => setIsLibraryOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-2xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
             title={isId ? "Buka Arsip Blueprint Tersimpan" : "Open Saved Blueprint Archive"}
           >
             <FolderOpen className="h-4 w-4 text-amber-400" />
@@ -505,16 +505,16 @@ export function CadStudio({ language }: CadStudioProps) {
           <button
             type="button"
             onClick={() => setIsAiModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-gradient-to-r from-red-800 to-[#8B0000] hover:from-red-700 hover:to-red-900 text-white text-xs font-bold shadow-lg shadow-red-950/50 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition"
           >
-            <Sparkles className="h-4 w-4 text-amber-300" />
-            <span>{isId ? "AI Generative Model" : "AI Generative Model"}</span>
+            <Sparkles className="h-4 w-4" />
+            <span>{isId ? "Model Generatif AI" : "AI Generative Model"}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsCncPreFlightOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:border-brand hover:text-brand text-xs font-bold active:scale-95 transition"
           >
             <Scissors className="h-4 w-4" />
             <span>{isId ? "Verifikasi & Ekspor CNC" : "CNC Pre-Flight & Export"}</span>
@@ -523,7 +523,7 @@ export function CadStudio({ language }: CadStudioProps) {
           <button
             type="button"
             onClick={handleSaveBlueprint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
             title="Ctrl+S / Cmd+S"
           >
             <Save className="h-4 w-4" />
@@ -538,7 +538,7 @@ export function CadStudio({ language }: CadStudioProps) {
           type="button"
           onClick={() => setMobileCadView("CANVAS")}
           className={`flex-1 py-2 rounded-xl text-center transition ${
-            mobileCadView === "CANVAS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+            mobileCadView === "CANVAS" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
           }`}
         >
           {isId ? "1. Canvas" : "1. Canvas"}
@@ -547,7 +547,7 @@ export function CadStudio({ language }: CadStudioProps) {
           type="button"
           onClick={() => setMobileCadView("PARAMETERS")}
           className={`flex-1 py-2 rounded-xl text-center transition ${
-            mobileCadView === "PARAMETERS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+            mobileCadView === "PARAMETERS" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
           }`}
         >
           {isId ? "2. Ukuran" : "2. Sizing"}
@@ -556,7 +556,7 @@ export function CadStudio({ language }: CadStudioProps) {
           type="button"
           onClick={() => setMobileCadView("ORTHOTICS")}
           className={`flex-1 py-2 rounded-xl text-center transition ${
-            mobileCadView === "ORTHOTICS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+            mobileCadView === "ORTHOTICS" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
           }`}
         >
           {isId ? "3. Ortotik" : "3. Orthotics"}
@@ -565,7 +565,7 @@ export function CadStudio({ language }: CadStudioProps) {
           type="button"
           onClick={() => setMobileCadView("EXPORT")}
           className={`flex-1 py-2 rounded-xl text-center transition ${
-            mobileCadView === "EXPORT" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+            mobileCadView === "EXPORT" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
           }`}
         >
           {isId ? "4. Ekspor" : "4. Export"}
@@ -589,13 +589,13 @@ export function CadStudio({ language }: CadStudioProps) {
               type="text"
               value={blueprintName}
               onChange={(e) => setBlueprintName(e.target.value)}
-              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-1.5 text-white font-bold text-xs focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none"
+              className="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-1.5 text-white font-bold text-xs focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
               placeholder="e.g. Ergonomic Running Insole"
             />
           </div>
 
           {/* Sizing Standard Selector */}
-          <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2.5">
+          <div className="p-3.5 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase text-gray-400">
                 {isId ? "Sistem Standar Ukuran" : "Sizing Standard System"}
@@ -611,7 +611,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   onClick={() => setSizingSystem(sys)}
                   className={`py-1.5 rounded-lg text-[10px] font-bold border transition ${
                     sizingSystem === sys
-                      ? "bg-[#8B0000] text-white border-[#8B0000]"
+                      ? "bg-brand text-white border-brand"
                       : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                   }`}
                 >
@@ -633,7 +633,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   max={340}
                   value={customLengthMm}
                   onChange={(e) => setCustomLengthMm(parseFloat(e.target.value) || 260)}
-                  className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 font-mono font-bold text-white text-xs focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 font-mono font-bold text-white text-xs focus:border-brand focus:outline-none"
                 />
               </div>
             ) : (
@@ -651,14 +651,14 @@ export function CadStudio({ language }: CadStudioProps) {
                   step={sizingSystem === "MONDOPOINT_CM" ? 0.5 : 1}
                   value={rawSizeValue}
                   onChange={(e) => setRawSizeValue(parseFloat(e.target.value))}
-                  className="w-full accent-[#8B0000]"
+                  className="w-full accent-brand"
                 />
               </div>
             )}
           </div>
 
           {/* Foot Laterality (Left / Right / Pair Switcher) */}
-          <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+          <div className="p-3.5 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-2">
             <span className="text-[10px] font-bold uppercase text-gray-400 block">
               {isId ? "Orientasi Kaki (Simetri)" : "Foot Symmetry & Laterality"}
             </span>
@@ -679,7 +679,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setFoot("RIGHT")}
                 className={`py-2 rounded-xl text-xs font-bold border transition ${
                   foot === "RIGHT"
-                    ? "bg-[#8B0000] text-white border-[#8B0000]"
+                    ? "bg-brand text-white border-brand"
                     : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                 }`}
               >
@@ -700,7 +700,7 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
 
           {/* Caliper Direct-Entry & Width Adjusters */}
-          <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-3">
+          <div className="p-3.5 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase text-gray-400">
                 {isId ? "Pengukuran Caliper Presisi (mm)" : "Precision Caliper Dimensions (mm)"}
@@ -723,7 +723,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     value={ballWidth}
                     aria-label={isId ? "Lebar Bola Kaki (mm)" : "Forefoot Ball Width (mm)"}
                     onChange={(e) => setBallWidth(Math.max(70, Math.min(130, parseFloat(e.target.value) || 70)))}
-                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-amber-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-amber-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">mm</span>
                 </div>
@@ -755,7 +755,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     value={heelWidth}
                     aria-label={isId ? "Lebar Mangkuk Tumit (mm)" : "Rearfoot Heel Width (mm)"}
                     onChange={(e) => setHeelWidth(Math.max(45, Math.min(95, parseFloat(e.target.value) || 45)))}
-                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">mm</span>
                 </div>
@@ -787,7 +787,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     value={archFactor}
                     aria-label={isId ? "Faktor Tinggi Lekukan Arch" : "Arch Flange Height Factor"}
                     onChange={(e) => setArchFactor(Math.max(0.75, Math.min(1.45, parseFloat(e.target.value) || 1.0)))}
-                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                    className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">x</span>
                 </div>
@@ -800,7 +800,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 value={archFactor}
                 aria-label={isId ? "Slider Faktor Tinggi Lekukan Arch" : "Arch Flange Height Factor Slider"}
                 onChange={(e) => setArchFactor(parseFloat(e.target.value))}
-                className="w-full accent-[#8B0000]"
+                className="w-full accent-brand"
               />
             </div>
           </div>
@@ -858,7 +858,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
           {/* Floating Viewport Overlay Toolbar */}
           <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
-            <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
+            <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
               <button
                 type="button"
                 onClick={() => setZoomScale((z) => Math.min(2.5, z + 0.15))}
@@ -897,7 +897,7 @@ export function CadStudio({ language }: CadStudioProps) {
               <button
                 type="button"
                 onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-                className="p-2 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-700 hover:bg-gray-800 text-white active:scale-95 transition shadow-xl flex items-center gap-1.5 text-xs font-semibold"
+                className="p-2 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-700 hover:bg-gray-800 text-white active:scale-95 transition shadow-xl flex items-center gap-1.5 text-xs font-semibold"
                 title={isRightSidebarOpen ? "Tutup Panel" : "Buka Panel"}
               >
                 {isRightSidebarOpen ? (
@@ -937,7 +937,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showOutline && (
                     <path
                       d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -1015,7 +1015,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     {showOutline && (
                       <path
                         d={geometry.svgPathLeft}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
@@ -1046,7 +1046,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     {showOutline && (
                       <path
                         d={geometry.svgPathRight}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-[#8B0000] stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
@@ -1077,7 +1077,7 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
 
           {/* Bottom Live Dimension Callout Strip */}
-          <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between p-2.5 rounded-2xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs">
+          <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between p-2.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs">
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 font-mono text-[11px]">
               <span>
                 <strong className="text-red-400">{geometry.sizingLabel}</strong> ({foot})
@@ -1095,9 +1095,6 @@ export function CadStudio({ language }: CadStudioProps) {
                 Keliling: <strong className="text-cyan-400">{totalPerimeter} mm</strong>
               </span>
             </div>
-            <span className="text-[10px] text-gray-400 font-semibold hidden lg:inline">
-              Equator Anatomical CAD Engine v3.0
-            </span>
           </div>
         </div>
 
@@ -1114,7 +1111,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 type="button"
                 onClick={() => setInspectorTab("COMPONENTS")}
                 className={`flex-1 py-1.5 rounded-lg transition ${
-                  inspectorTab === "COMPONENTS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+                  inspectorTab === "COMPONENTS" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
                 }`}
               >
                 {isId ? "Komponen" : "Orthotics"}
@@ -1123,7 +1120,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 type="button"
                 onClick={() => setInspectorTab("LAYERS")}
                 className={`flex-1 py-1.5 rounded-lg transition ${
-                  inspectorTab === "LAYERS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+                  inspectorTab === "LAYERS" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
                 }`}
               >
                 {isId ? "Layer CAD" : "Layers"}
@@ -1132,7 +1129,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 type="button"
                 onClick={() => setInspectorTab("SPECS")}
                 className={`flex-1 py-1.5 rounded-lg transition ${
-                  inspectorTab === "SPECS" ? "bg-[#8B0000] text-white" : "text-gray-400 hover:text-white"
+                  inspectorTab === "SPECS" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
                 }`}
               >
                 {isId ? "Spek & Yield" : "Specs"}
@@ -1143,7 +1140,7 @@ export function CadStudio({ language }: CadStudioProps) {
             {inspectorTab === "COMPONENTS" && (
               <div className="space-y-4">
                 {/* TPU Arch Support Plate */}
-                <div className="p-3.5 rounded-2xl bg-red-950/30 border border-red-900/40 space-y-3">
+                <div className="p-3.5 rounded-xl bg-red-950/30 border border-red-900/40 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className="font-bold text-red-300">
@@ -1185,7 +1182,7 @@ export function CadStudio({ language }: CadStudioProps) {
                           max={1.35}
                           value={archPlateLength}
                           onChange={(e) => setArchPlateLength(Math.max(0.75, Math.min(1.35, parseFloat(e.target.value) || 1.0)))}
-                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
                       </div>
@@ -1215,7 +1212,7 @@ export function CadStudio({ language }: CadStudioProps) {
                           max={1.30}
                           value={archPlateWidth}
                           onChange={(e) => setArchPlateWidth(Math.max(0.70, Math.min(1.30, parseFloat(e.target.value) || 1.0)))}
-                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
                       </div>
@@ -1233,7 +1230,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
 
                 {/* Heel Cup Pad */}
-                <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-900/40 space-y-3">
+                <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-900/40 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-emerald-300">
                       {isId ? "Mangkuk Tumit (Heel Cup)" : "Heel Cup Profile"}
@@ -1257,7 +1254,7 @@ export function CadStudio({ language }: CadStudioProps) {
                           max={1.30}
                           value={heelCupRadius}
                           onChange={(e) => setHeelCupRadius(Math.max(0.70, Math.min(1.30, parseFloat(e.target.value) || 1.0)))}
-                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
                       </div>
@@ -1275,7 +1272,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
 
                 {/* Metatarsal Pad */}
-                <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-900/40 space-y-3">
+                <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-900/40 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-cyan-300">
                       {isId ? "Bantalan Metatarsal (Dome)" : "Metatarsal Pad Dome"}
@@ -1299,7 +1296,7 @@ export function CadStudio({ language }: CadStudioProps) {
                           max={1.40}
                           value={metatarsalSize}
                           onChange={(e) => setMetatarsalSize(Math.max(0.60, Math.min(1.40, parseFloat(e.target.value) || 1.0)))}
-                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
                       </div>
@@ -1329,7 +1326,7 @@ export function CadStudio({ language }: CadStudioProps) {
                           max={0.72}
                           value={metatarsalYPos}
                           onChange={(e) => setMetatarsalYPos(Math.max(0.58, Math.min(0.72, parseFloat(e.target.value) || 0.65)))}
-                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000]"
+                          className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                       </div>
                     </div>
@@ -1354,14 +1351,14 @@ export function CadStudio({ language }: CadStudioProps) {
                   {isId ? "Visibilitas Layer CAD" : "CAD Layer Visibility"}
                 </span>
 
-                <div className="p-3 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+                <div className="p-3 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-2">
                   <label className="flex items-center justify-between cursor-pointer">
                     <span className="text-gray-300 font-bold">{isId ? "Garis Potong (Cut Outline)" : "Cut Outline"}</span>
                     <input
                       type="checkbox"
                       checked={showOutline}
                       onChange={(e) => setShowOutline(e.target.checked)}
-                      className="rounded text-[#8B0000] focus:ring-0"
+                      className="rounded text-brand focus:ring-0"
                     />
                   </label>
 
@@ -1411,7 +1408,7 @@ export function CadStudio({ language }: CadStudioProps) {
             {/* TAB 3: SPECS & YIELD */}
             {inspectorTab === "SPECS" && (
               <div className="space-y-3">
-                <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+                <div className="p-3.5 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-2">
                   <span className="text-[10px] font-bold uppercase text-gray-400 block">
                     {isId ? "Spesifikasi Material" : "Material Specifications"}
                   </span>
@@ -1435,7 +1432,7 @@ export function CadStudio({ language }: CadStudioProps) {
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-2">
+                <div className="p-3.5 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-2">
                   <span className="text-[10px] font-bold uppercase text-gray-400 block">
                     {isId ? "Estimasi Yield per Lembar EVA" : "EVA Sheet Yield Estimate"}
                   </span>
@@ -1456,10 +1453,10 @@ export function CadStudio({ language }: CadStudioProps) {
       {/* Blueprint Library Drawer / Modal */}
       {isLibraryOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-xl rounded-3xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[85vh] flex flex-col">
+          <div className="w-full max-w-xl rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-2xl bg-amber-950/80 text-amber-400 border border-amber-800">
+                <div className="p-2 rounded-xl bg-amber-950/80 text-amber-400 border border-amber-800">
                   <FolderOpen className="h-5 w-5" />
                 </div>
                 <div>
@@ -1483,7 +1480,7 @@ export function CadStudio({ language }: CadStudioProps) {
             {/* Blueprints List */}
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
               {savedBlueprints.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-gray-800 rounded-2xl text-gray-500">
+                <div className="p-8 text-center border border-dashed border-gray-800 rounded-xl text-gray-500">
                   <FolderOpen className="h-8 w-8 mx-auto mb-2 text-gray-600" />
                   <p className="text-xs font-bold">{isId ? "Belum ada blueprint tersimpan" : "No saved blueprints yet"}</p>
                   <p className="text-[11px] text-gray-600 mt-1">
@@ -1494,7 +1491,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 savedBlueprints.map((bp) => (
                   <div
                     key={bp.id}
-                    className="p-3.5 rounded-2xl bg-gray-800/80 border border-gray-700 hover:border-gray-600 transition flex items-center justify-between gap-3"
+                    className="p-3.5 rounded-xl bg-gray-800/80 border border-gray-700 hover:border-gray-600 transition flex items-center justify-between gap-3"
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -1511,7 +1508,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     <button
                       type="button"
                       onClick={() => handleLoadSavedBlueprint(bp)}
-                      className="px-3 py-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white font-bold text-xs shrink-0 active:scale-95 transition"
+                      className="px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shrink-0 active:scale-95 transition"
                     >
                       {isId ? "Muat Model" : "Load Model"}
                     </button>
@@ -1526,10 +1523,10 @@ export function CadStudio({ language }: CadStudioProps) {
       {/* CNC Die Pre-Flight Verification & Export Modal */}
       {isCncPreFlightOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4">
+          <div className="w-full max-w-lg rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-2xl bg-emerald-950/80 text-emerald-400 border border-emerald-800">
+                <div className="p-2 rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-800">
                   <Scissors className="h-5 w-5" />
                 </div>
                 <div>
@@ -1552,7 +1549,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
             {/* Audit Checklist */}
             <div className="space-y-2.5 text-xs">
-              <div className="p-3 rounded-2xl bg-gray-800/80 border border-gray-700 grid grid-cols-2 gap-2 font-mono">
+              <div className="p-3 rounded-xl bg-gray-800/80 border border-gray-700 grid grid-cols-2 gap-2 font-mono">
                 <div>
                   <span className="text-[10px] text-gray-400 uppercase block">{isId ? "Ukuran Bounding Box" : "Bounding Box"}</span>
                   <span className="font-bold text-white tabular-nums">{totalW.toFixed(1)} x {totalH.toFixed(1)} mm</span>
@@ -1563,12 +1560,12 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 flex items-center gap-2.5 text-emerald-300">
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 flex items-center gap-2.5 text-emerald-300">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                <span>{isId ? "✓ Polyline 100% Manifold Tertutup (Tanpa self-intersection)" : "✓ 100% Manifold Closed Loop Verified"}</span>
+                <span>{isId ? "Polyline 100% Manifold Tertutup (Tanpa self-intersection)" : "100% Manifold Closed Loop Verified"}</span>
               </div>
 
-              <div className="p-3 rounded-2xl bg-gray-800/60 border border-gray-700/60 space-y-1.5">
+              <div className="p-3 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">{isId ? "Audit Lapisan Layer DXF (Corel / CNC)" : "DXF Layer Color Audit"}</span>
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                   <div className="flex items-center gap-1.5 text-gray-200">
@@ -1605,7 +1602,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 type="button"
                 onClick={handleExportDxf}
                 disabled={exporting !== null}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 active:scale-95 transition"
               >
                 <Download className="h-4 w-4" />
                 <span>{exporting === "DXF" ? "Exporting..." : isId ? "Unduh AutoCAD R12 DXF" : "Download R12 DXF"}</span>

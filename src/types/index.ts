@@ -1,4 +1,4 @@
-// Shared TypeScript Types — MyEquator
+// Shared TypeScript Types - MyEquator
 
 export type UserRole = "SUPER_ADMIN" | "FACTORY_MANAGER" | "WAREHOUSE_STAFF" | "SALES_OPERATOR";
 

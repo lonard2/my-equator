@@ -104,7 +104,7 @@ export function CommandPalette({
     {
       id: "act-ai-chat",
       title: isId ? "Tanya Khatulistiwa AI Assistant" : "Ask Khatulistiwa AI Assistant",
-      subtitle: isId ? "Chat bot asisten pabrik pintar & prompt DO" : "AI factory intelligence & draft assistant",
+      subtitle: isId ? "Chat asisten pabrik & draft surat jalan" : "Factory assistant chat & DO drafts",
       category: "AI",
       icon: Sparkles,
       action: onOpenAssistant,
@@ -155,7 +155,7 @@ export function CommandPalette({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 p-4 animate-in fade-in duration-100">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Search Bar Input */}
         <div className="p-3.5 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
           <Search className="h-5 w-5 text-gray-400 shrink-0" />
@@ -202,9 +202,9 @@ export function CommandPalette({
                     onClose();
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`p-2.5 rounded-2xl flex items-center justify-between cursor-pointer transition ${
+                  className={`p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition ${
                     isSelected
-                      ? "bg-red-50 dark:bg-red-950/50 text-[#8B0000] dark:text-red-300"
+                      ? "bg-red-50 dark:bg-red-950/50 text-brand dark:text-red-300"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
@@ -212,7 +212,7 @@ export function CommandPalette({
                     <div
                       className={`p-2 rounded-xl shrink-0 ${
                         isSelected
-                          ? "bg-[#8B0000] text-white"
+                          ? "bg-brand text-white"
                           : "bg-gray-100 dark:bg-gray-800 text-gray-500"
                       }`}
                     >
@@ -225,7 +225,7 @@ export function CommandPalette({
                   </div>
                   <ArrowRight
                     className={`h-4 w-4 shrink-0 transition-transform ${
-                      isSelected ? "translate-x-0.5 opacity-100 text-[#8B0000]" : "opacity-0"
+                      isSelected ? "translate-x-0.5 opacity-100 text-brand" : "opacity-0"
                     }`}
                   />
                 </div>
@@ -237,10 +237,10 @@ export function CommandPalette({
         {/* Footer shortcuts hint */}
         <div className="p-2.5 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-200 dark:border-gray-800 text-[10px] text-gray-500 flex items-center justify-between font-mono">
           <div className="flex items-center gap-2">
-            <span>↑↓ Pilih</span>
-            <span>↵ Eksekusi</span>
+            <span>{isId ? "↑↓ Pilih" : "↑↓ Navigate"}</span>
+            <span>{isId ? "↵ Pilih" : "↵ Select"}</span>
           </div>
-          <span>Equator Command Palette (⌘K)</span>
+          <span>MyEquator (⌘K)</span>
         </div>
       </div>
     </div>

@@ -73,12 +73,12 @@ export function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-red-50/50 dark:bg-red-950/20">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-xs border border-red-100 dark:border-red-900/40">
-              <Sliders className="h-5 w-5 text-[#8B0000] dark:text-red-400" />
+              <Sliders className="h-5 w-5 text-brand dark:text-red-400" />
             </div>
             <div>
               <h3 className="font-bold text-sm text-gray-900 dark:text-white">
@@ -103,10 +103,10 @@ export function SettingsModal({
           <div className="space-y-2.5">
             <div className="flex items-center justify-between text-gray-800 dark:text-gray-200 font-bold uppercase tracking-wider text-[11px]">
               <div className="flex items-center gap-1.5">
-                <Type className="h-3.5 w-3.5 text-[#8B0000] dark:text-red-400" />
+                <Type className="h-3.5 w-3.5 text-brand dark:text-red-400" />
                 <span>{isId ? "Skala Ukuran Huruf (5 Pilihan)" : "Font Size Scale (5 Options)"}</span>
               </div>
-              <span className="text-[#8B0000] dark:text-red-400 font-mono font-extrabold normal-case">
+              <span className="text-brand dark:text-red-400 font-mono font-extrabold normal-case">
                 {fontOptions.find((o) => o.id === density)?.size}
               </span>
             </div>
@@ -118,14 +118,14 @@ export function SettingsModal({
                   <button
                     key={item.id}
                     onClick={() => onDensityChange(item.id)}
-                    className={`p-2.5 rounded-2xl border text-center transition flex flex-col justify-between items-center relative active:scale-95 hover:shadow-xs ${
+                    className={`p-2.5 rounded-xl border text-center transition flex flex-col justify-between items-center relative active:scale-95 hover:shadow-xs ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/70 text-[#8B0000] dark:text-red-200 ring-2 ring-[#8B0000]"
+                        ? "border-brand bg-red-50 dark:bg-red-950/70 text-brand dark:text-red-200 ring-2 ring-brand"
                         : "border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
                     }`}
                   >
                     <span className="font-bold text-xs">{item.label}</span>
-                    <span className="font-mono text-[11px] font-bold text-[#8B0000] dark:text-red-400 my-0.5">
+                    <span className="font-mono text-[11px] font-bold text-brand dark:text-red-400 my-0.5">
                       {item.size}
                     </span>
                     <span className="text-[9px] text-gray-500 line-clamp-1">{item.desc}</span>
@@ -138,7 +138,7 @@ export function SettingsModal({
           {/* 2. Layout Max Width */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200 font-bold uppercase tracking-wider text-[11px]">
-              <Layout className="h-3.5 w-3.5 text-[#8B0000] dark:text-red-400" />
+              <Layout className="h-3.5 w-3.5 text-brand dark:text-red-400" />
               <span>{isId ? "Lebar Ruang Kerja (Layout Width)" : "Workspace Width"}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -151,9 +151,9 @@ export function SettingsModal({
                   <button
                     key={item.id}
                     onClick={() => onLayoutWidthChange(item.id as LayoutWidth)}
-                    className={`p-3 rounded-2xl border text-left font-medium transition active:scale-95 hover:shadow-xs ${
+                    className={`p-3 rounded-xl border text-left font-medium transition active:scale-95 hover:shadow-xs ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50 dark:bg-red-950/70 text-[#8B0000] dark:text-red-200 ring-2 ring-[#8B0000]"
+                        ? "border-brand bg-red-50 dark:bg-red-950/70 text-brand dark:text-red-200 ring-2 ring-brand"
                         : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
                     }`}
                   >
@@ -176,7 +176,7 @@ export function SettingsModal({
                   onClick={() => onThemeChange("light")}
                   className={`flex-1 py-2 px-2 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 active:scale-95 transition ${
                     theme === "light"
-                      ? "border-[#8B0000] bg-red-50 text-[#8B0000] ring-1 ring-[#8B0000]"
+                      ? "border-brand bg-red-50 text-brand ring-1 ring-brand"
                       : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
@@ -206,21 +206,21 @@ export function SettingsModal({
                   onClick={() => onLanguageChange("id")}
                   className={`flex-1 py-2 px-2 rounded-xl border text-center font-bold flex items-center justify-center gap-1 active:scale-95 transition ${
                     language === "id"
-                      ? "border-[#8B0000] bg-red-50 text-[#8B0000] ring-1 ring-[#8B0000]"
+                      ? "border-brand bg-red-50 text-brand ring-1 ring-brand"
                       : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
-                  <span>🇮🇩 ID</span>
+                  <span>Indonesia (ID)</span>
                 </button>
                 <button
                   onClick={() => onLanguageChange("en")}
                   className={`flex-1 py-2 px-2 rounded-xl border text-center font-bold flex items-center justify-center gap-1 active:scale-95 transition ${
                     language === "en"
-                      ? "border-[#8B0000] bg-red-50 text-[#8B0000] ring-1 ring-[#8B0000]"
+                      ? "border-brand bg-red-50 text-brand ring-1 ring-brand"
                       : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                   }`}
                 >
-                  <span>🇬🇧 EN</span>
+                  <span>English (EN)</span>
                 </button>
               </div>
             </div>
@@ -231,9 +231,9 @@ export function SettingsModal({
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 text-right">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-xs font-bold text-white shadow-md hover:shadow-lg hover:shadow-red-900/20 active:scale-95 transition"
+            className="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-xs font-bold text-white shadow-xs active:scale-95 transition"
           >
-            {isId ? "Tutup & Terapkan" : "Apply & Close"}
+            {isId ? "Tutup" : "Close"}
           </button>
         </div>
       </div>

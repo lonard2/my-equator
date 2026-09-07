@@ -259,8 +259,8 @@ export async function generateFallbackResponse(userPrompt: string): Promise<{
     text += `- Peringatan Stok Rendah: **${summary.lowStockCount + summary.criticalStockCount} SKU**\n\n`;
     text += `**Rincian Saldo Bahan:**\n`;
     data.materials.forEach((m: any) => {
-      const statusEmoji = m.healthStatus === "CRITICAL" ? "🔴 KRITIS" : m.healthStatus === "WARNING" ? "🟡 MENIPIS" : "🟢 AMAN";
-      text += `- **[${m.sku}]** ${m.name}: **${m.currentStock}** (Safety: ${m.safetyThreshold}) — *${statusEmoji}*\n`;
+      const statusLabel = m.healthStatus === "CRITICAL" ? "KRITIS" : m.healthStatus === "WARNING" ? "MENIPIS" : "AMAN";
+      text += `- **[${m.sku}]** ${m.name}: **${m.currentStock}** (Safety: ${m.safetyThreshold}) (${statusLabel})\n`;
     });
     return { content: text };
   }

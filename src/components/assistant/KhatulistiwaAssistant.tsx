@@ -108,7 +108,7 @@ export function KhatulistiwaAssistant({
           if (isBullet) {
             return (
               <div key={lIdx} className="flex items-start gap-2 ml-1">
-                <span className={`text-xs mt-0.5 shrink-0 ${isUser ? "text-red-200" : "text-[#8B0000] dark:text-red-400"}`}>•</span>
+                <span className={`text-xs mt-0.5 shrink-0 ${isUser ? "text-red-200" : "text-brand dark:text-red-400"}`}>•</span>
                 <span className="flex-1">{formattedLine}</span>
               </div>
             );
@@ -202,7 +202,7 @@ export function KhatulistiwaAssistant({
         {
           role: "assistant",
           content: isId
-            ? "Maaf, terjadi kendala saat menghubungkan ke gateway AI. Menggunakan respons lokal cadangan pabrik."
+            ? "Maaf, terjadi kendala saat menghubungkan ke gateway AI."
             : "Sorry, an error occurred while connecting to the AI gateway.",
         },
       ]);
@@ -237,19 +237,16 @@ export function KhatulistiwaAssistant({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed bottom-20 md:bottom-6 right-6 z-40 flex items-center gap-3 rounded-full bg-[#8B0000] hover:bg-[#A00000] text-white px-4.5 py-3.5 shadow-2xl hover:shadow-red-900/40 active:scale-95 transition-all duration-200 group border border-red-400/30"
-          title="Buka Khatulistiwa AI Floating Copilot"
-          aria-label="Buka Khatulistiwa AI Floating Copilot"
+          className="fixed bottom-20 md:bottom-6 right-6 z-40 flex items-center gap-3 rounded-full bg-brand hover:bg-brand-strong text-white px-4.5 py-3.5 shadow-2xl active:scale-95 transition-all duration-200 group border border-red-400/30"
+          title="Buka Khatulistiwa AI"
+          aria-label="Buka Khatulistiwa AI"
         >
           <div className="relative">
             <Compass className={`h-6 w-6 text-white ${loading ? "animate-spin" : "group-hover:rotate-45 transition-transform"}`} />
-            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border-2 border-[#8B0000]"></span>
-            </span>
           </div>
           <div className="text-left hidden sm:block">
             <p className="text-xs font-extrabold tracking-wide leading-tight">Khatulistiwa AI</p>
-            <p className="text-[10px] text-red-200 font-medium">Factory Copilot</p>
+            <p className="text-[10px] text-red-200 font-medium">{isId ? "Asisten Pabrik" : "Factory Assistant"}</p>
           </div>
         </button>
       )}
@@ -257,27 +254,24 @@ export function KhatulistiwaAssistant({
       {/* Spacious & Font-Conscious Floating Window Widget */}
       {isOpen && (
         <div
-          className={`fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden animate-drawer-enter transition-all ${
+          className={`fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden animate-drawer-enter transition-all ${
             isExpanded
               ? "w-[calc(100vw-32px)] sm:w-[740px] md:w-[800px] h-[720px] max-h-[90vh]"
               : "w-[calc(100vw-32px)] sm:w-[520px] md:w-[560px] h-[640px] max-h-[86vh]"
           }`}
         >
           {/* Header */}
-          <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between shrink-0 shadow-sm">
+          <div className="p-4 bg-brand text-white flex items-center justify-between shrink-0 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-2xl bg-white/15 backdrop-blur-xs border border-white/20 shadow-xs">
+              <div className="p-2 rounded-xl bg-white/15 backdrop-blur-xs border border-white/20 shadow-xs">
                 <Compass className={`h-5 w-5 text-white ${loading ? "animate-spin" : ""}`} />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm sm:text-base tracking-wide flex items-center gap-2">
+                <h3 className="font-extrabold text-sm sm:text-base tracking-wide">
                   <span>Khatulistiwa AI</span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider">
-                    Copilot
-                  </span>
                 </h3>
                 <p className="text-xs text-red-100 font-medium">
-                  {isId ? "Asisten Operasional Pabrik Equator Insole" : "Equator Insole Factory Intelligence"}
+                  {isId ? "Asisten Operasional Pabrik" : "Factory Operations Assistant"}
                 </p>
               </div>
             </div>
@@ -320,22 +314,22 @@ export function KhatulistiwaAssistant({
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               aria-label={isId ? "Pilih model AI" : "Select AI model"}
-              className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-[#8B0000] focus:outline-none"
+              className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 focus:border-brand focus:outline-none"
             >
               <option value="google/gemini-3.5-flash-lite">
-                ⚡ Gemini 3.5 Flash Lite ({isId ? "Cepat & Harian" : "Fast & Daily"})
+                Gemini 3.5 Flash Lite ({isId ? "Cepat & Harian" : "Fast & Daily"})
               </option>
               <option value="google/gemini-3.7-flash">
-                📷 Gemini 3.7 Flash ({isId ? "Vision OCR & Ekstraksi" : "Vision OCR & Forms"})
+                Gemini 3.7 Flash ({isId ? "Vision OCR & Ekstraksi" : "Vision OCR & Forms"})
               </option>
               <option value="deepseek/deepseek-v4-pro-0813">
-                🧠 DeepSeek V4 Pro ({isId ? "Analitik & SQL Logika" : "Analytics & Logic"})
+                DeepSeek V4 Pro ({isId ? "Analitik & Logika SQL" : "Analytics & SQL Logic"})
               </option>
               <option value="qwen/qwen3.7-plus">
-                🌐 Qwen 3.7 Plus ({isId ? "Bilingual & Istilah Pabrik" : "Bilingual & Slang"})
+                Qwen 3.7 Plus ({isId ? "Bilingual & Istilah Pabrik" : "Bilingual & Factory Terms"})
               </option>
               <option value="openai/gpt-5.6-luna">
-                🎨 GPT-5.6 Luna ({isId ? "Generative CAD & Insole" : "CAD & Generative"})
+                GPT-5.6 Luna ({isId ? "CAD Generatif" : "Generative CAD"})
               </option>
             </select>
           </div>
@@ -357,9 +351,9 @@ export function KhatulistiwaAssistant({
                   </div>
 
                   <div
-                    className={`p-4 rounded-3xl max-w-[92%] relative group transition-all leading-relaxed whitespace-pre-wrap ${
+                    className={`p-4 rounded-xl max-w-[92%] relative group transition-all leading-relaxed whitespace-pre-wrap ${
                       isUser
-                        ? "bg-[#8B0000] text-white rounded-br-xs shadow-md font-medium text-xs sm:text-sm"
+                        ? "bg-brand text-white rounded-br-xs shadow-md font-medium text-xs sm:text-sm"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-xs border border-gray-200 dark:border-gray-700 text-xs sm:text-sm shadow-xs"
                     }`}
                   >
@@ -384,7 +378,7 @@ export function KhatulistiwaAssistant({
 
                   {/* Staged Draft Action Card with Footwear Size Matrix */}
                   {staged && (
-                    <div className="mt-2 w-full max-w-[92%] rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/50 p-4 space-y-3 shadow-sm animate-staging-glow animate-in zoom-in-95 duration-150">
+                    <div className="mt-2 w-full max-w-[92%] rounded-xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/50 p-4 space-y-3 shadow-sm animate-staging-glow animate-in zoom-in-95 duration-150">
                       <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-300 font-bold text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
                           <FileCheck2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -397,7 +391,7 @@ export function KhatulistiwaAssistant({
                         )}
                       </div>
 
-                      <div className="text-xs text-emerald-800 dark:text-emerald-200 space-y-1 font-medium bg-white/60 dark:bg-emerald-900/30 p-2.5 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-xs text-emerald-800 dark:text-emerald-200 space-y-1 font-medium bg-white/60 dark:bg-emerald-900/30 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
                         <p><strong>{isId ? "Penerima:" : "Recipient:"}</strong> {staged.recipient_name}</p>
                         <p><strong>{isId ? "Alamat:" : "Address:"}</strong> {staged.destination_address}</p>
                         <p><strong>{isId ? "No. PO / SPK:" : "PO / Work Order:"}</strong> {staged.po_number || "-"}</p>
@@ -426,9 +420,9 @@ export function KhatulistiwaAssistant({
 
                       {/* Apply Button State */}
                       {isApplied ? (
-                        <div className="w-full py-2.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-2">
+                        <div className="w-full py-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-2">
                           <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                          <span>{isId ? "Telah Diterapkan ke Form Surat Jalan ✓" : "Applied to Order Form ✓"}</span>
+                          <span>{isId ? "Telah Diterapkan ke Form Surat Jalan" : "Applied to Order Form"}</span>
                         </div>
                       ) : (
                         <button
@@ -436,7 +430,7 @@ export function KhatulistiwaAssistant({
                             onApplyDraftOrder(staged);
                             setAppliedDrafts((prev) => ({ ...prev, [idx]: true }));
                           }}
-                          className="w-full py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
+                          className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs sm:text-sm font-bold shadow-xs active:scale-95 transition flex items-center justify-center gap-2"
                         >
                           <Sparkles className="h-4 w-4" />
                           <span>{isId ? "Terapkan ke Form Surat Jalan (1-Click)" : "Apply to Order Form"}</span>
@@ -450,9 +444,9 @@ export function KhatulistiwaAssistant({
 
             {loading && (
               <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400 p-2">
-                <Compass className="h-5 w-5 text-[#8B0000] dark:text-red-400 animate-spin" />
+                <Compass className="h-5 w-5 text-brand dark:text-red-400 animate-spin" />
                 <span className="italic font-medium">
-                  {isId ? "Khatulistiwa AI sedang menganalisis data pabrik..." : "Analyzing factory data..."}
+                  {isId ? "Memproses pertanyaan..." : "Processing your question..."}
                 </span>
               </div>
             )}
@@ -466,7 +460,7 @@ export function KhatulistiwaAssistant({
               <button
                 key={i}
                 onClick={() => handleSendMessage(qp.prompt)}
-                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:border-[#8B0000] hover:text-[#8B0000] whitespace-nowrap active:scale-95 transition shadow-2xs focus:outline-none focus-visible:ring-1 focus-visible:ring-[#8B0000]"
+                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:border-brand hover:text-brand whitespace-nowrap active:scale-95 transition shadow-2xs focus:outline-none focus-visible:ring-1 focus-visible:ring-brand"
               >
                 {qp.label}
               </button>
@@ -505,13 +499,13 @@ export function KhatulistiwaAssistant({
                     : "Ask stock, draft DO, or BOM... (Enter = send, Shift+Enter = newline)"
                 }
                 aria-label={isId ? "Pesan untuk Khatulistiwa AI" : "Message for Khatulistiwa AI"}
-                className="flex-1 rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none resize-none max-h-32"
+                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none resize-none max-h-32"
               />
               <button
                 type="submit"
                 disabled={!inputPrompt.trim() || loading}
                 aria-label={isId ? "Kirim Pesan" : "Send Message"}
-                className="p-3 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white shadow-md disabled:opacity-40 active:scale-95 transition shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B0000]"
+                className="p-3 rounded-xl bg-brand hover:bg-brand-strong text-white shadow-md disabled:opacity-40 active:scale-95 transition shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
@@ -521,9 +515,9 @@ export function KhatulistiwaAssistant({
           {/* In-App Focus-Trapped Clear Chat Confirmation Modal */}
           {isConfirmClearOpen && (
             <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+                  <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-brand dark:text-red-400">
                     <Trash2 className="h-5 w-5" />
                   </div>
                   <div>
@@ -549,7 +543,7 @@ export function KhatulistiwaAssistant({
                   <button
                     type="button"
                     onClick={handleConfirmClear}
-                    className="px-4 py-2 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition"
+                    className="px-4 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition"
                   >
                     {isId ? "Ya, Bersihkan" : "Yes, Clear"}
                   </button>

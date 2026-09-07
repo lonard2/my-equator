@@ -310,9 +310,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       return <ArrowUpDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition inline ml-1 opacity-60" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-3 w-3 text-[#8B0000] dark:text-red-400 inline ml-1" />
+      <ArrowUp className="h-3 w-3 text-brand dark:text-red-400 inline ml-1" />
     ) : (
-      <ArrowDown className="h-3 w-3 text-[#8B0000] dark:text-red-400 inline ml-1" />
+      <ArrowDown className="h-3 w-3 text-brand dark:text-red-400 inline ml-1" />
     );
   };
 
@@ -326,16 +326,16 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 px-4 py-2.5 rounded-2xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
+        <div className="fixed top-5 right-5 z-50 px-4 py-2.5 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400 shrink-0">
+          <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400 shrink-0">
             <Boxes className="h-6 w-6" />
           </div>
           <div>
@@ -366,9 +366,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <button
             type="button"
             onClick={() => setShowBomDrawer(!showBomDrawer)}
-            className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl border text-xs font-bold transition active:scale-95 shadow-xs ${
+            className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl border text-xs font-bold transition active:scale-95 shadow-xs ${
               showBomDrawer
-                ? "bg-[#8B0000] text-white border-[#8B0000]"
+                ? "bg-brand text-white border-brand"
                 : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
             title={isId ? "Kalkulator Kebutuhan Bahan (BOM) (Alt+B)" : "Bill of Materials Calculator (Alt+B)"}
@@ -381,7 +381,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <button
             type="button"
             onClick={() => handleOpenMovement()}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition"
             title={isId ? "Catat Transaksi Mutasi (Alt+M)" : "Record Stock Movement (Alt+M)"}
           >
             <ArrowDownRight className="h-4 w-4" />
@@ -395,7 +395,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               setMaterialToEdit(null);
               setIsMaterialModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition"
             title={isId ? "Tambah SKU Bahan Baru (Alt+N)" : "Add New SKU (Alt+N)"}
           >
             <Plus className="h-4 w-4" />
@@ -407,11 +407,11 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
       {/* Interactive Insole BOM Estimator Drawer (For Pak Hendra / Factory Production Staging) */}
       {showBomDrawer && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm animate-in fade-in zoom-in-95 duration-150">
+        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm animate-in fade-in zoom-in-95 duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-gray-800">
             <div>
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+                <span className="p-1.5 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
                   <Calculator className="h-4 w-4" />
                 </span>
                 <h3 className="font-black text-sm text-gray-900 dark:text-white">
@@ -426,14 +426,19 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
                 bomResult.allSufficient
                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200"
                   : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200"
               }`}>
+                {bomResult.allSufficient ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                )}
                 {bomResult.allSufficient
-                  ? isId ? "✓ Stok Bahan Mencukupi" : "✓ Inventory Sufficient"
-                  : isId ? "⚠️ Ada Defisit Bahan" : "⚠️ Shortage Detected"}
+                  ? isId ? "Stok Bahan Mencukupi" : "Inventory Sufficient"
+                  : isId ? "Ada Defisit Bahan" : "Shortage Detected"}
               </span>
               <button
                 type="button"
@@ -455,7 +460,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               <select
                 value={bomArticleCode}
                 onChange={(e) => setBomArticleCode(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000]"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
               >
                 {INSOLE_BOM_PRESETS.map((p) => (
                   <option key={p.articleCode} value={p.articleCode}>
@@ -476,7 +481,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                   step={50}
                   value={bomTargetPairs}
                   onChange={(e) => setBomTargetPairs(Math.max(1, parseInt(e.target.value, 10) || 0))}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono font-black text-[#8B0000] dark:text-red-400 focus:outline-none focus:border-[#8B0000]"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono font-black text-brand dark:text-red-400 focus:outline-none focus:border-brand"
                 />
                 <div className="flex gap-1 shrink-0">
                   {[500, 1000, 2500].map((qty) => (
@@ -486,7 +491,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       onClick={() => setBomTargetPairs(qty)}
                       className={`px-2 py-2 rounded-xl text-[10px] font-bold border transition ${
                         bomTargetPairs === qty
-                          ? "bg-[#8B0000] text-white border-[#8B0000]"
+                          ? "bg-brand text-white border-brand"
                           : "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
                       }`}
                     >
@@ -499,7 +504,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </div>
 
           {/* BOM Material Breakdown Matrix */}
-          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
             <table className="w-full text-xs text-left">
               <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
                 <tr>
@@ -553,7 +558,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                         <button
                           type="button"
                           onClick={() => handleOpenMovement(req.matchedMaterial?.id)}
-                          className="px-2.5 py-1 rounded-xl bg-[#8B0000] hover:bg-[#A00000] text-white text-[11px] font-bold shadow-2xs active:scale-95 transition"
+                          className="px-2.5 py-1 rounded-xl bg-brand hover:bg-brand-strong text-white text-[11px] font-bold shadow-2xs active:scale-95 transition"
                         >
                           {isId ? "Restock" : "PO IN"}
                         </button>
@@ -570,7 +575,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                       (~{formatIDR(bomResult.costPerPairIDR)} / pasang)
                     </span>
                   </td>
-                  <td className="p-3.5 text-right font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
+                  <td className="p-3.5 text-right font-mono font-black text-sm text-brand dark:text-red-400 tabular-nums">
                     {formatIDR(bomResult.totalEstimatedCostIDR)}
                   </td>
                   <td></td>
@@ -583,7 +588,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Item SKU" : "Total SKUs"}
           </span>
@@ -592,16 +597,16 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Valuasi Stok Gudang" : "Valuation"}
           </span>
-          <p className="text-base sm:text-xl font-black text-[#8B0000] dark:text-red-400 font-mono truncate tabular-nums leading-none">
+          <p className="text-base sm:text-xl font-black text-brand dark:text-red-400 font-mono truncate tabular-nums leading-none">
             {formatIDR(totalValuation)}
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Stok Kritis / Minim" : "Low Stock Alert"}
           </span>
@@ -610,7 +615,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Mutasi Log" : "Total Movements"}
           </span>
@@ -622,7 +627,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
       {/* Critical Stock Alert Banner */}
       {criticalItems.length > 0 && (
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
             <div>
@@ -638,7 +643,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <button
             type="button"
             onClick={() => handleOpenMovement(criticalItems[0]?.id)}
-            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs active:scale-95 transition shrink-0"
+            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs active:scale-95 transition shrink-0"
           >
             <ArrowDownRight className="h-3.5 w-3.5" />
             <span>{isId ? "Restock Pembelian" : "Restock Purchase"}</span>
@@ -647,16 +652,16 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       )}
 
       {/* Workspace Card with Tabs & Search */}
-      <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
         {/* Tabs & Search Header */}
         <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40">
-          <div className="flex items-center rounded-2xl bg-gray-200/80 dark:bg-gray-800 p-1 text-xs font-bold">
+          <div className="flex items-center rounded-xl bg-gray-200/80 dark:bg-gray-800 p-1 text-xs font-bold">
             <button
               type="button"
               onClick={() => setActiveTab("MATERIALS")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition ${
                 activeTab === "MATERIALS"
-                  ? "bg-white dark:bg-gray-900 text-[#8B0000] dark:text-red-400 shadow-xs"
+                  ? "bg-white dark:bg-gray-900 text-brand dark:text-red-400 shadow-xs"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
             >
@@ -668,7 +673,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               onClick={() => setActiveTab("HISTORY")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition ${
                 activeTab === "HISTORY"
-                  ? "bg-white dark:bg-gray-900 text-[#8B0000] dark:text-red-400 shadow-xs"
+                  ? "bg-white dark:bg-gray-900 text-brand dark:text-red-400 shadow-xs"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
             >
@@ -687,7 +692,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 placeholder={isId ? "Cari SKU, Nama, Lokasi... (Tekan /)" : "Search SKU, Name... (Press /)"}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-12 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-12 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:outline-none"
               />
               <div className="absolute right-2 top-2 flex items-center gap-1">
                 {searchTerm ? (
@@ -725,7 +730,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 aria-pressed={categoryFilter === "ALL"}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
                   categoryFilter === "ALL"
-                    ? "bg-[#8B0000] text-white shadow-xs"
+                    ? "bg-brand text-white shadow-xs"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
               >
@@ -761,7 +766,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     aria-pressed={isSelected}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
                       isSelected
-                        ? "bg-[#8B0000] text-white shadow-xs"
+                        ? "bg-brand text-white shadow-xs"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                     }`}
                   >
@@ -802,12 +807,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                   return (
                     <div
                       key={m.id}
-                      className={`p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-3 transition-all duration-300 ${
+                      className={`p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-3 transition-all duration-300 ${
                         m.id === recentlyMutatedId ? "animate-ledger-flash ring-2 ring-emerald-400" : ""
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-black text-xs text-[#8B0000] dark:text-red-400 bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded-md">
+                        <span className="font-mono font-black text-xs text-brand dark:text-red-400 bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded-md">
                           {m.sku}
                         </span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badge.className}`}>
@@ -849,7 +854,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                           <span className="text-[10px] text-gray-400 font-bold uppercase block">
                             {isId ? "Total Valuasi" : "Valuation"}
                           </span>
-                          <span className="font-mono font-black text-sm text-[#8B0000] dark:text-red-400 tabular-nums">
+                          <span className="font-mono font-black text-sm text-brand dark:text-red-400 tabular-nums">
                             {formatIDR(totalVal)}
                           </span>
                         </div>
@@ -860,7 +865,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                         <button
                           type="button"
                           onClick={() => handleOpenMovement(m.id)}
-                          className="py-2.5 min-h-[44px] rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition shadow-xs"
+                          className="py-2.5 min-h-[44px] rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center gap-1 active:scale-95 transition shadow-xs"
                         >
                           <ArrowDownRight className="h-4 w-4" />
                           <span>Mutasi</span>
@@ -998,7 +1003,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                           <td className="p-3.5 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
                           <td className="p-3.5">
                             <p className="font-bold text-gray-900 dark:text-white">{m.name}</p>
-                            <p className="text-[11px] font-mono text-[#8B0000] dark:text-red-400 font-bold">{m.sku}</p>
+                            <p className="text-[11px] font-mono text-brand dark:text-red-400 font-bold">{m.sku}</p>
                             {m.notes && <p className="text-[10px] text-gray-400 mt-0.5">{m.notes}</p>}
                           </td>
                           <td className="p-3.5">
@@ -1034,7 +1039,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                               <button
                                 type="button"
                                 onClick={() => handleOpenMovement(m.id)}
-                                className="p-1.5 rounded-xl bg-red-50 dark:bg-red-950 text-[#8B0000] dark:text-red-300 hover:bg-red-100 transition active:scale-95 shadow-xs"
+                                className="p-1.5 rounded-xl bg-red-50 dark:bg-red-950 text-brand dark:text-red-300 hover:bg-red-100 transition active:scale-95 shadow-xs"
                                 title={isId ? "Catat Mutasi IN / OUT" : "Record Stock Movement"}
                               >
                                 <ArrowDownRight className="h-3.5 w-3.5" />
@@ -1081,7 +1086,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 movements.map((mov) => (
                   <div
                     key={mov.id}
-                    className="p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-2 text-xs"
+                    className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-gray-900 dark:text-white">
@@ -1211,10 +1216,10 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {/* Keyboard Shortcuts Cheatsheet Modal */}
       {isShortcutsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-                <span className="p-2 rounded-2xl bg-red-100 dark:bg-red-950/70 text-[#8B0000] dark:text-red-400">
+                <span className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
                   <Keyboard className="h-5 w-5" />
                 </span>
                 <div>
@@ -1296,7 +1301,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               <button
                 type="button"
                 onClick={() => setIsShortcutsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs active:scale-95 transition"
+                className="px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-xs active:scale-95 transition"
               >
                 {isId ? "Mengerti" : "Got it"}
               </button>
@@ -1308,9 +1313,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {/* In-App Delete Confirmation Modal */}
       {materialToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-red-600">
-              <div className="p-2 rounded-2xl bg-red-100 dark:bg-red-950/70">
+              <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70">
                 <Trash2 className="h-6 w-6" />
               </div>
               <div>

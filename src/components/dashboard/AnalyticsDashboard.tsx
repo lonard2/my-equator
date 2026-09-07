@@ -104,8 +104,8 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 text-gray-500">
         <div className="flex flex-col items-center gap-2">
-          <RefreshCw className="h-6 w-6 animate-spin text-[#8B0000]" />
-          <p className="text-xs font-semibold">{isId ? "Memuat visualisasi analitik..." : "Loading analytics visualizer..."}</p>
+          <RefreshCw className="h-6 w-6 animate-spin text-brand" />
+          <p className="text-xs font-semibold">{isId ? "Memuat data analitik..." : "Loading analytics data..."}</p>
         </div>
       </div>
     );
@@ -114,8 +114,8 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
   if (error && !data) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="max-w-md w-full p-6 rounded-3xl bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/60 shadow-xl text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400 flex items-center justify-center">
+        <div className="max-w-md w-full p-6 rounded-xl bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/60 shadow-xl text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400 flex items-center justify-center">
             <BarChart3 className="h-6 w-6" />
           </div>
           <div>
@@ -126,7 +126,7 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
           </div>
           <button
             onClick={() => fetchAnalytics(period)}
-            className="w-full py-2.5 rounded-2xl bg-[#8B0000] text-white font-bold text-xs hover:bg-[#A30000] transition active:scale-95 shadow-md flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-brand text-white font-bold text-xs hover:bg-brand-strong transition active:scale-95 shadow-md flex items-center justify-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             <span>{isId ? "Coba Lagi" : "Try Again"}</span>
@@ -143,17 +143,17 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
       {/* Top Header & Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+          <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
             <BarChart3 className="h-6 w-6" />
           </div>
           <div>
             <h2 className="font-extrabold text-lg sm:text-xl text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
-              <span>{isId ? "Pusat Analitik Bisnis & Operasional Pabrik" : "Executive Business & Factory Analytics"}</span>
+              <span>{isId ? "Analitik Bisnis" : "Business Analytics"}</span>
             </h2>
             <p className="text-xs text-gray-500">
               {isId
-                ? "Laporan omzet, kurva distribusi cetakan insole, pangsa pasar buyer, dan ketahanan stok material"
-                : "Real-time manufacturing KPIs, size matrix distribution, revenue shares, and material burn rates"}
+                ? "Omzet, distribusi ukuran insole, pangsa buyer, dan ketahanan stok material"
+                : "Revenue, size distribution, buyer share, and material burn rates"}
             </p>
           </div>
         </div>
@@ -161,14 +161,14 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
         {/* Period Selector & Action Triggers */}
         <div className="flex items-center gap-2">
           {/* Period Filter */}
-          <div className="flex rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 text-xs font-bold shadow-xs">
+          <div className="flex rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 text-xs font-bold shadow-xs">
             {(["30D", "Q", "YTD", "ALL"] as const).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1 rounded-xl transition ${
                   period === p
-                    ? "bg-[#8B0000] text-white shadow-xs"
+                    ? "bg-brand text-white shadow-xs"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
                 }`}
               >
@@ -180,16 +180,16 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
           {/* Export Report */}
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition shadow-xs"
           >
-            <Download className="h-4 w-4 text-[#8B0000]" />
+            <Download className="h-4 w-4 text-brand" />
             <span>{isId ? "Export CSV" : "Export CSV"}</span>
           </button>
 
           {/* Refresh */}
           <button
             onClick={() => fetchAnalytics(period)}
-            className="p-2 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-[#8B0000] active:scale-95 transition shadow-xs"
+            className="p-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:text-brand active:scale-95 transition shadow-xs"
             title="Refresh Data"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -199,11 +199,11 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
 
       {/* Network / Temporary Warning Banner if any */}
       {error && (
-        <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between text-xs text-red-900 dark:text-red-300">
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between text-xs text-red-900 dark:text-red-300">
           <p className="font-semibold">{error}</p>
           <button
             onClick={() => fetchAnalytics(period)}
-            className="px-2.5 py-1 rounded-xl bg-[#8B0000] text-white text-[11px] font-bold hover:bg-[#A30000] transition"
+            className="px-2.5 py-1 rounded-xl bg-brand text-white text-[11px] font-bold hover:bg-brand-strong transition"
           >
             {isId ? "Coba Lagi" : "Retry"}
           </button>
@@ -213,12 +213,12 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
       {/* Top Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Total Revenue */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
+        <div className="p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
               {isId ? "Total Omzet (IDR)" : "Total Revenue (IDR)"}
             </span>
-            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#8B0000] dark:text-red-400">
+            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
@@ -234,12 +234,12 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
         </div>
 
         {/* 2. Total Pairs Output */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
+        <div className="p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
               {isId ? "Total Output Produksi" : "Total Volume Output"}
             </span>
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
               <Package className="h-4 w-4" />
             </div>
           </div>
@@ -256,12 +256,12 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
         </div>
 
         {/* 3. Average Order Value */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
+        <div className="p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
               {isId ? "Rata-Rata Nilai Order (AOV)" : "Average Order Value (AOV)"}
             </span>
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
@@ -276,12 +276,12 @@ export function AnalyticsDashboard({ language }: AnalyticsDashboardProps) {
         </div>
 
         {/* 4. Delivery Completion Rate */}
-        <div className="p-4 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
+        <div className="p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
               {isId ? "Tingkat Pengiriman Selesai" : "Fulfillment Rate"}
             </span>
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400">
               <Truck className="h-4 w-4" />
             </div>
           </div>

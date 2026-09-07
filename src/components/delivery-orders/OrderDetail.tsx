@@ -358,7 +358,7 @@ export function OrderDetail({
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto relative">
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-2xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="fixed top-4 right-4 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
           <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -373,13 +373,13 @@ export function OrderDetail({
                 type="button"
                 onClick={handleCopyOrderNumber}
                 title={isId ? "Klik untuk menyalin nomor DO" : "Click to copy order number"}
-                className="group flex items-center gap-1 text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono hover:text-[#8B0000] dark:hover:text-red-400 transition"
+                className="group flex items-center gap-1 text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono hover:text-brand dark:hover:text-red-400 transition"
               >
                 <span>{order.orderNumber}</span>
                 {copiedOrderNo ? (
                   <Check className="h-4 w-4 text-emerald-600 ml-1" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#8B0000] opacity-60 group-hover:opacity-100 transition ml-1" />
+                  <Copy className="h-3.5 w-3.5 text-gray-400 group-hover:text-brand opacity-60 group-hover:opacity-100 transition ml-1" />
                 )}
               </button>
 
@@ -405,7 +405,7 @@ export function OrderDetail({
                   <div className="flex flex-col items-end">
                     <button
                       onClick={() => onStatusChange(order.id, nextAction.next)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
                     >
                       <nextAction.icon className="h-3.5 w-3.5" />
                       <span>{nextAction.label}</span>
@@ -449,7 +449,7 @@ export function OrderDetail({
                   </button>
 
                   {isMoreMenuOpen && (
-                    <div className="absolute right-0 mt-1.5 w-60 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute right-0 mt-1.5 w-60 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
                       {/* Download PRN Stream */}
                       <button
                         type="button"
@@ -542,7 +542,7 @@ export function OrderDetail({
                   type="button"
                   onClick={handleSaveChanges}
                   disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#A00000] px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 active:scale-95"
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span>
@@ -563,7 +563,7 @@ export function OrderDetail({
 
       {/* Non-blocking Error Banner */}
       {errorMessage && (
-        <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+        <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-xs text-red-800 dark:text-red-300 font-medium">
             <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
             <span>{errorMessage}</span>
@@ -579,7 +579,7 @@ export function OrderDetail({
 
       {/* Cancelled Banner */}
       {order.status === "CANCELLED" && (
-        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+        <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Ban className="h-5 w-5 text-red-600 shrink-0" />
             <div>
@@ -609,7 +609,7 @@ export function OrderDetail({
       <div className="p-4 sm:p-6 space-y-6 max-w-6xl">
         {/* Animated Operational Lifecycle Stepper */}
         {order.status !== "CANCELLED" && (
-          <div className="p-3.5 sm:p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs">
+          <div className="p-3.5 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs">
             <div className="flex items-center justify-between relative">
               {/* Background Connector Bar */}
               <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-0.5 bg-gray-100 dark:bg-gray-800 z-0" />
@@ -641,7 +641,7 @@ export function OrderDetail({
                         isPassed
                           ? "bg-emerald-600 text-white shadow-xs"
                           : isCurrent
-                          ? "bg-[#8B0000] text-white shadow-md animate-status-pulse ring-2 ring-red-300 dark:ring-red-900"
+                          ? "bg-brand text-white shadow-md animate-status-pulse ring-2 ring-red-300 dark:ring-red-900"
                           : "bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700"
                       }`}
                     >
@@ -650,7 +650,7 @@ export function OrderDetail({
                     <span
                       className={`text-[10px] sm:text-[11px] mt-1 font-semibold transition-colors duration-200 text-center ${
                         isCurrent
-                          ? "text-[#8B0000] dark:text-red-400 font-bold"
+                          ? "text-brand dark:text-red-400 font-bold"
                           : isPassed
                           ? "text-emerald-700 dark:text-emerald-400"
                           : "text-gray-400 dark:text-gray-500"
@@ -668,9 +668,9 @@ export function OrderDetail({
         {/* Info Cards (View / Edit Mode) */}
         {!isEditing ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <Building className="h-3.5 w-3.5 text-[#8B0000]" />
+                <Building className="h-3.5 w-3.5 text-brand" />
                 <span>{isId ? "Penerima / Customer" : "Customer / Recipient"}</span>
               </div>
               <p className="font-bold text-sm text-gray-900 dark:text-white">{order.recipientName}</p>
@@ -680,9 +680,9 @@ export function OrderDetail({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <Calendar className="h-3.5 w-3.5 text-[#8B0000]" />
+                <Calendar className="h-3.5 w-3.5 text-brand" />
                 <span>{isId ? "Jadwal & Referensi" : "Schedule & References"}</span>
               </div>
               <div className="text-xs space-y-1">
@@ -697,9 +697,9 @@ export function OrderDetail({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-1.5 shadow-xs">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <Truck className="h-3.5 w-3.5 text-[#8B0000]" />
+                <Truck className="h-3.5 w-3.5 text-brand" />
                 <span>{isId ? "Armada & Pengemudi" : "Logistics & Driver"}</span>
               </div>
               <div className="text-xs space-y-1">
@@ -716,9 +716,9 @@ export function OrderDetail({
           </div>
         ) : (
           /* Interactive Edit Mode for Header Fields */
-          <div className="rounded-2xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 sm:p-5 space-y-4 shadow-xs">
+          <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-900 p-4 sm:p-5 space-y-4 shadow-xs">
             <h4 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-              <Edit3 className="h-4 w-4 text-[#8B0000]" />
+              <Edit3 className="h-4 w-4 text-brand" />
               <span>{isId ? "Edit Informasi Surat Jalan" : "Edit Order Information"}</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -730,7 +730,7 @@ export function OrderDetail({
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                 />
               </div>
 
@@ -742,7 +742,7 @@ export function OrderDetail({
                   type="text"
                   value={poNumber}
                   onChange={(e) => setPoNumber(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                 />
               </div>
 
@@ -754,7 +754,7 @@ export function OrderDetail({
                   type="date"
                   value={deliveryDate}
                   onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                 />
               </div>
 
@@ -766,7 +766,7 @@ export function OrderDetail({
                   type="text"
                   value={destinationAddress}
                   onChange={(e) => setDestinationAddress(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                 />
               </div>
 
@@ -778,7 +778,7 @@ export function OrderDetail({
                   type="text"
                   value={driverName}
                   onChange={(e) => setDriverName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
                 />
               </div>
             </div>
@@ -786,7 +786,7 @@ export function OrderDetail({
         )}
 
         {/* Size Matrix Items Table */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
@@ -796,7 +796,7 @@ export function OrderDetail({
                 <button
                   type="button"
                   onClick={() => setShowOversized(!showOversized)}
-                  className="text-[11px] font-semibold text-gray-500 hover:text-[#8B0000] dark:hover:text-red-400 flex items-center gap-0.5"
+                  className="text-[11px] font-semibold text-gray-500 hover:text-brand dark:hover:text-red-400 flex items-center gap-0.5"
                 >
                   <span>{showOversized ? (isId ? "Sembunyikan 46-48" : "Hide 46-48") : (isId ? "+ Jumbo EU 46-48" : "+ Oversize 46-48")}</span>
                   {showOversized ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -819,7 +819,7 @@ export function OrderDetail({
                     onClick={() => setInputMode("GRID")}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "GRID"
-                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
                         : "text-gray-500"
                     }`}
                   >
@@ -831,7 +831,7 @@ export function OrderDetail({
                     onClick={() => setInputMode("TOUCH_PAD")}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition ${
                       inputMode === "TOUCH_PAD"
-                        ? "bg-white dark:bg-gray-700 text-[#8B0000] dark:text-red-300 shadow-xs"
+                        ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
                         : "text-gray-500"
                     }`}
                   >
@@ -845,7 +845,7 @@ export function OrderDetail({
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#8B0000] dark:text-red-400 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-brand dark:text-red-400 hover:underline"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>{isId ? "+ Tambah Baris" : "+ Add Row"}</span>
@@ -856,7 +856,7 @@ export function OrderDetail({
                 <span className="text-[11px] text-gray-500 uppercase font-semibold block">
                   {isId ? "Total Pasang" : "Total Pairs"}
                 </span>
-                <span className="text-base font-extrabold text-[#8B0000] dark:text-red-400">
+                <span className="text-base font-extrabold text-brand dark:text-red-400">
                   {isEditing
                     ? `${editGrandTotalPairs.toLocaleString("id-ID")} psg`
                     : `${order.totalQuantity.toLocaleString("id-ID")} psg`}
@@ -908,7 +908,7 @@ export function OrderDetail({
                             key={size}
                             className={`p-2 text-center font-mono ${
                               qty && qty > 0
-                                ? "bg-red-50/80 dark:bg-red-950/40 font-bold text-[#8B0000] dark:text-red-300"
+                                ? "bg-red-50/80 dark:bg-red-950/40 font-bold text-brand dark:text-red-300"
                                 : "text-gray-300 dark:text-gray-600"
                             }`}
                           >
@@ -942,11 +942,11 @@ export function OrderDetail({
                         </td>
                       );
                     })}
-                    <td className="p-3 text-right text-[#8B0000] dark:text-red-400 font-extrabold">
+                    <td className="p-3 text-right text-brand dark:text-red-400 font-extrabold">
                       {order.totalQuantity.toLocaleString("id-ID")} psg
                     </td>
                     <td></td>
-                    <td className="p-3 text-right text-[#8B0000] dark:text-red-400 font-extrabold">
+                    <td className="p-3 text-right text-brand dark:text-red-400 font-extrabold">
                       {order.totalAmount ? formatIDR(order.totalAmount) : "-"}
                     </td>
                   </tr>
@@ -964,7 +964,7 @@ export function OrderDetail({
                       onClick={() => setActiveItemIndex(idx)}
                       className={`px-3 py-1.5 rounded-xl border text-xs font-bold whitespace-nowrap transition ${
                         activeItemIndex === idx
-                          ? "bg-[#8B0000] text-white border-[#8B0000] shadow-xs"
+                          ? "bg-brand text-white border-brand shadow-xs"
                           : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
                       }`}
                     >
@@ -1060,14 +1060,14 @@ export function OrderDetail({
                                 onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
                                 className={`w-full text-center rounded-lg border px-1 py-1 text-xs font-mono font-bold transition ${
                                   val && Number(val) > 0
-                                    ? "bg-red-50 dark:bg-red-950/60 border-[#8B0000] text-[#8B0000] dark:text-red-300"
+                                    ? "bg-red-50 dark:bg-red-950/60 border-brand text-brand dark:text-red-300"
                                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800"
                                 }`}
                               />
                             </td>
                           );
                         })}
-                        <td className="p-2.5 text-right font-extrabold text-xs text-[#8B0000] dark:text-red-400">
+                        <td className="p-2.5 text-right font-extrabold text-xs text-brand dark:text-red-400">
                           {itemPairs} psg
                         </td>
                         <td className="p-2.5 text-center">
@@ -1093,18 +1093,18 @@ export function OrderDetail({
         {!isEditing ? (
           <>
             {order.totalAmount && order.totalAmount > 0 && (
-              <div className="rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4 shadow-xs">
+              <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4 shadow-xs">
                 <p className="text-xs font-semibold text-red-900 dark:text-red-300 uppercase tracking-wide">
                   {isId ? "Terbilang Formal:" : "Spelled Out in Words:"}
                 </p>
-                <p className="text-sm font-bold text-[#8B0000] dark:text-red-400 italic mt-0.5">
+                <p className="text-sm font-bold text-brand dark:text-red-400 italic mt-0.5">
                   "{terbilang(order.totalAmount)}"
                 </p>
               </div>
             )}
 
             {order.notes && (
-              <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-xs">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-xs">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                   {isId ? "Catatan Tambahan" : "Notes"}
                 </p>
@@ -1121,7 +1121,7 @@ export function OrderDetail({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white focus:border-[#8B0000] focus:outline-none"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white focus:border-brand focus:outline-none"
             />
           </div>
         )}
@@ -1130,9 +1130,9 @@ export function OrderDetail({
       {/* In-App Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 shrink-0">
+              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 shrink-0">
                 <Trash2 className="h-5 w-5" />
               </div>
               <div className="space-y-1">
@@ -1173,8 +1173,8 @@ export function OrderDetail({
       {/* Status Rollback & Cancellation Modal */}
       {isRollbackModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <RotateCcw className="h-5 w-5" />
                 <h3 className="font-bold text-sm">
@@ -1190,7 +1190,7 @@ export function OrderDetail({
                 }}
                 className="p-1 rounded-lg hover:bg-white/10"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -1201,7 +1201,7 @@ export function OrderDetail({
                 </div>
               )}
 
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-start gap-2.5">
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-900 dark:text-amber-300 space-y-0.5">
                   <p className="font-bold">
@@ -1234,14 +1234,14 @@ export function OrderDetail({
                         key={st}
                         type="button"
                         onClick={() => setRollbackTarget(st)}
-                        className={`p-2.5 rounded-2xl border text-left text-xs font-bold transition flex items-center justify-between ${
+                        className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between ${
                           rollbackTarget === st
-                            ? "border-[#8B0000] bg-red-50 dark:bg-red-950/50 text-[#8B0000] dark:text-red-300"
+                            ? "border-brand bg-red-50 dark:bg-red-950/50 text-brand dark:text-red-300"
                             : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300"
                         }`}
                       >
                         <span>{st}</span>
-                        {rollbackTarget === st && <CheckCircle2 className="h-4 w-4 text-[#8B0000] dark:text-red-400" />}
+                        {rollbackTarget === st && <CheckCircle2 className="h-4 w-4 text-brand dark:text-red-400" />}
                       </button>
                     );
                   })}
@@ -1262,7 +1262,7 @@ export function OrderDetail({
                   }
                   value={rollbackReason}
                   onChange={(e) => setRollbackReason(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:outline-none"
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:outline-none"
                 />
               </div>
 
@@ -1281,7 +1281,7 @@ export function OrderDetail({
                   type="button"
                   onClick={handleExecuteRollback}
                   disabled={rollbackSubmitting || !rollbackReason.trim()}
-                  className="px-4 py-2 rounded-xl bg-[#8B0000] text-white text-xs font-bold shadow-xs hover:bg-[#A00000] disabled:opacity-50 transition active:scale-95"
+                  className="px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-strong disabled:opacity-50 transition active:scale-95"
                 >
                   {rollbackSubmitting
                     ? isId ? "Memproses..." : "Processing..."

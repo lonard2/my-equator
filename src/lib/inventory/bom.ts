@@ -1,4 +1,4 @@
-// Insole Bill of Materials (BOM) Calculation Engine — Equator Insole
+// Insole Bill of Materials (BOM) Calculation Engine - Equator Insole
 import { MaterialItem, MaterialCategory } from "@/types";
 
 export interface BomMaterialRequirement {

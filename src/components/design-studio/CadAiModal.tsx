@@ -11,7 +11,6 @@ import {
   Layers,
   ArrowRight,
   Bot,
-  Lightbulb,
 } from "lucide-react";
 
 interface CadAiModalProps {
@@ -213,19 +212,16 @@ export function CadAiModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between shrink-0 shadow-sm">
+        <div className="p-4 bg-brand text-white flex items-center justify-between shrink-0 shadow-sm">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-white/15 backdrop-blur-xs border border-white/20">
-              <Sparkles className="h-5 w-5 text-white animate-pulse" />
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm sm:text-base tracking-wide flex items-center gap-2">
-                <span>{isId ? "Desainer Insole Generative AI" : "Generative AI Insole Designer"}</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase">
-                  Prompt-to-CAD
-                </span>
+              <h3 className="font-extrabold text-sm sm:text-base tracking-wide">
+                <span>{isId ? "Desainer Insole Generatif AI" : "Generative AI Insole Designer"}</span>
               </h3>
               <p className="text-xs text-red-100">
                 {isId
@@ -246,8 +242,7 @@ export function CadAiModal({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
           {/* Quick Prompts Suggestions */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-              <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
               <span>{isId ? "Contoh Prompt Cepat:" : "Quick Prompt Ideas:"}</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -258,9 +253,9 @@ export function CadAiModal({
                     setPrompt(qp.text);
                     handleGenerate(qp.text);
                   }}
-                  className="p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-left hover:border-[#8B0000] hover:bg-red-50/40 dark:hover:bg-red-950/20 active:scale-[0.98] transition group"
+                  className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-left hover:border-brand hover:bg-red-50/40 dark:hover:bg-red-950/20 active:scale-[0.98] transition group"
                 >
-                  <p className="font-bold text-xs text-gray-800 dark:text-gray-200 group-hover:text-[#8B0000] dark:group-hover:text-red-300">
+                  <p className="font-bold text-xs text-gray-800 dark:text-gray-200 group-hover:text-brand dark:group-hover:text-red-300">
                     {qp.label}
                   </p>
                   <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">{qp.text}</p>
@@ -284,13 +279,13 @@ export function CadAiModal({
                     ? "Contoh: Insole lari maraton EU 43, arch tinggi, peredam tumit tebal, toe box lebar untuk kaki tipe wide..."
                     : "e.g. Marathon running insole size EU 43 with high arch support and wide anatomical toe box..."
                 }
-                className="flex-1 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] focus:outline-none"
+                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
               />
             </div>
             <button
               onClick={() => handleGenerate()}
               disabled={!prompt.trim() || loading}
-              className="w-full py-2.5 rounded-2xl bg-[#8B0000] hover:bg-[#A00000] text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Sparkles className="h-4 w-4" />
               <span>{loading ? (isId ? "Khatulistiwa AI Sedang Merancang..." : "AI Designing...") : isId ? "Generate Model CAD" : "Generate CAD Model"}</span>
@@ -299,7 +294,7 @@ export function CadAiModal({
 
           {/* Generated Result Preview Card */}
           {generatedResult && (
-            <div className="p-4 rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 space-y-3 animate-in zoom-in-95 duration-150">
+            <div className="p-4 rounded-xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 space-y-3 animate-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-300 font-extrabold text-sm">
                   <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -335,14 +330,14 @@ export function CadAiModal({
               </div>
 
               {generatedResult.rationale && (
-                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 italic">
-                  💡 {generatedResult.rationale}
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
+                  {generatedResult.rationale}
                 </p>
               )}
 
               <button
                 onClick={handleApply}
-                className="w-full py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition flex items-center justify-center gap-2"
               >
                 <span>{isId ? "Terapkan ke Studio CAD (1-Click)" : "Apply to CAD Canvas"}</span>
                 <ArrowRight className="h-4 w-4" />

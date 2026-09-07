@@ -252,11 +252,11 @@ export function StockMovementModal({
       aria-labelledby="movement-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
     >
-      <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <div className="w-full max-w-lg rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
               <ArrowDownRight className="h-5 w-5" />
             </div>
             <div>
@@ -281,7 +281,7 @@ export function StockMovementModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs">
           {validationError && (
-            <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-red-700 dark:text-red-300 font-bold">
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-red-700 dark:text-red-300 font-bold">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{validationError}</span>
             </div>
@@ -296,7 +296,7 @@ export function StockMovementModal({
               value={materialId}
               onChange={(e) => setMaterialId(e.target.value)}
               disabled={loading}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60"
               required
             >
               {materials.map((m) => (
@@ -323,7 +323,7 @@ export function StockMovementModal({
                     onClick={() => setMovementType(t.id)}
                     className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
                       isSelected
-                        ? "border-[#8B0000] bg-red-50/70 dark:bg-red-950/40 text-[#8B0000] dark:text-red-300 font-bold shadow-xs"
+                        ? "border-brand bg-red-50/70 dark:bg-red-950/40 text-brand dark:text-red-300 font-bold shadow-xs"
                         : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50"
                     } disabled:opacity-60`}
                   >
@@ -362,7 +362,7 @@ export function StockMovementModal({
                 value={quantity}
                 disabled={loading}
                 onChange={(e) => setQuantity(Math.min(1000000, Math.max(1, parseInt(e.target.value, 10) || 0)))}
-                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-extrabold text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] tabular-nums disabled:opacity-60"
+                className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-extrabold text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand tabular-nums disabled:opacity-60"
                 required
               />
               <div className="flex gap-1">
@@ -382,7 +382,7 @@ export function StockMovementModal({
           </div>
 
           {/* Live Stock Projection & Value Indicator */}
-          <div className={`p-3.5 rounded-2xl border space-y-2.5 ${
+          <div className={`p-3.5 rounded-xl border space-y-2.5 ${
             isOutOfStockWarning
               ? "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900/60"
               : "bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-800"
@@ -436,7 +436,7 @@ export function StockMovementModal({
                 onChange={(e) => setReferenceNumber(e.target.value.toUpperCase())}
                 placeholder="e.g. PO/EQ/2026/08/042"
                 maxLength={40}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60 uppercase"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60 uppercase"
               />
             </div>
 
@@ -450,7 +450,7 @@ export function StockMovementModal({
                 disabled={loading}
                 onChange={(e) => setOperatorName(e.target.value)}
                 maxLength={50}
-                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60"
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60"
                 required
               />
             </div>
@@ -468,7 +468,7 @@ export function StockMovementModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder={isId ? "Keterangan batch produksi, surat jalan masuk, koreksi dll" : "Production batch info, incoming DO, offset info"}
               maxLength={200}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#8B0000] disabled:opacity-60"
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60"
             />
           </div>
 
@@ -485,7 +485,7 @@ export function StockMovementModal({
             <button
               type="submit"
               disabled={loading || isOutOfStockWarning}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Mutasi" : "Save Movement"}</span>
@@ -497,9 +497,9 @@ export function StockMovementModal({
       {/* Discard Changes In-App Confirmation Modal */}
       {showDiscardConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-amber-600">
-              <div className="p-2 rounded-2xl bg-amber-100 dark:bg-amber-950/70">
+              <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/70">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
