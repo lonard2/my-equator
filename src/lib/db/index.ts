@@ -133,6 +133,73 @@ async function initializeTables(cli: ReturnType<typeof createClient>) {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS company_tax_profiles (
+        id TEXT PRIMARY KEY,
+        company_name TEXT NOT NULL,
+        npwp16 TEXT NOT NULL,
+        nitku22 TEXT NOT NULL,
+        kpp_code TEXT NOT NULL,
+        kpp_name TEXT,
+        tax_address TEXT NOT NULL,
+        signatory_name TEXT NOT NULL,
+        signatory_role TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS tax_invoices (
+        id TEXT PRIMARY KEY,
+        invoice_type TEXT NOT NULL DEFAULT 'OUTPUT_FPK',
+        transaction_code TEXT NOT NULL DEFAULT '01',
+        nomor_faktur TEXT NOT NULL,
+        reference_number TEXT,
+        tax_period TEXT NOT NULL,
+        invoice_date TEXT NOT NULL,
+        buyer_name TEXT NOT NULL,
+        buyer_npwp16 TEXT NOT NULL,
+        buyer_nitku22 TEXT NOT NULL,
+        buyer_address TEXT NOT NULL,
+        dpp INTEGER NOT NULL DEFAULT 0,
+        ppn INTEGER NOT NULL DEFAULT 0,
+        tax_rate INTEGER NOT NULL DEFAULT 11,
+        is_tax_included INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'DRAFT',
+        delivery_order_id TEXT,
+        inventory_movement_id TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS tax_invoice_items (
+        id TEXT PRIMARY KEY,
+        tax_invoice_id TEXT NOT NULL,
+        item_code TEXT NOT NULL,
+        item_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        unit_price INTEGER NOT NULL DEFAULT 0,
+        total_price INTEGER NOT NULL DEFAULT 0,
+        dpp INTEGER NOT NULL DEFAULT 0,
+        ppn INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS spt_masa_periods (
+        id TEXT PRIMARY KEY,
+        period TEXT NOT NULL UNIQUE,
+        total_dpp_keluaran INTEGER NOT NULL DEFAULT 0,
+        total_ppn_keluaran INTEGER NOT NULL DEFAULT 0,
+        count_fpk INTEGER NOT NULL DEFAULT 0,
+        total_dpp_masukan INTEGER NOT NULL DEFAULT 0,
+        total_ppn_masukan INTEGER NOT NULL DEFAULT 0,
+        count_fpm INTEGER NOT NULL DEFAULT 0,
+        net_tax_payable INTEGER NOT NULL DEFAULT 0,
+        unbilled_orders_count INTEGER NOT NULL DEFAULT 0,
+        unbilled_orders_amount INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'OPEN',
+        updated_at TEXT NOT NULL
+      );
     `);
 
     // Safe column migrations for existing SQLite database files
