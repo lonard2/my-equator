@@ -204,3 +204,27 @@ export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = 
 export function getStatusToken(status: DeliveryOrderStatus): StatusVisualToken {
   return STATUS_COLOR_MAP[status] || STATUS_COLOR_MAP.DRAFT;
 }
+
+export interface OrderFilterOption {
+  id: string;
+  label: string;
+  statusKey?: DeliveryOrderStatus;
+}
+
+/**
+ * Shared, canonical Delivery Order filter options across desktop OrderList tabs
+ * and mobile feed header chips.
+ * Enforces identical 7 items, identical lifecycle sequence, and authoritative DESIGN.md token labels.
+ */
+export function getOrderFilterOptions(language: "id" | "en"): OrderFilterOption[] {
+  const isId = language === "id";
+  return [
+    { id: "ALL", label: isId ? "Semua" : "All" },
+    { id: "DRAFT", label: isId ? STATUS_COLOR_MAP.DRAFT.labelId : STATUS_COLOR_MAP.DRAFT.labelEn, statusKey: "DRAFT" },
+    { id: "CONFIRMED", label: isId ? STATUS_COLOR_MAP.CONFIRMED.labelId : STATUS_COLOR_MAP.CONFIRMED.labelEn, statusKey: "CONFIRMED" },
+    { id: "PRINTED", label: isId ? STATUS_COLOR_MAP.PRINTED.labelId : STATUS_COLOR_MAP.PRINTED.labelEn, statusKey: "PRINTED" },
+    { id: "DISPATCHED", label: isId ? STATUS_COLOR_MAP.DISPATCHED.labelId : STATUS_COLOR_MAP.DISPATCHED.labelEn, statusKey: "DISPATCHED" },
+    { id: "DELIVERED", label: isId ? STATUS_COLOR_MAP.DELIVERED.labelId : STATUS_COLOR_MAP.DELIVERED.labelEn, statusKey: "DELIVERED" },
+    { id: "CANCELLED", label: isId ? STATUS_COLOR_MAP.CANCELLED.labelId : STATUS_COLOR_MAP.CANCELLED.labelEn, statusKey: "CANCELLED" },
+  ];
+}

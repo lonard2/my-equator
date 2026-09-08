@@ -10,6 +10,7 @@ import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
+import { getOrderFilterOptions } from "@/lib/utils/statusColors";
 import { DispatchConfirmModal } from "@/components/delivery-orders/DispatchConfirmModal";
 import { DeliveredCeremonyModal } from "@/components/delivery-orders/DeliveredCeremonyModal";
 import { SlipSpooledCeremonyModal } from "@/components/delivery-orders/SlipSpooledCeremonyModal";
@@ -291,16 +292,8 @@ export default function HomePage() {
   const readyOrDispatchedCount = orders.filter((o) => o.status === "PRINTED" || o.status === "DISPATCHED").length;
   const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
 
-  // Mobile Header & Feed Filter Options
-  const mobileFilterOptions: Array<{ id: string; label: string }> = [
-    { id: "ALL", label: isId ? "Semua" : "All" },
-    { id: "CONFIRMED", label: isId ? "Konfirm" : "Confirmed" },
-    { id: "PRINTED", label: isId ? "Tercetak" : "Printed" },
-    { id: "DISPATCHED", label: isId ? "Kirim" : "Dispatched" },
-    { id: "DELIVERED", label: isId ? "Selesai" : "Delivered" },
-    { id: "DRAFT", label: "Draft" },
-    { id: "CANCELLED", label: isId ? "Batal" : "Cancelled" },
-  ];
+  // Mobile Header & Feed Filter Options (Canonical shared token config)
+  const mobileFilterOptions = getOrderFilterOptions(language);
 
   const countMobileByStatus = (st: string) => {
     if (st === "ALL") return orders.length;
@@ -477,7 +470,7 @@ export default function HomePage() {
                             key={opt.id}
                             type="button"
                             onClick={() => setMobileStatusFilter(opt.id)}
-                            className={`px-2.5 py-1 min-h-[34px] rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1 active:scale-95 ${
+                            className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1.5 active:scale-95 ${
                               isSelected
                                 ? "bg-white text-brand shadow-xs font-black"
                                 : "bg-white/15 text-white hover:bg-white/25 backdrop-blur-xs"

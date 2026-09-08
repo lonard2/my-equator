@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { DeliveryOrder, FootwearSize } from "@/types";
 import { formatShortDate } from "@/lib/utils/formatters";
+import { getOrderFilterOptions } from "@/lib/utils/statusColors";
 import { StatusBadge } from "./StatusBadge";
 import {
   Search,
@@ -41,14 +42,7 @@ export function OrderList({
   const [showAggregateSummary, setShowAggregateSummary] = useState(false);
   const listContainerRef = useRef<HTMLDivElement>(null);
 
-  const filterOptions: Array<{ id: string; label: string }> = [
-    { id: "ALL", label: isId ? "Semua" : "All" },
-    { id: "DRAFT", label: "Draft" },
-    { id: "CONFIRMED", label: isId ? "Konfirm" : "Confirmed" },
-    { id: "PRINTED", label: isId ? "Tercetak" : "Printed" },
-    { id: "DISPATCHED", label: isId ? "Kirim" : "Dispatched" },
-    { id: "DELIVERED", label: isId ? "Selesai" : "Delivered" },
-  ];
+  const filterOptions = useMemo(() => getOrderFilterOptions(language), [language]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
