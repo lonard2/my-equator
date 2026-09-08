@@ -4,8 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown } from "@/types";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
 import { getAvailableStatusRollbacks } from "@/lib/orders/status";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { TouchSizePad } from "./TouchSizePad";
 import { StatusBadge } from "./StatusBadge";
+import { DispatchConfirmModal } from "./DispatchConfirmModal";
 import {
   Printer,
   FileDown,
@@ -78,15 +80,29 @@ export function OrderDetail({
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // In-App Delete Confirmation State
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  // Dispatch Guard State (P0: lightweight confirm sheet on Kirimkan / Tiba di Lokasi)
+  const [pendingDispatchStatus, setPendingDispatchStatus] = useState<"DISPATCHED" | "DELIVERED" | null>(null);
 
-  // Status Rollback / Cancellation Modal States
+  // In-App Delete Confirmation State & Modal Safety
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const deleteModalRef = useModalSafety({
+    isOpen: isDeleteModalOpen,
+    onClose: () => setIsDeleteModalOpen(false),
+  });
+
+  // Status Rollback / Cancellation Modal States & Modal Safety
   const [isRollbackModalOpen, setIsRollbackModalOpen] = useState(false);
   const [rollbackTarget, setRollbackTarget] = useState<DeliveryOrderStatus>("DRAFT");
   const [rollbackReason, setRollbackReason] = useState("");
   const [rollbackSubmitting, setRollbackSubmitting] = useState(false);
   const [rollbackError, setRollbackError] = useState<string | null>(null);
+  const rollbackModalRef = useModalSafety({
+    isOpen: isRollbackModalOpen,
+    onClose: () => {
+      setIsRollbackModalOpen(false);
+      setRollbackError(null);
+    },
+  });
 
   // Edit form states
   const [recipientName, setRecipientName] = useState(order.recipientName);
@@ -404,7 +420,13 @@ export function OrderDetail({
                 {nextAction && order.status !== "CANCELLED" && (
                   <div className="flex flex-col items-end">
                     <button
-                      onClick={() => onStatusChange(order.id, nextAction.next)}
+                      onClick={() => {
+                        if (nextAction.next === "DISPATCHED" || nextAction.next === "DELIVERED") {
+                          setPendingDispatchStatus(nextAction.next);
+                        } else {
+                          onStatusChange(order.id, nextAction.next);
+                        }
+                      }}
                       className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
                     >
                       <nextAction.icon className="h-3.5 w-3.5" />
@@ -1130,16 +1152,23 @@ export function OrderDetail({
       {/* In-App Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4">
+          <div
+            ref={deleteModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+            aria-describedby="delete-dialog-desc"
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4"
+          >
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 shrink-0">
                 <Trash2 className="h-5 w-5" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                <h3 id="delete-dialog-title" className="font-bold text-sm text-gray-900 dark:text-white">
                   {isId ? "Hapus Surat Jalan Ini?" : "Delete this Delivery Order?"}
                 </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p id="delete-dialog-desc" className="text-xs text-gray-600 dark:text-gray-400">
                   {isId
                     ? `Surat jalan nomor ${order.orderNumber} akan dihapus secara permanen dari sistem. Tindakan ini tidak dapat dibatalkan.`
                     : `Order ${order.orderNumber} will be permanently deleted from the database. This action cannot be undone.`}
@@ -1173,22 +1202,30 @@ export function OrderDetail({
       {/* Status Rollback & Cancellation Modal */}
       {isRollbackModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+          <div
+            ref={rollbackModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rollback-dialog-title"
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+          >
             <div className="p-4 bg-brand text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <RotateCcw className="h-5 w-5" />
-                <h3 className="font-bold text-sm">
+                <h3 id="rollback-dialog-title" className="font-bold text-sm">
                   {rollbackTarget === "CANCELLED"
                     ? isId ? "Batalkan Surat Jalan" : "Cancel Delivery Order"
                     : isId ? "Koreksi / Rollback Status Surat Jalan" : "Revert Delivery Order Status"}
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setIsRollbackModalOpen(false);
                   setRollbackError(null);
                 }}
                 className="p-1 rounded-lg hover:bg-white/10"
+                aria-label={isId ? "Tutup dialog" : "Close dialog"}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1292,6 +1329,21 @@ export function OrderDetail({
           </div>
         </div>
       )}
+
+      {/* Dispatch Guard Confirmation Sheet (P0: Lightweight Confirm on Kirimkan / Tiba di Lokasi) */}
+      <DispatchConfirmModal
+        isOpen={!!pendingDispatchStatus}
+        order={order}
+        targetStatus={pendingDispatchStatus || "DISPATCHED"}
+        onConfirm={() => {
+          if (pendingDispatchStatus) {
+            onStatusChange(order.id, pendingDispatchStatus);
+            setPendingDispatchStatus(null);
+          }
+        }}
+        onClose={() => setPendingDispatchStatus(null)}
+        language={language}
+      />
     </div>
   );
 }

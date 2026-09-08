@@ -10,6 +10,8 @@ import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
+import { DispatchConfirmModal } from "@/components/delivery-orders/DispatchConfirmModal";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
@@ -62,6 +64,18 @@ export default function HomePage() {
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Dispatch Guard State (P0: Lightweight confirmation sheet on Kirimkan / Tiba di Lokasi)
+  const [dispatchGuard, setDispatchGuard] = useState<{
+    order: DeliveryOrder;
+    targetStatus: "DISPATCHED" | "DELIVERED";
+  } | null>(null);
+
+  // Mobile Bottom Sheet modal safety
+  const mobileDetailRef = useModalSafety({
+    isOpen: isMobileDetailOpen,
+    onClose: () => setIsMobileDetailOpen(false),
+  });
 
   // Restore saved authentication session from localStorage
   useEffect(() => {
@@ -403,7 +417,7 @@ export default function HomePage() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
-                                handleStatusChange(order.id, "DISPATCHED");
+                                setDispatchGuard({ order, targetStatus: "DISPATCHED" });
                               }}
                               className="py-2.5 min-h-[44px] rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
                             >
@@ -416,7 +430,7 @@ export default function HomePage() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedOrder(order);
-                                handleStatusChange(order.id, "DELIVERED");
+                                setDispatchGuard({ order, targetStatus: "DELIVERED" });
                               }}
                               className="py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
                             >
@@ -525,7 +539,13 @@ export default function HomePage() {
       {/* Mobile Slide-Up Bottom Sheet Detail Viewer */}
       {isMobileDetailOpen && selectedOrder && (
         <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-gray-900 rounded-t-2xl border-t border-gray-200 dark:border-gray-800 shadow-2xl h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+          <div
+            ref={mobileDetailRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Detail Surat Jalan ${selectedOrder.orderNumber}`}
+            className="bg-white dark:bg-gray-900 rounded-t-2xl border-t border-gray-200 dark:border-gray-800 shadow-2xl h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200"
+          >
             <div className="p-3.5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/60">
               <span className="font-bold text-sm text-gray-900 dark:text-white font-mono">
                 {selectedOrder.orderNumber}
@@ -687,6 +707,21 @@ export default function HomePage() {
         onThemeChange={handleThemeChange}
         language={language}
         onLanguageChange={setLanguage}
+      />
+
+      {/* Dispatch Guard Confirmation Sheet (P0: Lightweight Confirm on Mobile Kirimkan / Tiba di Lokasi) */}
+      <DispatchConfirmModal
+        isOpen={!!dispatchGuard}
+        order={dispatchGuard?.order || null}
+        targetStatus={dispatchGuard?.targetStatus || "DISPATCHED"}
+        onConfirm={() => {
+          if (dispatchGuard) {
+            handleStatusChange(dispatchGuard.order.id, dispatchGuard.targetStatus);
+            setDispatchGuard(null);
+          }
+        }}
+        onClose={() => setDispatchGuard(null)}
+        language={language}
       />
     </div>
   );

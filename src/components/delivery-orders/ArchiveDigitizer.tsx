@@ -661,11 +661,16 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       {/* Keyboard Shortcuts Cheat Sheet Modal */}
       {showShortcuts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcuts-dialog-title"
+            className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <Command className="h-5 w-5 text-brand" />
-                <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                <h3 id="shortcuts-dialog-title" className="font-extrabold text-sm text-gray-900 dark:text-white">
                   {isId ? "Pintasan Keyboard Digitizer" : "Digitizer Keyboard Shortcuts"}
                 </h3>
               </div>

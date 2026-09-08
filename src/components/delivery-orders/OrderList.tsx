@@ -84,14 +84,29 @@ export function OrderList({
   }, [filteredOrders]);
 
   // Keyboard navigation between orders (ArrowUp / ArrowDown) with auto-scroll into view
+  // Suppressed automatically whenever any modal dialog is open in the DOM
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") {
+        return;
+      }
+
       if (
         document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA"
+        document.activeElement?.tagName === "TEXTAREA" ||
+        (document.activeElement as HTMLElement)?.isContentEditable
       ) {
         return;
       }
+
+      // Modal safety (P1): Suppress arrow-key order switching while any modal dialog is open
+      if (
+        document.querySelector('[role="dialog"]') ||
+        document.querySelector('[aria-modal="true"]')
+      ) {
+        return;
+      }
+
       if (filteredOrders.length === 0) return;
 
       const currentIndex = filteredOrders.findIndex((o) => o.id === selectedOrderId);

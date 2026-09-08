@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { DeliveryOrder, FootwearSize } from "@/types";
 import { generateEscpMonospaceText } from "@/lib/printer/escp";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 import {
   X,
   Printer,
@@ -28,6 +29,11 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
   const isId = language === "id";
   const [activeTab, setActiveTab] = useState<"DOT_MATRIX" | "HTML_SHEET">("DOT_MATRIX");
   const [copied, setCopied] = useState(false);
+
+  const modalRef = useModalSafety({
+    isOpen,
+    onClose,
+  });
 
   // In-place tweaking for print overrides
   const [customDriver, setCustomDriver] = useState("");
@@ -70,7 +76,13 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="print-modal-title"
+        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      >
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40">
           <div className="flex items-center gap-3">
@@ -79,7 +91,7 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                <h3 id="print-modal-title" className="font-bold text-sm text-gray-900 dark:text-white">
                   {isId ? "Pratinjau Cetak Surat Jalan" : "Print Preview & Spooler"}
                 </h3>
                 <span className="text-xs font-mono font-bold text-brand dark:text-red-400">

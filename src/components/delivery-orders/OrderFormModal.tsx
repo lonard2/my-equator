@@ -159,21 +159,68 @@ export function OrderFormModal({
     }
   }, [isDirty, onClose, resetForm]);
 
-  // Handle escape key listener for safe dismiss
+  const triggerElementRef = useRef<HTMLElement | null>(null);
+
+  // Handle escape key listener for safe dismiss, focus trap, and focus return
   useEffect(() => {
+    if (!isOpen) return;
+
+    triggerElementRef.current = document.activeElement as HTMLElement | null;
+
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
         if (showDiscardConfirm) {
           setShowDiscardConfirm(false);
         } else {
           handleRequestClose();
         }
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = Array.from(
+          modalRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => el.offsetParent !== null || el.offsetWidth > 0 || el.offsetHeight > 0);
+
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            !modalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (
+            document.activeElement === lastElement ||
+            !modalRef.current.contains(document.activeElement)
+          ) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     }
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (triggerElementRef.current && typeof triggerElementRef.current.focus === "function") {
+        setTimeout(() => triggerElementRef.current?.focus(), 10);
+      }
+    };
   }, [isOpen, showDiscardConfirm, handleRequestClose]);
 
   if (!isOpen) return null;
@@ -312,7 +359,12 @@ export function OrderFormModal({
       ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto"
     >
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-form-title"
+        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+      >
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/40">
           <div className="flex items-center space-x-3">
@@ -320,7 +372,7 @@ export function OrderFormModal({
               <Calculator className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white leading-tight">
+              <h3 id="order-form-title" className="font-extrabold text-base text-gray-900 dark:text-white leading-tight">
                 {isId ? "Buat Surat Jalan (DO) Baru" : "New Delivery Order"}
               </h3>
               <p className="text-[11px] text-gray-500">
