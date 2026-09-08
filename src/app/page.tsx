@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { DeliveryOrder, DeliveryOrderStatus, DensityMode, LayoutWidth, ThemeMode, Language } from "@/types";
+import React, { useState, useEffect, useMemo } from "react";
+import { DeliveryOrder, DeliveryOrderStatus, DensityMode, LayoutWidth, ThemeMode, Language, FootwearSize } from "@/types";
 import { Header } from "@/components/common/Header";
 import { Sidebar, NavTab } from "@/components/common/Sidebar";
 import { OrderList } from "@/components/delivery-orders/OrderList";
@@ -43,8 +43,11 @@ import {
   PanelLeftOpen,
   AlertTriangle,
   CheckCircle2,
+  Layers,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
+
+const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 export default function HomePage() {
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
@@ -320,6 +323,26 @@ export default function HomePage() {
     return matchesSearch && matchesStatus;
   });
 
+  const [showMobileRekap, setShowMobileRekap] = useState(false);
+  // Aggregate pairs per size across the mobile-filtered orders (Rekap for Pak Hendra on tablet/phone)
+  const mobileSizeAggregates = useMemo(() => {
+    const agg: { [key in FootwearSize]?: number } = {};
+    let totalAll = 0;
+    filteredMobileOrders.forEach((order) => {
+      order.items?.forEach((item) => {
+        Object.entries(item.sizes || {}).forEach(([sz, q]) => {
+          const numS = parseInt(sz, 10) as FootwearSize;
+          const numQ = typeof q === "number" ? q : parseInt(q as string, 10) || 0;
+          if (numQ > 0) {
+            agg[numS] = (agg[numS] || 0) + numQ;
+            totalAll += numQ;
+          }
+        });
+      });
+    });
+    return { bySize: agg, total: totalAll };
+  }, [filteredMobileOrders]);
+
   return (
     <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-950 font-sans antialiased text-gray-900 dark:text-gray-100 overflow-hidden">
       {/* Top Header */}
@@ -498,6 +521,54 @@ export default function HomePage() {
                         );
                       })}
                     </div>
+                  </div>
+
+                  {/* Mobile/Tablet Rekap Size Aggregate (Pak Hendra) */}
+                  <div className="md:hidden px-3 pt-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowMobileRekap(!showMobileRekap)}
+                      aria-expanded={showMobileRekap}
+                      className={`w-full min-h-[44px] px-3.5 rounded-xl border text-xs font-bold flex items-center justify-between transition active:scale-98 ${
+                        showMobileRekap
+                          ? "bg-brand text-white border-brand shadow-xs"
+                          : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Layers className="h-4 w-4" />
+                        <span>{isId ? "Rekap Pasang per Size" : "Pairs per Size"}</span>
+                      </span>
+                      <span className="font-mono tabular-nums">
+                        {mobileSizeAggregates.total.toLocaleString("id-ID")} psg
+                      </span>
+                    </button>
+
+                    {showMobileRekap && (
+                      <div className="mt-2 p-3 rounded-xl bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 space-y-2 animate-in fade-in zoom-in-95 duration-100">
+                        <p className="text-[10px] font-bold text-red-900 dark:text-red-300">
+                          {isId ? "Total pasang per ukuran (filter aktif)" : "Total pairs per size (active filter)"}
+                        </p>
+                        <div className="grid grid-cols-5 gap-1 text-center font-mono">
+                          {STANDARD_SIZES.map((size) => {
+                            const qty = mobileSizeAggregates.bySize[size] || 0;
+                            return (
+                              <div
+                                key={size}
+                                className={`p-1 rounded-lg border text-[11px] transition ${
+                                  qty > 0
+                                    ? "bg-white dark:bg-gray-800 border-red-300 dark:border-red-900 text-brand dark:text-red-300 font-bold shadow-2xs"
+                                    : "bg-transparent border-red-100/60 dark:border-red-950/60 text-gray-400 dark:text-gray-600"
+                                }`}
+                              >
+                                <span className="block text-[9px] text-gray-500 dark:text-gray-400 font-sans font-semibold">EU {size}</span>
+                                <span className="tabular-nums">{qty > 0 ? qty : "-"}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Mobile Specific Card Feed */}
