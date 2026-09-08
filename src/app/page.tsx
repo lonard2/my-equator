@@ -860,6 +860,7 @@ export default function HomePage() {
                       onOrderUpdated={fetchOrders}
                       language={language}
                       onSpoolSuccess={(order) => setSlipSpooledCeremonyOrder(order)}
+                      onToast={showAppToast}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full text-center p-8 text-gray-400">
@@ -934,6 +935,7 @@ export default function HomePage() {
                 onOrderUpdated={fetchOrders}
                 language={language}
                 onSpoolSuccess={(order) => setSlipSpooledCeremonyOrder(order)}
+                      onToast={showAppToast}
               />
             </div>
           </div>

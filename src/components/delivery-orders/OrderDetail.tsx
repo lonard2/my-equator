@@ -45,6 +45,8 @@ interface OrderDetailProps {
   onOrderUpdated: () => void;
   language: "id" | "en";
   onSpoolSuccess?: (order: DeliveryOrder) => void;
+  /** Delegate notifications to the single page-level toast system. */
+  onToast?: (message: string) => void;
 }
 
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
@@ -106,6 +108,7 @@ export function OrderDetail({
   onOrderUpdated,
   language,
   onSpoolSuccess,
+  onToast,
 }: OrderDetailProps) {
   const isId = language === "id";
   const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
@@ -116,7 +119,6 @@ export function OrderDetail({
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedOrderNo, setCopiedOrderNo] = useState(false);
   const [showOversized, setShowOversized] = useState(false);
   const [inputMode, setInputMode] = useState<"GRID" | "TOUCH_PAD">("GRID");
@@ -273,8 +275,8 @@ export function OrderDetail({
     : STANDARD_SIZES;
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    // Single notification system: delegate to the page-level app toast.
+    onToast?.(msg);
   };
 
   // Close dropdown on outside click or Escape
@@ -627,25 +629,6 @@ export function OrderDetail({
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto relative">
-      {/* Floating Toast Notification (Accessible Live Region) */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className={
-          toastMessage
-            ? "fixed top-4 right-4 z-70 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150"
-            : "sr-only"
-        }
-      >
-        {toastMessage && (
-          <>
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
-            <span>{toastMessage}</span>
-          </>
-        )}
-      </div>
-
       {/* Top Header Banner */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 sm:p-5 sticky top-0 z-20 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -5,7 +5,7 @@ import { DeliveryOrder, DeliveryOrderStatus, Language } from "@/types";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
 import { StatusBadge } from "./StatusBadge";
-import { Truck, CheckCircle2, X, AlertTriangle, Building, MapPin, Calendar, Package, Loader2 } from "lucide-react";
+import { Truck, CheckCircle2, X, AlertTriangle, Building, MapPin, Calendar, Package, Loader2, ArrowRight } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
 interface DispatchConfirmModalProps {
@@ -101,7 +101,7 @@ export function DispatchConfirmModal({
               </div>
             </div>
 
-            <div className="text-gray-400 font-black text-sm">➔</div>
+            <ArrowRight className="h-4 w-4 text-gray-400" aria-hidden />
 
             <div className="space-y-0.5 text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
