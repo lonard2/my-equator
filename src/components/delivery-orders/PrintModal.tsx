@@ -13,7 +13,6 @@ import {
   FileText,
   Check,
   Edit3,
-  Sparkles,
 } from "lucide-react";
 
 interface PrintModalProps {

@@ -380,7 +380,7 @@ export function OrderDetail({
         aria-atomic="true"
         className={
           toastMessage
-            ? "fixed top-4 right-4 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150"
+            ? "fixed top-4 right-4 z-70 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150"
             : "sr-only"
         }
       >

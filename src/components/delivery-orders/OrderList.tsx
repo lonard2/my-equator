@@ -12,7 +12,6 @@ import {
   BarChart3,
   Layers,
   RotateCcw,
-  SlidersHorizontal,
 } from "lucide-react";
 
 interface OrderListProps {
@@ -22,6 +21,7 @@ interface OrderListProps {
   onCreateNew: () => void;
   onOpenPrint: (order: DeliveryOrder) => void;
   language: "id" | "en";
+  loading?: boolean;
 }
 
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
@@ -33,6 +33,7 @@ export function OrderList({
   onCreateNew,
   onOpenPrint,
   language,
+  loading = false,
 }: OrderListProps) {
   const isId = language === "id";
   const [searchTerm, setSearchTerm] = useState("");
@@ -291,7 +292,26 @@ export function OrderList({
         aria-activedescendant={selectedOrderId ? `order-opt-${selectedOrderId}` : undefined}
         className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80"
       >
-        {filteredOrders.length === 0 ? (
+        {loading ? (
+          <div className="p-3 space-y-2.5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="p-3.5 rounded-xl border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900 space-y-2.5 animate-pulse"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-3.5 w-28 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                </div>
+                <div className="h-3 w-40 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                <div className="flex items-center justify-between pt-1">
+                  <div className="h-2.5 w-20 bg-gray-100 dark:bg-gray-800 rounded-md" />
+                  <div className="h-3 w-14 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredOrders.length === 0 ? (
           <div className="p-8 text-center text-gray-400 space-y-3">
             <FileText className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-700" />
             <div>

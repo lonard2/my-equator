@@ -231,9 +231,12 @@ export default function HomePage() {
         setSelectedOrder(null);
         setIsMobileDetailOpen(false);
         fetchOrders();
+      } else {
+        alert(json.error || (language === "id" ? "Gagal menghapus surat jalan." : "Failed to delete delivery order."));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete order:", err);
+      alert(err.message || (language === "id" ? "Terjadi kesalahan saat menghapus surat jalan." : "An error occurred while deleting delivery order."));
     }
   };
 
@@ -338,8 +341,8 @@ export default function HomePage() {
                     <p className="text-[10px] uppercase font-bold text-blue-900/70 dark:text-blue-300">
                       {isId ? "Total Surat Jalan" : "Total Orders"}
                     </p>
-                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
-                      {orders.length} <span className="text-xs font-normal text-gray-500">dokumen</span>
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight font-mono tabular-nums">
+                      {orders.length} <span className="text-xs font-normal text-gray-500 font-sans">dokumen</span>
                     </p>
                   </div>
                 </div>
@@ -352,9 +355,9 @@ export default function HomePage() {
                     <p className="text-[10px] uppercase font-bold text-amber-900/70 dark:text-amber-300">
                       {isId ? "Total Pasang Terjadwal" : "Total Scheduled Pairs"}
                     </p>
-                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight font-mono tabular-nums">
                       {totalVolumePairs.toLocaleString("id-ID")}{" "}
-                      <span className="text-xs font-normal text-gray-500">pasang</span>
+                      <span className="text-xs font-normal text-gray-500 font-sans">pasang</span>
                     </p>
                   </div>
                 </div>
@@ -367,11 +370,11 @@ export default function HomePage() {
                     <p className="text-[10px] uppercase font-bold text-purple-900/70 dark:text-purple-300">
                       {isId ? "Pengiriman & Selesai" : "Dispatched & Delivered"}
                     </p>
-                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
-                      <span className="text-purple-700 dark:text-purple-300 font-bold">{readyOrDispatchedCount}</span>{" "}
-                      <span className="text-xs font-normal text-gray-500">{isId ? "Kirim" : "Transit"}</span> •{" "}
-                      <span className="text-emerald-700 dark:text-emerald-400 font-bold">{completedCount}</span>{" "}
-                      <span className="text-xs font-normal text-gray-500">{isId ? "Selesai" : "Delivered"}</span>
+                    <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight tabular-nums">
+                      <span className="text-purple-700 dark:text-purple-300 font-bold font-mono">{readyOrDispatchedCount}</span>{" "}
+                      <span className="text-xs font-normal text-gray-500 font-sans">{isId ? "Kirim" : "Transit"}</span> •{" "}
+                      <span className="text-emerald-700 dark:text-emerald-400 font-bold font-mono">{completedCount}</span>{" "}
+                      <span className="text-xs font-normal text-gray-500 font-sans">{isId ? "Selesai" : "Delivered"}</span>
                     </p>
                   </div>
                 </div>
@@ -644,6 +647,7 @@ export default function HomePage() {
                       }}
                       onOpenPrint={(order) => setPrintOrder(order)}
                       language={language}
+                      loading={loading}
                     />
                   </div>
                 </div>
@@ -665,7 +669,23 @@ export default function HomePage() {
                     </button>
                   </div>
 
-                  {selectedOrder ? (
+                  {loading && !selectedOrder ? (
+                    <div className="flex-1 p-6 space-y-5 animate-pulse bg-gray-50/50 dark:bg-gray-950/50 overflow-y-auto">
+                      <div className="h-16 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex items-center justify-between">
+                        <div className="space-y-2">
+                          <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                          <div className="h-3 w-32 bg-gray-100 dark:bg-gray-800 rounded-md" />
+                        </div>
+                        <div className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="h-24 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4" />
+                        <div className="h-24 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4" />
+                        <div className="h-24 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4" />
+                      </div>
+                      <div className="h-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4" />
+                    </div>
+                  ) : selectedOrder ? (
                     <OrderDetail
                       order={selectedOrder}
                       onStatusChange={handleStatusChange}

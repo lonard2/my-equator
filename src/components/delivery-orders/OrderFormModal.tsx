@@ -10,7 +10,6 @@ import {
   Calculator,
   Grid,
   Touchpad,
-  Sparkles,
   AlertTriangle,
   AlertCircle,
   RotateCcw,
