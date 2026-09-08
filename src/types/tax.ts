@@ -71,6 +71,19 @@ export interface TaxInvoice {
   updatedAt: string;
 }
 
+export interface MaterialPurchaseDetail {
+  id: string;
+  materialName: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+  totalCost: number;
+  estimatedVat: number;
+  date: string;
+  notes?: string | null;
+}
+
 export interface SptMasaPeriodSummary {
   id?: string;
   period: string; // YYYY-MM
@@ -84,6 +97,7 @@ export interface SptMasaPeriodSummary {
   unbilledOrdersCount: number;
   unbilledOrdersAmount: number;
   status: "OPEN" | "RECONCILED" | "REPORTED";
+  materialPurchases?: MaterialPurchaseDetail[];
 }
 
 export interface BatchGenerateOptions {

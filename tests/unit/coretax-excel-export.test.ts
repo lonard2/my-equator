@@ -79,5 +79,34 @@ describe("Coretax Excel DJP Template Export Generator", () => {
     assert.strictEqual(detailJson.length, 1);
     assert.strictEqual(detailJson[0]["KODE_OBJEK"], "INS-EVA-40");
     assert.strictEqual(detailJson[0]["HARGA_TOTAL"], 10000000);
+
+    // Verify Petunjuk_Pengisian guide sheet
+    assert.ok(workbook.SheetNames.includes("Petunjuk_Pengisian"), "Guide sheet must exist");
+    const guideSheet = workbook.Sheets["Petunjuk_Pengisian"];
+    const guideJson = XLSX.utils.sheet_to_json(guideSheet) as Record<string, unknown>[];
+    assert.ok(guideJson.length >= 5, "Should include at least 5 DJP instruction entries");
+  });
+
+  it("generates an official blank DJP template with sample guide rows when invoices array is empty", async () => {
+    const buffer = await generateCoretaxExcel([], mockCompany);
+    assert.ok(buffer.length > 0, "Buffer should not be empty");
+
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    assert.deepStrictEqual(workbook.SheetNames, ["Faktur", "DetailFaktur", "Petunjuk_Pengisian"]);
+
+    // Verify sample row is populated
+    const fakturSheet = workbook.Sheets["Faktur"];
+    const fakturJson = XLSX.utils.sheet_to_json(fakturSheet) as Record<string, unknown>[];
+    assert.strictEqual(fakturJson.length, 1);
+    assert.strictEqual(fakturJson[0]["NAMA_PENJUAL"], "PT Equator Insole Indonesia");
+    assert.ok(fakturJson[0]["NAMA_PEMBELI"]?.toString().includes("CONTOH FORMAT"));
+
+    // Verify columns exist in the generated template
+    const headers = Object.keys(fakturJson[0]);
+    assert.ok(headers.includes("NOMOR_FAKTUR"));
+    assert.ok(headers.includes("NPWP_PENJUAL"));
+    assert.ok(headers.includes("NPWP_PEMBELI"));
+    assert.ok(headers.includes("JUMLAH_DPP"));
+    assert.ok(headers.includes("JUMLAH_PPN"));
   });
 });

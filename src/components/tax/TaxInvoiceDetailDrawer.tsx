@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
-import { TaxInvoice } from "@/types/tax";
+import { TaxInvoice, TaxInvoiceStatus } from "@/types/tax";
 import { formatRupiahTax, formatNpwp16, formatNitku22 } from "@/lib/utils/taxFormatters";
 import {
   X,
@@ -14,6 +12,9 @@ import {
   Check,
   Code2,
   Receipt,
+  FileSpreadsheet,
+  Download,
+  CheckCircle2,
 } from "lucide-react";
 
 interface TaxInvoiceDetailDrawerProps {
@@ -21,6 +22,8 @@ interface TaxInvoiceDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   language: "id" | "en";
+  userRole?: string;
+  onUpdateStatus?: (id: string, status: TaxInvoiceStatus) => Promise<void>;
 }
 
 export function TaxInvoiceDetailDrawer({
@@ -28,12 +31,85 @@ export function TaxInvoiceDetailDrawer({
   isOpen,
   onClose,
   language,
+  userRole = "SUPER_ADMIN",
+  onUpdateStatus,
 }: TaxInvoiceDetailDrawerProps) {
   const isId = language === "id";
   const [activeTab, setActiveTab] = useState<"DETAILS" | "XML">("DETAILS");
   const [copied, setCopied] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [downloadingXml, setDownloadingXml] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   if (!isOpen || !invoice) return null;
+
+  const handleDownloadInvoiceExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      const res = await fetch("/api/tax/export-excel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": userRole,
+        },
+        body: JSON.stringify({ invoiceIds: [invoice.id] }),
+      });
+      if (!res.ok) throw new Error("Gagal mengunduh Excel");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Faktur_${invoice.nomorFaktur.replace(/[/\\?%*:|"<>]/g, "-")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
+  const handleDownloadInvoiceXml = async () => {
+    setDownloadingXml(true);
+    try {
+      const res = await fetch("/api/tax/export-xml", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": userRole,
+        },
+        body: JSON.stringify({ invoiceIds: [invoice.id] }),
+      });
+      if (!res.ok) throw new Error("Gagal mengunduh XML");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Faktur_${invoice.nomorFaktur.replace(/[/\\?%*:|"<>]/g, "-")}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDownloadingXml(false);
+    }
+  };
+
+  const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value as TaxInvoiceStatus;
+    if (onUpdateStatus) {
+      setUpdatingStatus(true);
+      try {
+        await onUpdateStatus(invoice.id, newStatus);
+      } finally {
+        setUpdatingStatus(false);
+      }
+    }
+  };
 
   const sampleXml = `<?xml version="1.0" encoding="UTF-8"?>
 <TaxInvoice>
@@ -241,6 +317,48 @@ export function TaxInvoiceDetailDrawer({
               </pre>
             </div>
           )}
+        </div>
+
+        {/* Drawer Action Footer */}
+        <div className="p-4 border-t border-neutral-800 bg-neutral-950/80 flex flex-wrap items-center justify-between gap-3">
+          {/* Status selector */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-neutral-400">{isId ? "Status:" : "Status:"}</span>
+            <select
+              value={invoice.status}
+              disabled={updatingStatus}
+              onChange={handleStatusChange}
+              className="px-2.5 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200 text-xs focus:outline-none focus:border-red-600"
+            >
+              <option value="DRAFT">DRAFT (Konsep)</option>
+              <option value="READY">READY (Siap Ekspor)</option>
+              <option value="EXPORTED_XML">EXPORTED_XML</option>
+              <option value="EXPORTED_EXCEL">EXPORTED_EXCEL</option>
+              <option value="UPLOADED_CORETAX">UPLOADED_CORETAX</option>
+              <option value="APPROVED">APPROVED (Disetujui DJP)</option>
+              <option value="CANCELLED">CANCELLED (Dibatalkan)</option>
+            </select>
+          </div>
+
+          {/* Direct Download Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadInvoiceExcel}
+              disabled={downloadingExcel}
+              className="px-3 py-1.5 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-800 text-emerald-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isId ? "Unduh Excel (.xlsx)" : "Download Excel"}</span>
+            </button>
+            <button
+              onClick={handleDownloadInvoiceXml}
+              disabled={downloadingXml}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5 text-red-400" />
+              <span>{isId ? "Unduh XML (.xml)" : "Download XML"}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -4,8 +4,10 @@ import { GET as getProfile, POST as saveProfile } from "@/app/api/tax/profile/ro
 import { GET as getInvoices, POST as createInvoice } from "@/app/api/tax/invoices/route";
 import { GET as getReconciliation } from "@/app/api/tax/reconciliation/route";
 import { POST as exportXml } from "@/app/api/tax/export-xml/route";
-import { POST as exportExcel } from "@/app/api/tax/export-excel/route";
+import { POST as exportExcel, GET as exportExcelGet } from "@/app/api/tax/export-excel/route";
 import { POST as batchGenerate } from "@/app/api/tax/batch-generate/route";
+import { POST as seedDemo } from "@/app/api/tax/seed-demo/route";
+import { PUT as updateInvoice } from "@/app/api/tax/invoices/[id]/route";
 
 describe("Coretax Tax Management API Endpoints & RBAC Enforcement", () => {
   it("rejects unauthorized roles (SALES_OPERATOR, WAREHOUSE_STAFF) from accessing tax routes", async () => {
@@ -114,7 +116,7 @@ describe("Coretax Tax Management API Endpoints & RBAC Enforcement", () => {
     assert.ok(xmlText.includes("TaxInvoiceBulk"));
     assert.ok(xmlText.includes("010.001-26.88889999"));
 
-    // 4. Export Excel
+    // 4. Export Excel (POST)
     const excelReq = new Request("http://localhost:3000/api/tax/export-excel", {
       method: "POST",
       headers: { "x-user-role": "SUPER_ADMIN" },
@@ -126,5 +128,48 @@ describe("Coretax Tax Management API Endpoints & RBAC Enforcement", () => {
       excelRes.headers.get("Content-Type")?.includes("spreadsheetml.sheet") ||
       excelRes.headers.get("Content-Type")?.includes("octet-stream")
     );
+
+    // 5. Direct 1-Click Excel Download (GET)
+    const getExcelReq = new Request("http://localhost:3000/api/tax/export-excel?period=2026-09", {
+      headers: { "x-user-role": "SUPER_ADMIN" },
+    });
+    const getExcelRes = await exportExcelGet(getExcelReq);
+    assert.strictEqual(getExcelRes.status, 200);
+    assert.strictEqual(
+      getExcelRes.headers.get("Content-Type"),
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    const excelBytes = await getExcelRes.arrayBuffer();
+    assert.ok(excelBytes.byteLength > 0, "Direct GET Excel should return non-empty binary buffer");
+
+    // 6. Update Invoice Status via PUT
+    const putReq = new Request(`http://localhost:3000/api/tax/invoices/${invoiceId}`, {
+      method: "PUT",
+      headers: {
+        "x-user-role": "SUPER_ADMIN",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: "READY" }),
+    });
+    const putRes = await updateInvoice(putReq, { params: Promise.resolve({ id: invoiceId }) });
+    assert.strictEqual(putRes.status, 200);
+    const putBody = await putRes.json();
+    assert.strictEqual(putBody.data.status, "READY");
+
+    // 7. Seed Demo Invoices
+    const seedReq = new Request("http://localhost:3000/api/tax/seed-demo", {
+      method: "POST",
+      headers: {
+        "x-user-role": "SUPER_ADMIN",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ period: "2026-09" }),
+    });
+    const seedRes = await seedDemo(seedReq);
+    assert.strictEqual(seedRes.status, 200);
+    const seedBody = await seedRes.json();
+    assert.strictEqual(seedBody.success, true);
+    assert.strictEqual(seedBody.data.length, 4);
+    assert.ok(seedBody.data.some((i: any) => i.buyerName.includes("Bintang Footwear")));
   });
 });

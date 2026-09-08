@@ -17,12 +17,14 @@ interface SptMasaSummaryCardProps {
   summary: SptMasaPeriodSummary | null;
   language: "id" | "en";
   onOpenBatchModal: () => void;
+  onOpenPurchasesModal?: () => void;
 }
 
 export function SptMasaSummaryCard({
   summary,
   language,
   onOpenBatchModal,
+  onOpenPurchasesModal,
 }: SptMasaSummaryCardProps) {
   const isId = language === "id";
 
@@ -121,19 +123,42 @@ export function SptMasaSummaryCard({
         </div>
 
         {/* PPN Masukan */}
-        <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-lg p-3.5">
+        <div
+          onClick={onOpenPurchasesModal}
+          className={`bg-neutral-950/60 border border-neutral-800/80 rounded-lg p-3.5 transition-all ${
+            onOpenPurchasesModal
+              ? "hover:border-emerald-700/60 hover:bg-neutral-900/80 cursor-pointer group"
+              : ""
+          }`}
+          role={onOpenPurchasesModal ? "button" : undefined}
+          tabIndex={onOpenPurchasesModal ? 0 : undefined}
+          onKeyDown={(e) => {
+            if (onOpenPurchasesModal && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              onOpenPurchasesModal();
+            }
+          }}
+          aria-label={isId ? "Lihat rincian pembelian bahan baku PPN Masukan" : "View Input VAT material purchases"}
+        >
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-400">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 group-hover:text-neutral-300">
               {isId ? "PPN Masukan (Kredit)" : "Input VAT (Credit)"}
             </span>
-            <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />
+            <TrendingDown className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-lg font-bold font-mono text-emerald-400">
             {formatRupiahTax(summary.totalPpnMasukan)}
           </div>
-          <span className="text-[11px] text-neutral-500 mt-1 block">
-            {summary.countFpm} {isId ? "Pembelian bahan baku" : "Material purchases"}
-          </span>
+          <div className="flex items-center justify-between mt-1 text-[11px]">
+            <span className="text-neutral-500">
+              {summary.countFpm} {isId ? "Pembelian bahan baku" : "Material purchases"}
+            </span>
+            {onOpenPurchasesModal && (
+              <span className="text-emerald-400/80 group-hover:text-emerald-300 font-medium">
+                {isId ? "Rincian →" : "Details →"}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Net Tax Payable */}

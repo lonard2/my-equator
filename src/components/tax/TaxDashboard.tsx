@@ -1,13 +1,13 @@
-"use client";
-
 import React, { useState, useEffect, useCallback } from "react";
-import { TaxInvoice, SptMasaPeriodSummary, CompanyTaxProfile } from "@/types/tax";
+import { TaxInvoice, TaxInvoiceStatus, SptMasaPeriodSummary, CompanyTaxProfile } from "@/types/tax";
 import { SptMasaSummaryCard } from "./SptMasaSummaryCard";
 import { TaxInvoiceList } from "./TaxInvoiceList";
 import { TaxInvoiceDetailDrawer } from "./TaxInvoiceDetailDrawer";
 import { TaxBatchGenerateModal } from "./TaxBatchGenerateModal";
 import { CoretaxExportModal } from "./CoretaxExportModal";
 import { CompanyTaxProfileModal } from "./CompanyTaxProfileModal";
+import { TaxManualInvoiceModal } from "./TaxManualInvoiceModal";
+import { TaxMaterialPurchasesModal } from "./TaxMaterialPurchasesModal";
 import {
   FileSpreadsheet,
   Download,
@@ -17,6 +17,9 @@ import {
   ChevronRight,
   AlertTriangle,
   Building2,
+  Sparkles,
+  CheckCircle2,
+  Plus,
 } from "lucide-react";
 
 interface TaxDashboardProps {
@@ -38,6 +41,9 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
   const [companyProfile, setCompanyProfile] = useState<CompanyTaxProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [downloadingDirectExcel, setDownloadingDirectExcel] = useState(false);
+  const [seedingDemo, setSeedingDemo] = useState(false);
 
   // Selected invoices for bulk actions
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
@@ -48,6 +54,8 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isPurchasesModalOpen, setIsPurchasesModalOpen] = useState(false);
 
   // Fetch reconciliation and invoices
   const fetchData = useCallback(async () => {
@@ -131,6 +139,132 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
     setIsDetailDrawerOpen(true);
   };
 
+  // 1-Click Direct Excel Download (GET)
+  const handleDirectDownloadExcel = async () => {
+    setDownloadingDirectExcel(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/tax/export-excel?period=${currentPeriod}&role=${userRole}`, {
+        headers: { "x-user-role": userRole },
+      });
+      if (!res.ok) throw new Error("Gagal mengunduh Excel Coretax");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = invoices.length > 0
+        ? `Coretax_Faktur_${currentPeriod}.xlsx`
+        : `Template_Coretax_DJP_Resmi.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setFeedback({
+        type: "success",
+        text: isId
+          ? invoices.length > 0
+            ? `Berhasil mengunduh berkas Excel Coretax masa ${currentPeriod}`
+            : "Berhasil mengunduh Template Resmi Excel DJP Coretax (3-Sheet)"
+          : "Coretax Excel workbook downloaded successfully",
+      });
+    } catch (err: any) {
+      setFeedback({
+        type: "error",
+        text: err?.message || (isId ? "Gagal mengunduh Excel" : "Failed to download Excel"),
+      });
+    } finally {
+      setDownloadingDirectExcel(false);
+    }
+  };
+
+  // Quick Seed Demo Data
+  const handleSeedDemoData = async () => {
+    setSeedingDemo(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/tax/seed-demo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": userRole,
+        },
+        body: JSON.stringify({ period: currentPeriod }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Gagal memuat data contoh");
+      }
+      await fetchData();
+      setFeedback({
+        type: "success",
+        text: isId
+          ? `Berhasil memuat 4 faktur contoh Coretax untuk masa ${currentPeriod}`
+          : `Loaded 4 demo Coretax invoices for period ${currentPeriod}`,
+      });
+    } catch (err: any) {
+      setFeedback({
+        type: "error",
+        text: err?.message || "Gagal memuat data contoh",
+      });
+    } finally {
+      setSeedingDemo(false);
+    }
+  };
+
+  // Single Invoice Excel Download
+  const handleDownloadSingleExcel = async (inv: TaxInvoice) => {
+    try {
+      const res = await fetch("/api/tax/export-excel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": userRole,
+        },
+        body: JSON.stringify({ invoiceIds: [inv.id] }),
+      });
+      if (!res.ok) throw new Error("Gagal mengunduh Excel");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Faktur_${inv.nomorFaktur.replace(/[/\\?%*:|"<>]/g, "-")}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setFeedback({
+        type: "error",
+        text: err?.message || "Gagal mengunduh file Excel faktur",
+      });
+    }
+  };
+
+  // Status Update helper
+  const handleUpdateStatus = async (id: string, newStatus: TaxInvoiceStatus) => {
+    try {
+      const res = await fetch(`/api/tax/invoices/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": userRole,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setInvoices((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, status: newStatus } : i))
+        );
+        if (selectedInvoice && selectedInvoice.id === id) {
+          setSelectedInvoice((prev) => prev ? { ...prev, status: newStatus } : null);
+        }
+        fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header & Global Actions Bar */}
@@ -150,7 +284,7 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Period Selector */}
           <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-1">
             <button
@@ -181,6 +315,17 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
 
+          {/* Seed Demo Data Button */}
+          <button
+            onClick={handleSeedDemoData}
+            disabled={seedingDemo}
+            title={isId ? "Muat contoh 4 faktur siap Coretax" : "Load 4 demo Coretax invoices"}
+            className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+          >
+            <Sparkles className={`w-4 h-4 text-amber-400 ${seedingDemo ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">{isId ? "Contoh Data" : "Demo Data"}</span>
+          </button>
+
           {/* PKP Tax Profile Button */}
           <button
             onClick={() => setIsProfileModalOpen(true)}
@@ -190,7 +335,22 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
             <span className="hidden sm:inline">{isId ? "Profil PKP" : "PKP Profile"}</span>
           </button>
 
-          {/* Export Coretax Button */}
+          {/* Direct 1-Click Excel Download */}
+          <button
+            onClick={handleDirectDownloadExcel}
+            disabled={downloadingDirectExcel}
+            title={isId ? "Unduh langsung workbook Excel resmi DJP (.xlsx)" : "Direct download official DJP Excel (.xlsx)"}
+            className="px-3 py-2 bg-neutral-900 hover:bg-emerald-950/60 border border-neutral-800 hover:border-emerald-800 text-emerald-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <span className="hidden md:inline">
+              {invoices.length > 0
+                ? isId ? "Unduh Excel (.xlsx)" : "Download Excel"
+                : isId ? "Unduh Template Excel" : "Download Excel Template"}
+            </span>
+          </button>
+
+          {/* Export Coretax Modal Trigger */}
           <button
             onClick={() => setIsExportModalOpen(true)}
             className="px-3.5 py-2 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-md transition-all"
@@ -200,6 +360,32 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
           </button>
         </div>
       </div>
+
+      {/* Feedback Toast/Banner */}
+      {feedback && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs transition-all ${
+            feedback.type === "success"
+              ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-200"
+              : "bg-rose-950/40 border-rose-800/60 text-rose-200"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{feedback.text}</span>
+          </div>
+          <button
+            onClick={() => setFeedback(null)}
+            className="text-neutral-400 hover:text-neutral-200 text-xs px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Error alert if any */}
       {error && (
@@ -214,6 +400,7 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         summary={summary}
         language={language}
         onOpenBatchModal={() => setIsBatchModalOpen(true)}
+        onOpenPurchasesModal={() => setIsPurchasesModalOpen(true)}
       />
 
       {/* 2. Tax Invoice Table */}
@@ -226,6 +413,10 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         onViewInvoice={handleViewInvoice}
         onDeleteInvoice={handleDeleteInvoice}
         onOpenBatchModal={() => setIsBatchModalOpen(true)}
+        onOpenManualModal={() => setIsManualModalOpen(true)}
+        onSeedDemoData={handleSeedDemoData}
+        onDownloadSingleExcel={handleDownloadSingleExcel}
+        onUpdateStatus={handleUpdateStatus}
       />
 
       {/* Drawer: Detail Inspection */}
@@ -234,6 +425,8 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         isOpen={isDetailDrawerOpen}
         onClose={() => setIsDetailDrawerOpen(false)}
         language={language}
+        userRole={userRole}
+        onUpdateStatus={handleUpdateStatus}
       />
 
       {/* Modal: Batch Generate from Delivery Orders */}
@@ -254,6 +447,8 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         invoices={invoices}
         selectedIds={selectedInvoiceIds}
         companyProfile={companyProfile}
+        userRole={userRole}
+        period={currentPeriod}
       />
 
       {/* Modal: Company PKP Tax Profile */}
@@ -264,6 +459,25 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         profile={companyProfile}
         onSaved={fetchData}
         userRole={userRole}
+      />
+
+      {/* Modal: Manual Tax Invoice Creator */}
+      <TaxManualInvoiceModal
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+        language={language}
+        period={currentPeriod}
+        onCreated={fetchData}
+        userRole={userRole}
+      />
+
+      {/* Modal: Raw Material Purchases Inspector (Input VAT) */}
+      <TaxMaterialPurchasesModal
+        isOpen={isPurchasesModalOpen}
+        onClose={() => setIsPurchasesModalOpen(false)}
+        language={language}
+        period={currentPeriod}
+        purchases={summary?.materialPurchases || []}
       />
     </div>
   );

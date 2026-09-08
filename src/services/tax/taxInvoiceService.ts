@@ -310,18 +310,32 @@ export class TaxInvoiceService {
       m.createdAt.startsWith(period)
     );
 
-    // Get materials for unitCost
+    // Get materials for unitCost and metadata
     const allMaterials = await db.select().from(materials);
-    const materialCostMap = new Map(allMaterials.map((m) => [m.id, m.unitCost]));
+    const materialMap = new Map(allMaterials.map((m) => [m.id, m]));
 
-    const materialPurchases: MaterialPurchaseRecord[] = monthlyMovements.map(
-      (mov) => {
-        const unitCost = materialCostMap.get(mov.materialId) || 0;
-        const totalCost = mov.quantity * unitCost;
-        const estimatedVat = Math.round(totalCost * 0.11);
-        return { totalCost, estimatedVat };
-      }
-    );
+    const materialPurchases: MaterialPurchaseRecord[] = [];
+    const materialPurchasesDetails: any[] = [];
+
+    for (const mov of monthlyMovements) {
+      const mat = materialMap.get(mov.materialId);
+      const unitCost = mat?.unitCost || 0;
+      const totalCost = mov.quantity * unitCost;
+      const estimatedVat = Math.round(totalCost * 0.11);
+      materialPurchases.push({ totalCost, estimatedVat });
+      materialPurchasesDetails.push({
+        id: mov.id,
+        materialName: mat?.name || "Bahan Baku Insole",
+        category: mat?.category || "RAW_MATERIAL",
+        quantity: mov.quantity,
+        unit: mat?.unit || "sheet",
+        unitCost,
+        totalCost,
+        estimatedVat,
+        date: mov.createdAt.split("T")[0],
+        notes: mov.notes || null,
+      });
+    }
 
     // 5. Summary
     const summary = computeMonthlyVatSummary(
@@ -331,11 +345,147 @@ export class TaxInvoiceService {
       unbilledOrders.length,
       unbilledAmount
     );
+    summary.materialPurchases = materialPurchasesDetails;
 
     return {
       summary,
       unbilledOrders,
       invoices,
     };
+  }
+
+  /**
+   * Seeds demo Coretax Tax Invoices for testing and demonstration purposes.
+   */
+  static async seedDemoInvoices(period?: string): Promise<TaxInvoice[]> {
+    const taxPeriod = period || new Date().toISOString().slice(0, 7);
+    const datePrefix = `${taxPeriod}-`;
+    const yearShort = taxPeriod.slice(2, 4);
+
+    const demoDockets = [
+      {
+        nomorFaktur: `010.001-${yearShort}.10023451`,
+        referenceNumber: `SJ/EQ/${taxPeriod.replace("-", "/")}/0042`,
+        invoiceDate: `${datePrefix}04`,
+        buyerName: "PT Bintang Footwear Indonesia",
+        buyerNpwp16: "0134567890123456",
+        buyerNitku22: "0134567890123456000000",
+        buyerAddress: "Kawasan Industri MM2100 Blok C-3, Cikarang Barat, Bekasi",
+        transactionCode: "01" as const,
+        status: "READY" as const,
+        items: [
+          {
+            itemCode: "INS-EVA-40",
+            itemName: "Insole EVA High Rebound Cushion Size 40",
+            quantity: 2500,
+            unitPrice: 18500,
+            totalPrice: 46250000,
+            dpp: 46250000,
+            ppn: Math.round(46250000 * 0.11),
+          },
+          {
+            itemCode: "INS-EVA-42",
+            itemName: "Insole EVA High Rebound Cushion Size 42",
+            quantity: 2500,
+            unitPrice: 18500,
+            totalPrice: 46250000,
+            dpp: 46250000,
+            ppn: Math.round(46250000 * 0.11),
+          },
+        ],
+      },
+      {
+        nomorFaktur: `010.001-${yearShort}.10023452`,
+        referenceNumber: `SJ/EQ/${taxPeriod.replace("-", "/")}/0055`,
+        invoiceDate: `${datePrefix}08`,
+        buyerName: "PT Sepatu Nusantara Jaya",
+        buyerNpwp16: "0245678901234567",
+        buyerNitku22: "0245678901234567000000",
+        buyerAddress: "Jl. Rungkut Industri III No. 12, Surabaya, Jawa Timur",
+        transactionCode: "01" as const,
+        status: "EXPORTED_XML" as const,
+        items: [
+          {
+            itemCode: "INS-PU-CUP-41",
+            itemName: "Insole PU Cup Ergonomic Support Size 41",
+            quantity: 1800,
+            unitPrice: 24000,
+            totalPrice: 43200000,
+            dpp: 43200000,
+            ppn: Math.round(43200000 * 0.11),
+          },
+        ],
+      },
+      {
+        nomorFaktur: `010.001-${yearShort}.10023453`,
+        referenceNumber: `SJ/EQ/${taxPeriod.replace("-", "/")}/0061`,
+        invoiceDate: `${datePrefix}12`,
+        buyerName: "CV Maju Jaya Footwear",
+        buyerNpwp16: "0356789012345678",
+        buyerNitku22: "0356789012345678000000",
+        buyerAddress: "Sentra Sepatu Cibaduyut Kav. 45, Bandung, Jawa Barat",
+        transactionCode: "01" as const,
+        status: "APPROVED" as const,
+        items: [
+          {
+            itemCode: "INS-ORTHO-42",
+            itemName: "Custom Orthotic Arch Support Insole Size 42",
+            quantity: 600,
+            unitPrice: 55000,
+            totalPrice: 33000000,
+            dpp: 33000000,
+            ppn: Math.round(33000000 * 0.11),
+          },
+        ],
+      },
+      {
+        nomorFaktur: `010.001-${yearShort}.10023454`,
+        referenceNumber: `SJ/EQ/${taxPeriod.replace("-", "/")}/0070`,
+        invoiceDate: `${datePrefix}15`,
+        buyerName: "Toko Harapan Sepatu (Bpk. Bambang)",
+        buyerNpwp16: "3204123456780001",
+        buyerNitku22: "3204123456780001000000",
+        buyerAddress: "Jl. Pasar Anyar No. 22, Bogor",
+        transactionCode: "01" as const,
+        status: "DRAFT" as const,
+        items: [
+          {
+            itemCode: "INS-BASIC-39",
+            itemName: "Insole Basic Foam Density 45 Size 39",
+            quantity: 500,
+            unitPrice: 12000,
+            totalPrice: 6000000,
+            dpp: 6000000,
+            ppn: Math.round(6000000 * 0.11),
+          },
+        ],
+      },
+    ];
+
+    const results: TaxInvoice[] = [];
+    for (const d of demoDockets) {
+      const dpp = d.items.reduce((s, it) => s + it.dpp, 0);
+      const ppn = d.items.reduce((s, it) => s + it.ppn, 0);
+      const created = await this.createTaxInvoice({
+        taxPeriod,
+        nomorFaktur: d.nomorFaktur,
+        referenceNumber: d.referenceNumber,
+        invoiceDate: d.invoiceDate,
+        buyerName: d.buyerName,
+        buyerNpwp16: d.buyerNpwp16,
+        buyerNitku22: d.buyerNitku22,
+        buyerAddress: d.buyerAddress,
+        transactionCode: d.transactionCode,
+        status: d.status,
+        dpp,
+        ppn,
+        taxRate: 11,
+        isTaxIncluded: false,
+        items: d.items as any,
+      });
+      results.push(created);
+    }
+
+    return results;
   }
 }

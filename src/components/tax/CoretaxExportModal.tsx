@@ -23,6 +23,8 @@ interface CoretaxExportModalProps {
   invoices: TaxInvoice[];
   selectedIds: string[];
   companyProfile: CompanyTaxProfile | null;
+  userRole?: string;
+  period?: string;
 }
 
 export function CoretaxExportModal({
@@ -32,11 +34,14 @@ export function CoretaxExportModal({
   invoices,
   selectedIds,
   companyProfile,
+  userRole = "SUPER_ADMIN",
+  period,
 }: CoretaxExportModalProps) {
   const isId = language === "id";
   const [downloadingXml, setDownloadingXml] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const targetInvoices = useMemo(() => {
     if (selectedIds.length > 0) {
@@ -65,27 +70,45 @@ export function CoretaxExportModal({
   const handleDownloadXml = async () => {
     setDownloadingXml(true);
     setDownloadSuccess(null);
+    setDownloadError(null);
     try {
+      const activeRole = userRole || "SUPER_ADMIN";
+      const invoiceIds = targetInvoices.map((i) => i.id);
       const res = await fetch("/api/tax/export-xml", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceIds: targetInvoices.map((i) => i.id) }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": activeRole,
+        },
+        body: JSON.stringify({ invoiceIds, period }),
       });
 
-      if (!res.ok) throw new Error("Gagal mengunduh XML Coretax");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || (isId ? "Gagal mengunduh XML Coretax" : "Failed to download Coretax XML"));
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Coretax_Faktur_${new Date().toISOString().slice(0, 10)}.xml`;
+      const timestamp = new Date().toISOString().slice(0, 10);
+      a.download = targetInvoices.length > 0
+        ? `Coretax_Faktur_${timestamp}.xml`
+        : `Coretax_Sample_Template_${timestamp}.xml`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      setDownloadSuccess(isId ? "File XML Coretax berhasil diunduh!" : "Coretax XML downloaded successfully!");
+      setDownloadSuccess(
+        isId
+          ? targetInvoices.length > 0
+            ? "File XML Coretax berhasil diunduh!"
+            : "Berkas contoh XML Coretax berhasil diunduh!"
+          : "Coretax XML file downloaded successfully!"
+      );
     } catch (err: any) {
-      alert(err.message || "Gagal mengunduh XML");
+      setDownloadError(err.message || (isId ? "Gagal mengunduh XML" : "Failed to download XML"));
     } finally {
       setDownloadingXml(false);
     }
@@ -94,27 +117,45 @@ export function CoretaxExportModal({
   const handleDownloadExcel = async () => {
     setDownloadingExcel(true);
     setDownloadSuccess(null);
+    setDownloadError(null);
     try {
+      const activeRole = userRole || "SUPER_ADMIN";
+      const invoiceIds = targetInvoices.map((i) => i.id);
       const res = await fetch("/api/tax/export-excel", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceIds: targetInvoices.map((i) => i.id) }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": activeRole,
+        },
+        body: JSON.stringify({ invoiceIds, period }),
       });
 
-      if (!res.ok) throw new Error("Gagal mengunduh Excel Coretax");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || (isId ? "Gagal mengunduh Excel Coretax" : "Failed to download Coretax Excel"));
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Coretax_Faktur_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const timestamp = new Date().toISOString().slice(0, 10);
+      a.download = targetInvoices.length > 0
+        ? `Coretax_Faktur_${timestamp}.xlsx`
+        : `Template_Coretax_DJP_Resmi.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      setDownloadSuccess(isId ? "File Excel Coretax berhasil diunduh!" : "Coretax Excel downloaded successfully!");
+      setDownloadSuccess(
+        isId
+          ? targetInvoices.length > 0
+            ? "File Excel Coretax (3-Sheet) berhasil diunduh!"
+            : "Template Resmi Excel DJP Coretax (3-Sheet) berhasil diunduh!"
+          : "Official DJP Coretax Excel Template downloaded successfully!"
+      );
     } catch (err: any) {
-      alert(err.message || "Gagal mengunduh Excel");
+      setDownloadError(err.message || (isId ? "Gagal mengunduh Excel" : "Failed to download Excel"));
     } finally {
       setDownloadingExcel(false);
     }
@@ -200,8 +241,15 @@ export function CoretaxExportModal({
 
           {downloadSuccess && (
             <div className="bg-emerald-950/40 border border-emerald-700/60 rounded-xl p-3 text-xs text-emerald-200 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{downloadSuccess}</span>
+            </div>
+          )}
+
+          {downloadError && (
+            <div className="bg-rose-950/40 border border-rose-700/60 rounded-xl p-3 text-xs text-rose-200 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{downloadError}</span>
             </div>
           )}
 
@@ -210,38 +258,50 @@ export function CoretaxExportModal({
             {/* Download XML */}
             <button
               onClick={handleDownloadXml}
-              disabled={downloadingXml || targetInvoices.length === 0}
+              disabled={downloadingXml}
               className="p-4 bg-neutral-950 hover:bg-neutral-800/80 border border-neutral-800 hover:border-red-700/60 rounded-xl flex flex-col items-start text-left transition-all group disabled:opacity-50"
             >
               <div className="w-9 h-9 rounded-lg bg-red-950/40 border border-red-800/60 flex items-center justify-center text-red-400 mb-2.5 group-hover:scale-105 transition-transform">
                 <FileCode className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold text-neutral-100 block">
-                {isId ? "Unduh File XML Coretax" : "Download Coretax XML"}
+                {targetInvoices.length > 0
+                  ? isId ? "Unduh File XML Coretax" : "Download Coretax XML"
+                  : isId ? "Unduh Contoh Skema XML DJP" : "Download Sample DJP XML"}
               </span>
               <span className="text-[11px] text-neutral-400 mt-1 block">
-                {isId
-                  ? "Format .xml resmi untuk impor massal web portal Coretax DJP"
-                  : "Official .xml format for Coretax DJP portal batch upload"}
+                {targetInvoices.length > 0
+                  ? isId
+                    ? "Format .xml resmi untuk impor massal web portal Coretax DJP"
+                    : "Official .xml format for Coretax DJP portal batch upload"
+                  : isId
+                    ? "Skema berkas XML contoh dengan identitas PKP PT Equator"
+                    : "Sample XML schema with PT Equator PKP credentials"}
               </span>
             </button>
 
             {/* Download Excel */}
             <button
               onClick={handleDownloadExcel}
-              disabled={downloadingExcel || targetInvoices.length === 0}
+              disabled={downloadingExcel}
               className="p-4 bg-neutral-950 hover:bg-neutral-800/80 border border-neutral-800 hover:border-emerald-700/60 rounded-xl flex flex-col items-start text-left transition-all group disabled:opacity-50"
             >
               <div className="w-9 h-9 rounded-lg bg-emerald-950/40 border border-emerald-800/60 flex items-center justify-center text-emerald-400 mb-2.5 group-hover:scale-105 transition-transform">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold text-neutral-100 block">
-                {isId ? "Unduh Template Excel DJP" : "Download DJP Excel Template"}
+                {targetInvoices.length > 0
+                  ? isId ? "Unduh Excel Coretax (3-Sheet)" : "Download Coretax Excel (3-Sheet)"
+                  : isId ? "Unduh Template Excel DJP (Blank)" : "Download DJP Excel Template (Blank)"}
               </span>
               <span className="text-[11px] text-neutral-400 mt-1 block">
-                {isId
-                  ? "File .xlsx 2-sheet (Faktur + Detail) kompatibel converter DJP"
-                  : "Official 2-sheet .xlsx compatible with DJP converter tools"}
+                {targetInvoices.length > 0
+                  ? isId
+                    ? "Berkas .xlsx lengkap (Faktur, Detail, & Petunjuk Pengisian)"
+                    : "Complete .xlsx workbook (Faktur, Detail & Instructions)"
+                  : isId
+                    ? "Template resmi DJP kosong dengan baris panduan & identitas PKP"
+                    : "Official empty DJP template with guide rows & PKP headers"}
               </span>
             </button>
           </div>

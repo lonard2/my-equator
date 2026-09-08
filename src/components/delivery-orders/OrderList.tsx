@@ -80,19 +80,18 @@ export function OrderList({
     return { bySize: agg, total: totalAll };
   }, [filteredOrders]);
 
-  // Keyboard navigation between orders (ArrowUp / ArrowDown / Home / End) with roving DOM focus
-  // Suppressed automatically whenever any modal dialog is open in the DOM
+  // Keyboard navigation between orders (ArrowUp / ArrowDown / Home / End) with roving DOM focus.
+  // Scoped to the listbox: only fires when focus is already inside the order list, so screen-reader
+  // virtual cursors and page-level arrow usage elsewhere are never hijacked. Suppressed while any
+  // modal dialog is open.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") {
         return;
       }
 
-      if (
-        document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA" ||
-        (document.activeElement as HTMLElement)?.isContentEditable
-      ) {
+      const target = e.target as Node | null;
+      if (!target || !listContainerRef.current?.contains(target)) {
         return;
       }
 

@@ -13,6 +13,10 @@ import {
   Square,
   Sparkles,
   AlertTriangle,
+  FileSpreadsheet,
+  Plus,
+  ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 
 interface TaxInvoiceListProps {
@@ -24,6 +28,10 @@ interface TaxInvoiceListProps {
   onViewInvoice: (invoice: TaxInvoice) => void;
   onDeleteInvoice: (id: string) => void;
   onOpenBatchModal: () => void;
+  onOpenManualModal?: () => void;
+  onSeedDemoData?: () => void;
+  onDownloadSingleExcel?: (invoice: TaxInvoice) => void;
+  onUpdateStatus?: (id: string, status: TaxInvoiceStatus) => void;
 }
 
 const STATUS_CONFIG: Record<
@@ -83,6 +91,10 @@ export function TaxInvoiceList({
   onViewInvoice,
   onDeleteInvoice,
   onOpenBatchModal,
+  onOpenManualModal,
+  onSeedDemoData,
+  onDownloadSingleExcel,
+  onUpdateStatus,
 }: TaxInvoiceListProps) {
   const isId = language === "id";
   const [searchTerm, setSearchTerm] = useState("");
@@ -168,6 +180,16 @@ export function TaxInvoiceList({
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenManualModal && (
+              <button
+                onClick={onOpenManualModal}
+                className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors min-h-[38px]"
+              >
+                <Plus className="w-3.5 h-3.5 text-neutral-400" />
+                <span>{isId ? "Faktur Manual" : "Manual Invoice"}</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenBatchModal}
               className="px-3.5 py-2 bg-red-700 hover:bg-red-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors min-h-[38px]"
@@ -240,8 +262,42 @@ export function TaxInvoiceList({
             {filteredInvoices.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-neutral-500">
-                  <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p>{isId ? "Belum ada Faktur Pajak yang sesuai filter" : "No tax invoices matching criteria"}</p>
+                  <FileText className="w-9 h-9 mx-auto mb-2 opacity-30 text-neutral-400" />
+                  <p className="text-xs font-medium text-neutral-400">
+                    {isId ? "Belum ada Faktur Pajak yang sesuai kriteria" : "No tax invoices matching criteria"}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 mt-1 max-w-sm mx-auto">
+                    {isId
+                      ? "Anda dapat memuat contoh data faktur pabrik, mengonversi dari Surat Jalan, atau menginput faktur manual."
+                      : "You can load demo footwear invoices, generate from Delivery Orders, or create manual invoices."}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4">
+                    {onSeedDemoData && (
+                      <button
+                        onClick={onSeedDemoData}
+                        className="px-3 py-1.5 bg-gradient-to-r from-red-800 to-red-900 hover:from-red-700 hover:to-red-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{isId ? "Muat Contoh Faktur Coretax" : "Load Demo Invoices"}</span>
+                      </button>
+                    )}
+                    {onOpenManualModal && (
+                      <button
+                        onClick={onOpenManualModal}
+                        className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{isId ? "Input Faktur Manual" : "Manual Invoice"}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={onOpenBatchModal}
+                      className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-red-400" />
+                      <span>{isId ? "Buat dari Surat Jalan" : "From Delivery Orders"}</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -302,6 +358,7 @@ export function TaxInvoiceList({
                     </td>
                     <td className="py-3 px-3 text-center">
                       <div className="flex items-center justify-center gap-1">
+                        {/* Quick View Details */}
                         <button
                           onClick={() => onViewInvoice(inv)}
                           title={isId ? "Lihat Detail" : "View Details"}
@@ -309,6 +366,30 @@ export function TaxInvoiceList({
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+
+                        {/* Quick Download Excel */}
+                        {onDownloadSingleExcel && (
+                          <button
+                            onClick={() => onDownloadSingleExcel(inv)}
+                            title={isId ? "Unduh Excel Faktur Ini (.xlsx)" : "Download Excel for this invoice (.xlsx)"}
+                            className="p-1.5 text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/50 rounded transition-colors"
+                          >
+                            <FileSpreadsheet className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Quick Advance Status: DRAFT -> READY */}
+                        {inv.status === "DRAFT" && onUpdateStatus && (
+                          <button
+                            onClick={() => onUpdateStatus(inv.id, "READY")}
+                            title={isId ? "Tandai Siap Ekspor" : "Mark as Ready to Export"}
+                            className="p-1.5 text-blue-400 hover:text-blue-200 hover:bg-blue-950/50 rounded transition-colors"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Delete Draft */}
                         {inv.status === "DRAFT" && (
                           <button
                             onClick={() => onDeleteInvoice(inv.id)}
