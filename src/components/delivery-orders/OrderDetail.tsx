@@ -8,6 +8,7 @@ import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { TouchSizePad } from "./TouchSizePad";
 import { StatusBadge } from "./StatusBadge";
 import { DispatchConfirmModal } from "./DispatchConfirmModal";
+import { STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
 import {
   Printer,
   FileDown,
@@ -438,7 +439,9 @@ export function OrderDetail({
                           onStatusChange(order.id, nextAction.next);
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 focus:outline-none focus-visible:ring-2 ${
+                        STATUS_COLOR_MAP[nextAction.next].cta.buttonClasses
+                      }`}
                     >
                       <nextAction.icon className="h-3.5 w-3.5" />
                       <span>{nextAction.label}</span>
@@ -648,12 +651,13 @@ export function OrderDetail({
               <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-0.5 bg-gray-100 dark:bg-gray-800 z-0" />
               
               {[
-                { key: "DRAFT", labelId: "Draft", labelEn: "Draft", icon: FileText, stepIdx: 0 },
-                { key: "CONFIRMED", labelId: "Terkonfirmasi", labelEn: "Confirmed", icon: CheckCircle, stepIdx: 1 },
-                { key: "PRINTED", labelId: "Tercetak", labelEn: "Printed", icon: Printer, stepIdx: 2 },
-                { key: "DISPATCHED", labelId: "Pengiriman", labelEn: "Dispatched", icon: Truck, stepIdx: 3 },
-                { key: "DELIVERED", labelId: "Diterima", labelEn: "Delivered", icon: CheckCircle2, stepIdx: 4 },
+                { key: "DRAFT" as const, stepIdx: 0 },
+                { key: "CONFIRMED" as const, stepIdx: 1 },
+                { key: "PRINTED" as const, stepIdx: 2 },
+                { key: "DISPATCHED" as const, stepIdx: 3 },
+                { key: "DELIVERED" as const, stepIdx: 4 },
               ].map((step, idx) => {
+                const token = STATUS_COLOR_MAP[step.key];
                 const stepOrder: Record<DeliveryOrderStatus, number> = {
                   DRAFT: 0,
                   CONFIRMED: 1,
@@ -665,17 +669,17 @@ export function OrderDetail({
                 const currentIdx = stepOrder[order.status] ?? 0;
                 const isPassed = currentIdx > idx;
                 const isCurrent = currentIdx === idx;
-                const Icon = step.icon;
+                const Icon = token.icon;
 
                 return (
                   <div key={step.key} className="flex flex-col items-center relative z-10">
                     <div
                       className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                         isPassed
-                          ? "bg-emerald-600 text-white shadow-xs"
+                          ? `${token.stepper.passedBg} shadow-xs`
                           : isCurrent
-                          ? "bg-brand text-white shadow-md animate-status-pulse ring-2 ring-red-300 dark:ring-red-900"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700"
+                          ? `${token.stepper.activeBg} shadow-md animate-status-pulse ${token.stepper.activeRing}`
+                          : token.stepper.idleBg
                       }`}
                     >
                       <Icon className="h-3.5 w-3.5" />
@@ -683,13 +687,13 @@ export function OrderDetail({
                     <span
                       className={`text-[10px] sm:text-[11px] mt-1 font-semibold transition-colors duration-200 text-center ${
                         isCurrent
-                          ? "text-brand dark:text-red-400 font-bold"
+                          ? token.stepper.activeText
                           : isPassed
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-gray-400 dark:text-gray-500"
+                          ? token.stepper.passedText
+                          : token.stepper.idleText
                       }`}
                     >
-                      {isId ? step.labelId : step.labelEn}
+                      {isId ? token.labelId : token.labelEn}
                     </span>
                   </div>
                 );

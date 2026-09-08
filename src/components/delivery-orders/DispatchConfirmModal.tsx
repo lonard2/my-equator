@@ -3,6 +3,7 @@
 import React, { useRef } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, Language } from "@/types";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
+import { STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
 import { Truck, CheckCircle2, X, AlertTriangle, Building, MapPin, Calendar, Package } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -47,7 +48,11 @@ export function DispatchConfirmModal({
         className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-md md:max-w-lg flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
       >
         {/* Modal Header */}
-        <div className="p-4 bg-[#8B0000] text-white flex items-center justify-between shadow-xs">
+        <div
+          className={`p-4 text-white flex items-center justify-between shadow-xs ${
+            isDispatching ? "bg-purple-800 dark:bg-purple-900" : "bg-emerald-800 dark:bg-emerald-900"
+          }`}
+        >
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-white/10 text-white">
               {isDispatching ? <Truck className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
@@ -58,7 +63,7 @@ export function DispatchConfirmModal({
                   ? isId ? "Konfirmasi Pengiriman ke Armada" : "Confirm Delivery Dispatch"
                   : isId ? "Konfirmasi Selesai Diterima" : "Confirm Delivery Receipt"}
               </h3>
-              <p className="text-[11px] font-mono text-red-200">{order.orderNumber}</p>
+              <p className="text-[11px] font-mono text-purple-200 dark:text-emerald-200">{order.orderNumber}</p>
             </div>
           </div>
           <button
@@ -185,10 +190,8 @@ export function DispatchConfirmModal({
               onConfirm();
               onClose();
             }}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition active:scale-95 ${
-              isDispatching
-                ? "bg-[#8B0000] hover:bg-[#A00000]"
-                : "bg-emerald-600 hover:bg-emerald-700"
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 ${
+              STATUS_COLOR_MAP[targetStatus].cta.buttonClasses
             }`}
           >
             {isDispatching ? <Truck className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}

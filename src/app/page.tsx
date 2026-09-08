@@ -323,12 +323,12 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               {/* Top KPI Micro Strip */}
               <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0">
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-red-50/70 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 hover:shadow-xs transition">
-                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-brand dark:text-red-400 shadow-xs">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 shadow-xs">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-red-900/70 dark:text-red-300">
+                    <p className="text-[10px] uppercase font-bold text-blue-900/70 dark:text-blue-300">
                       {isId ? "Total Surat Jalan" : "Total Orders"}
                     </p>
                     <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
@@ -352,17 +352,19 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 hover:shadow-xs transition">
-                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 shadow-xs">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-xs">
                     <Truck className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-emerald-900/70 dark:text-emerald-300">
-                      {isId ? "Proses Pengiriman / Selesai" : "In Transit / Delivered"}
+                    <p className="text-[10px] uppercase font-bold text-purple-900/70 dark:text-purple-300">
+                      {isId ? "Pengiriman & Selesai" : "Dispatched & Delivered"}
                     </p>
                     <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
-                      {readyOrDispatchedCount} <span className="text-xs font-normal text-gray-500">Kirim</span>{" "}
-                      • {completedCount} <span className="text-xs font-normal text-gray-500">Selesai</span>
+                      <span className="text-purple-700 dark:text-purple-300 font-bold">{readyOrDispatchedCount}</span>{" "}
+                      <span className="text-xs font-normal text-gray-500">{isId ? "Kirim" : "Transit"}</span> •{" "}
+                      <span className="text-emerald-700 dark:text-emerald-400 font-bold">{completedCount}</span>{" "}
+                      <span className="text-xs font-normal text-gray-500">{isId ? "Selesai" : "Delivered"}</span>
                     </p>
                   </div>
                 </div>
@@ -586,7 +588,7 @@ export default function HomePage() {
                                   setSelectedOrder(order);
                                   setDispatchGuard({ order, targetStatus: "DISPATCHED" });
                                 }}
-                                className="py-2.5 min-h-[44px] rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                                className="py-2.5 min-h-[44px] rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
                               >
                                 <Truck className="h-4 w-4" />
                                 <span>{isId ? "Kirimkan" : "Dispatch"}</span>
