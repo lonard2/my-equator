@@ -49,6 +49,33 @@ interface OrderDetailProps {
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 const OVERSIZED_SIZES: FootwearSize[] = [46, 47, 48];
 
+const ROLLBACK_SEMANTICS: Record<DeliveryOrderStatus, { id: string; en: string }> = {
+  DRAFT: {
+    id: "Buka kembali edit data & size matrix",
+    en: "Unlock full edit for order & matrix",
+  },
+  CONFIRMED: {
+    id: "Siap cetak ulang dokumen resmi",
+    en: "Ready for official re-printing",
+  },
+  PRINTED: {
+    id: "Siap kirim ulang oleh armada sopir",
+    en: "Ready for driver re-dispatch",
+  },
+  DISPATCHED: {
+    id: "Dalam perjalanan ke alamat tujuan",
+    en: "In transit to destination",
+  },
+  CANCELLED: {
+    id: "Batalkan DO resmi & catat audit",
+    en: "Officially cancel and log audit",
+  },
+  DELIVERED: {
+    id: "Telah diterima di lokasi",
+    en: "Delivered on site",
+  },
+};
+
 interface EditableItem {
   id: string;
   articleCode: string;
@@ -597,19 +624,31 @@ export function OrderDetail({
         </div>
       </div>
 
-      {/* Non-blocking Error Banner */}
+      {/* Non-blocking Error Banner with Retry Path (Heuristic 9) */}
       {errorMessage && (
         <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-xs text-red-800 dark:text-red-300 font-medium">
             <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
             <span>{errorMessage}</span>
           </div>
-          <button
-            onClick={() => setErrorMessage(null)}
-            className="text-xs text-red-600 hover:underline font-bold"
-          >
-            {isId ? "Tutup" : "Dismiss"}
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            {isEditing && (
+              <button
+                type="button"
+                onClick={handleSaveChanges}
+                disabled={saving}
+                className="text-xs text-brand dark:text-red-400 hover:underline font-bold"
+              >
+                {isId ? "Coba Lagi" : "Retry"}
+              </button>
+            )}
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-semibold"
+            >
+              {isId ? "Tutup" : "Dismiss"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1281,19 +1320,30 @@ export function OrderDetail({
 
                     if (!isAvailable) return null;
 
+                    const semanticHelp = isId ? ROLLBACK_SEMANTICS[st]?.id : ROLLBACK_SEMANTICS[st]?.en;
+
                     return (
                       <button
                         key={st}
                         type="button"
                         onClick={() => setRollbackTarget(st)}
-                        className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between ${
+                        className={`p-2.5 rounded-xl border text-left transition flex items-start justify-between ${
                           rollbackTarget === st
                             ? "border-brand bg-red-50 dark:bg-red-950/50 text-brand dark:text-red-300"
                             : "border-gray-200 dark:border-gray-800 hover:border-gray-300 bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300"
                         }`}
                       >
-                        <span>{st}</span>
-                        {rollbackTarget === st && <CheckCircle2 className="h-4 w-4 text-brand dark:text-red-400" />}
+                        <div className="space-y-0.5 min-w-0 pr-1">
+                          <span className="block text-xs font-bold font-mono">{st}</span>
+                          {semanticHelp && (
+                            <span className="block text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight">
+                              {semanticHelp}
+                            </span>
+                          )}
+                        </div>
+                        {rollbackTarget === st && (
+                          <CheckCircle2 className="h-4 w-4 text-brand dark:text-red-400 shrink-0 mt-0.5" />
+                        )}
                       </button>
                     );
                   })}

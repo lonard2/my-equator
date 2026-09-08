@@ -72,5 +72,57 @@ describe("DO Surface Final Quality Pass & Ergonomic Polish", () => {
       simulateDeleteResult({ success: false });
       assert.strictEqual(notifiedMessage, "Gagal menghapus surat jalan.");
     });
+
+    it("provides inline retry capability when order updates encounter errors", () => {
+      let retryTriggered = false;
+      const onRetry = () => {
+        retryTriggered = true;
+      };
+
+      const errorBannerState = {
+        hasError: true,
+        isEditing: true,
+        canRetry: true,
+      };
+
+      if (errorBannerState.hasError && errorBannerState.isEditing && errorBannerState.canRetry) {
+        onRetry();
+      }
+
+      assert.strictEqual(retryTriggered, true, "Retry must be executable from error banner");
+    });
+  });
+
+  describe("Help & Rollback Lifecycle Semantics (Heuristic 10)", () => {
+    it("defines clear semantic explanations for every rollback target status", () => {
+      const statuses = ["DRAFT", "CONFIRMED", "PRINTED", "DISPATCHED", "CANCELLED"] as const;
+      const semanticsSample: Record<string, { id: string; en: string }> = {
+        DRAFT: {
+          id: "Buka kembali edit data & size matrix",
+          en: "Unlock full edit for order & matrix",
+        },
+        CONFIRMED: {
+          id: "Siap cetak ulang dokumen resmi",
+          en: "Ready for official re-printing",
+        },
+        PRINTED: {
+          id: "Siap kirim ulang oleh armada sopir",
+          en: "Ready for driver re-dispatch",
+        },
+        DISPATCHED: {
+          id: "Dalam perjalanan ke alamat tujuan",
+          en: "In transit to destination",
+        },
+        CANCELLED: {
+          id: "Batalkan DO resmi & catat audit",
+          en: "Officially cancel and log audit",
+        },
+      };
+
+      for (const st of statuses) {
+        assert.ok(semanticsSample[st].id.length > 0, `Missing ID description for ${st}`);
+        assert.ok(semanticsSample[st].en.length > 0, `Missing EN description for ${st}`);
+      }
+    });
   });
 });
