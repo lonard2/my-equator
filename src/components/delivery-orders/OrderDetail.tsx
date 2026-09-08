@@ -1411,7 +1411,7 @@ export function OrderDetail({
                                 placeholder="-"
                                 value={val}
                                 onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
-                                className={`w-full text-center rounded-lg border px-1 py-1 text-xs font-mono font-bold transition ${
+                                className={`w-full min-h-[44px] text-center rounded-lg border px-1 py-1 text-xs font-mono font-bold transition ${
                                   val && Number(val) > 0
                                     ? "bg-red-50 dark:bg-red-950/60 border-brand text-brand dark:text-red-300"
                                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800"

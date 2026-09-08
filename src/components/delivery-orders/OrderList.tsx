@@ -284,6 +284,7 @@ export function OrderList({
       <div
         ref={listContainerRef}
         role="listbox"
+        aria-orientation="vertical"
         aria-label={isId ? "Daftar Surat Jalan" : "Delivery Orders List"}
         className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80 focus:outline-none"
       >
