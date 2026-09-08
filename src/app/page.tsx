@@ -478,7 +478,7 @@ export default function HomePage() {
                           placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir..." : "Search Order, Client, PO, Driver..."}
                           value={mobileSearchTerm}
                           onChange={(e) => setMobileSearchTerm(e.target.value)}
-                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-11 text-xs text-white placeholder-red-200/70 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
+                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-11 text-xs text-white placeholder-red-100 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
                         />
                         {mobileSearchTerm && (
                           <button
@@ -511,7 +511,7 @@ export default function HomePage() {
                           >
                             <span>{opt.label}</span>
                             <span
-                              className={`px-1.5 py-0.2 rounded-full text-[9px] font-mono tabular-nums ${
+                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums ${
                                 isSelected ? "bg-red-100 text-brand font-black" : "bg-black/25 text-white/90"
                               }`}
                             >
@@ -561,7 +561,7 @@ export default function HomePage() {
                                     : "bg-transparent border-red-100/60 dark:border-red-950/60 text-gray-400 dark:text-gray-600"
                                 }`}
                               >
-                                <span className="block text-[9px] text-gray-500 dark:text-gray-400 font-sans font-semibold">EU {size}</span>
+                                <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-sans font-semibold">EU {size}</span>
                                 <span className="tabular-nums">{qty > 0 ? qty : "-"}</span>
                               </div>
                             );

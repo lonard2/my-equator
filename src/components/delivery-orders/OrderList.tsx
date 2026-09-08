@@ -226,7 +226,7 @@ export function OrderList({
                         : "bg-transparent border-red-100/60 dark:border-red-950/60 text-gray-400 dark:text-gray-600"
                     }`}
                   >
-                    <span className="block text-[9px] text-gray-500 dark:text-gray-400 font-sans font-semibold">EU {size}</span>
+                    <span className="block text-[10px] text-gray-500 dark:text-gray-400 font-sans font-semibold">EU {size}</span>
                     <span className="tabular-nums">{qty > 0 ? qty : "-"}</span>
                   </div>
                 );
@@ -266,7 +266,7 @@ export function OrderList({
               >
                 <span>{f.label}</span>
                 <span
-                  className={`px-1 rounded-full text-[9px] font-mono tabular-nums ${
+                  className={`px-1 rounded-full text-[10px] font-mono tabular-nums ${
                     isSelected
                       ? "bg-white/25 text-white"
                       : "bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
