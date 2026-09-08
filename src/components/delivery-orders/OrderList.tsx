@@ -391,19 +391,36 @@ export function OrderList({
 
                 <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px] text-gray-400">
                   <span className="tabular-nums">{formatShortDate(order.deliveryDate)}</span>
-                  {order.poNumber && <span className="font-mono text-[10px] truncate max-w-[120px]">PO: {order.poNumber}</span>}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenPrint(order);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 max-md:opacity-100 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all min-h-[28px] min-w-[28px] flex items-center justify-center active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    title={isId ? "Cetak Surat Jalan" : "Print Order"}
-                    aria-label={isId ? `Cetak Surat Jalan ${order.orderNumber}` : `Print Order ${order.orderNumber}`}
-                  >
-                    <Printer className="h-3.5 w-3.5" />
-                  </button>
+                  {(() => {
+                    const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
+                    const printDisabledTooltip = order.status === "DRAFT"
+                      ? (isId ? "Konfirm dulu untuk cetak resmi" : "Confirm order before official print")
+                      : (isId ? "Dokumen dibatalkan, tidak dapat dicetak" : "Cancelled order cannot be printed");
+
+                    return (
+                      <button
+                        type="button"
+                        disabled={!isPrintable}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isPrintable) onOpenPrint(order);
+                        }}
+                        className={`opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 max-md:opacity-100 p-1.5 rounded-lg transition-all min-h-[28px] min-w-[28px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                          !isPrintable
+                            ? "cursor-not-allowed text-gray-300 dark:text-gray-600 hover:bg-transparent"
+                            : "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 active:scale-95"
+                        }`}
+                        title={!isPrintable ? printDisabledTooltip : (isId ? "Cetak Surat Jalan" : "Print Order")}
+                        aria-label={
+                          !isPrintable
+                            ? `${order.orderNumber}: ${printDisabledTooltip}`
+                            : isId ? `Cetak Surat Jalan ${order.orderNumber}` : `Print Order ${order.orderNumber}`
+                        }
+                      >
+                        <Printer className="h-3.5 w-3.5" />
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             );

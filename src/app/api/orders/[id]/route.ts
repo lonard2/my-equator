@@ -71,9 +71,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const success = await OrderService.deleteOrder(id);
-    if (!success) {
-      return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    const result = await OrderService.deleteOrder(id);
+    if (!result.success) {
+      const statusCode = result.error === "Order not found" ? 404 : 400;
+      return NextResponse.json({ success: false, error: result.error }, { status: statusCode });
     }
     return NextResponse.json({ success: true, message: "Order deleted successfully" });
   } catch (error) {

@@ -95,6 +95,11 @@ export function OrderDetail({
   language,
 }: OrderDetailProps) {
   const isId = language === "id";
+  const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
+  const printDisabledReason = order.status === "DRAFT"
+    ? (isId ? "Konfirm dulu untuk cetak resmi" : "Confirm order before official print")
+    : (isId ? "Dokumen dibatalkan, tidak dapat dicetak" : "Cancelled order cannot be printed");
+
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -490,10 +495,19 @@ export function OrderDetail({
                   </button>
                 )}
 
-                {/* 3. Secondary Primary: Print Trigger */}
+                {/* 3. Secondary Primary: Print Trigger (Status-gated) */}
                 <button
-                  onClick={() => onOpenPrint(order)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  type="button"
+                  disabled={!isPrintable}
+                  onClick={() => {
+                    if (isPrintable) onOpenPrint(order);
+                  }}
+                  title={!isPrintable ? printDisabledReason : (isId ? "Cetak Surat Jalan" : "Print Order")}
+                  className={`inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold shadow-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    !isPrintable
+                      ? "opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-500"
+                      : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95"
+                  }`}
                 >
                   <Printer className="h-3.5 w-3.5 text-gray-500" />
                   <span>{isId ? "Cetak" : "Print"}</span>
@@ -513,16 +527,26 @@ export function OrderDetail({
 
                   {isMoreMenuOpen && (
                     <div className="absolute right-0 mt-1.5 w-60 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
-                      {/* Download PRN Stream */}
+                      {/* Download PRN Stream (Status-gated) */}
                       <button
                         type="button"
-                        onClick={handleDownloadPrn}
-                        className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                        disabled={!isPrintable}
+                        onClick={() => {
+                          if (isPrintable) handleDownloadPrn();
+                        }}
+                        title={!isPrintable ? printDisabledReason : undefined}
+                        className={`w-full px-3.5 py-2 text-left flex items-center gap-2.5 transition ${
+                          !isPrintable
+                            ? "opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-500"
+                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
                       >
                         <FileDown className="h-4 w-4 text-gray-500" />
                         <div>
                           <p className="font-semibold">{isId ? "Unduh Stream .PRN" : "Download .PRN File"}</p>
-                          <p className="text-[10px] text-gray-400">Epson LX-300/310 Continuous Form</p>
+                          <p className="text-[10px] text-gray-400">
+                            {!isPrintable ? printDisabledReason : "Epson LX-300/310 Continuous Form"}
+                          </p>
                         </div>
                       </button>
 
@@ -548,7 +572,7 @@ export function OrderDetail({
                         </button>
                       )}
 
-                      {/* Cancel Order */}
+                      {/* Cancel / Void & Archive Order */}
                       {order.status !== "CANCELLED" && (
                         <button
                           type="button"
@@ -561,28 +585,42 @@ export function OrderDetail({
                         >
                           <Ban className="h-4 w-4 text-red-600" />
                           <div>
-                            <p className="font-semibold">{isId ? "Batalkan Surat Jalan" : "Cancel Order"}</p>
+                            <p className="font-semibold">
+                              {order.status === "DRAFT"
+                                ? isId ? "Batalkan Surat Jalan" : "Cancel Draft Order"
+                                : isId ? "Void & Arsipkan Surat Jalan" : "Void & Archive Order"}
+                            </p>
                             <p className="text-[10px] text-red-600/80 dark:text-red-400/80">
-                              {isId ? "Set status CANCELLED" : "Mark document as cancelled"}
+                              {order.status === "DRAFT"
+                                ? isId ? "Set status CANCELLED" : "Mark document as cancelled"
+                                : isId ? "Batalkan resmi dengan jejak audit paper-twin" : "Cancel officially with paper-twin audit log"}
                             </p>
                           </div>
                         </button>
                       )}
 
-                      <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-
-                      {/* Delete Order */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsMoreMenuOpen(false);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition font-semibold"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span>{isId ? "Hapus Surat Jalan" : "Delete Order"}</span>
-                      </button>
+                      {/* Delete Draft Order (Strictly DRAFT only; PRINTED+ orders require Void & Archive to prevent orphaned paper-twins) */}
+                      {order.status === "DRAFT" && (
+                        <>
+                          <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsMoreMenuOpen(false);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition font-semibold"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <div>
+                              <p>{isId ? "Hapus Draft Surat Jalan" : "Delete Draft Order"}</p>
+                              <p className="text-[10px] text-gray-400 font-normal">
+                                {isId ? "Hanya draft yang dapat dihapus permanen" : "Only unprinted drafts can be purged"}
+                              </p>
+                            </div>
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1220,12 +1258,12 @@ export function OrderDetail({
               </div>
               <div className="space-y-1">
                 <h3 id="delete-dialog-title" className="font-bold text-sm text-gray-900 dark:text-white">
-                  {isId ? "Hapus Surat Jalan Ini?" : "Delete this Delivery Order?"}
+                  {isId ? "Hapus Draft Surat Jalan Ini?" : "Delete this Draft Delivery Order?"}
                 </h3>
-                <p id="delete-dialog-desc" className="text-xs text-gray-600 dark:text-gray-400">
+                <p id="delete-dialog-desc" className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                   {isId
-                    ? `Surat jalan nomor ${order.orderNumber} akan dihapus secara permanen dari sistem. Tindakan ini tidak dapat dibatalkan.`
-                    : `Order ${order.orderNumber} will be permanently deleted from the database. This action cannot be undone.`}
+                    ? `Draft surat jalan nomor ${order.orderNumber} belum pernah dicetak dan aman untuk dihapus permanen. Dokumen berstatus CONFIRMED ke atas wajib melalui 'Void & Arsip' demi mencegah risiko salinan fisik (paper-twin) yang beredar di pabrik.`
+                    : `Draft order ${order.orderNumber} has never been printed and is safe to permanently delete. Orders marked CONFIRMED or beyond must use 'Void & Archive' to prevent untracked physical paper-twins circulating on the factory floor.`}
                 </p>
               </div>
             </div>
@@ -1234,7 +1272,7 @@ export function OrderDetail({
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                className="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 {isId ? "Batal" : "Cancel"}
               </button>
@@ -1244,9 +1282,9 @@ export function OrderDetail({
                   setIsDeleteModalOpen(false);
                   onDeleteOrder(order.id);
                 }}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
+                className="min-h-[44px] px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
               >
-                {isId ? "Ya, Hapus Dokumen" : "Yes, Delete Order"}
+                {isId ? "Ya, Hapus Draft" : "Yes, Delete Draft"}
               </button>
             </div>
           </div>
@@ -1268,7 +1306,7 @@ export function OrderDetail({
                 <RotateCcw className="h-5 w-5" />
                 <h3 id="rollback-dialog-title" className="font-bold text-sm">
                   {rollbackTarget === "CANCELLED"
-                    ? isId ? "Batalkan Surat Jalan" : "Cancel Delivery Order"
+                    ? isId ? "Void & Arsipkan Surat Jalan" : "Void & Archive Delivery Order"
                     : isId ? "Koreksi / Rollback Status Surat Jalan" : "Revert Delivery Order Status"}
                 </h3>
               </div>
@@ -1300,9 +1338,13 @@ export function OrderDetail({
                     <span className="underline font-mono">{order.status}</span>
                   </p>
                   <p className="text-[11px] text-amber-800 dark:text-amber-400">
-                    {isId
-                      ? "Tindakan ini akan mengembalikan status dokumen dan mencatat alasan pembatalan/koreksi ke jejak audit keamanan."
-                      : "This action will reverse the document lifecycle and record the operational reason in the audit log."}
+                    {rollbackTarget === "CANCELLED" && order.status !== "DRAFT"
+                      ? isId
+                        ? "Surat jalan ini telah diproses/dicetak dan berpotensi memiliki salinan fisik (paper-twin). Dokumen tidak dihapus melainkan di-Void dan diarsipkan dengan jejak audit resmi."
+                        : "This order has been processed/printed and may have a physical paper-twin. The document will not be purged, but Voided and archived with an official audit log."
+                      : isId
+                        ? "Tindakan ini akan mengembalikan status dokumen dan mencatat alasan pembatalan/koreksi ke jejak audit keamanan."
+                        : "This action will reverse the document lifecycle and record the operational reason in the audit log."}
                   </p>
                 </div>
               </div>
@@ -1375,7 +1417,7 @@ export function OrderDetail({
                     setIsRollbackModalOpen(false);
                     setRollbackError(null);
                   }}
-                  className="px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
+                  className="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300"
                 >
                   {isId ? "Batal" : "Cancel"}
                 </button>
@@ -1383,11 +1425,13 @@ export function OrderDetail({
                   type="button"
                   onClick={handleExecuteRollback}
                   disabled={rollbackSubmitting || !rollbackReason.trim()}
-                  className="px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-strong disabled:opacity-50 transition active:scale-95"
+                  className="min-h-[44px] px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-xs hover:bg-brand-strong disabled:opacity-50 transition active:scale-95"
                 >
                   {rollbackSubmitting
                     ? isId ? "Memproses..." : "Processing..."
-                    : isId ? "Konfirmasi Perubahan Status" : "Confirm Status Change"}
+                    : rollbackTarget === "CANCELLED"
+                      ? isId ? "Konfirmasi Void & Arsip" : "Confirm Void & Archive"
+                      : isId ? "Konfirmasi Perubahan Status" : "Confirm Status Change"}
                 </button>
               </div>
             </div>

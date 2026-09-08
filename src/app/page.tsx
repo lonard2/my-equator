@@ -38,6 +38,8 @@ import {
   RefreshCw,
   PanelLeftClose,
   PanelLeftOpen,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -77,6 +79,16 @@ export default function HomePage() {
 
   // Delivered Ceremony State (Brief full-screen celebration on DELIVERED transition)
   const [deliveredCeremonyOrder, setDeliveredCeremonyOrder] = useState<DeliveryOrder | null>(null);
+
+  // Global App Toast State (Accessible Live Region, replaces native alert)
+  const [appToast, setAppToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showAppToast = (message: string, type: "success" | "error" = "success") => {
+    setAppToast({ message, type });
+    setTimeout(() => {
+      setAppToast((curr) => (curr?.message === message ? null : curr));
+    }, 4000);
+  };
 
   // Mobile Bottom Sheet modal safety
   const mobileDetailRef = useModalSafety({
@@ -213,11 +225,11 @@ export default function HomePage() {
         }
         fetchOrders();
       } else {
-        alert(json.error || "Gagal memperbarui status surat jalan.");
+        showAppToast(json.error || (language === "id" ? "Gagal memperbarui status surat jalan." : "Failed to update order status."), "error");
       }
     } catch (err: any) {
       console.error("Failed to update status:", err);
-      alert(err.message);
+      showAppToast(err.message || (language === "id" ? "Terjadi kesalahan jaringan." : "Network error occurred."), "error");
     }
   };
 
@@ -230,13 +242,23 @@ export default function HomePage() {
       if (json.success) {
         setSelectedOrder(null);
         setIsMobileDetailOpen(false);
+        showAppToast(
+          language === "id" ? "Surat jalan draft berhasil dihapus." : "Draft order deleted successfully.",
+          "success"
+        );
         fetchOrders();
       } else {
-        alert(json.error || (language === "id" ? "Gagal menghapus surat jalan." : "Failed to delete delivery order."));
+        showAppToast(
+          json.error || (language === "id" ? "Gagal menghapus surat jalan." : "Failed to delete delivery order."),
+          "error"
+        );
       }
     } catch (err: any) {
       console.error("Failed to delete order:", err);
-      alert(err.message || (language === "id" ? "Terjadi kesalahan saat menghapus surat jalan." : "An error occurred while deleting delivery order."));
+      showAppToast(
+        err.message || (language === "id" ? "Terjadi kesalahan saat menghapus surat jalan." : "An error occurred while deleting delivery order."),
+        "error"
+      );
     }
   };
 
@@ -540,55 +562,67 @@ export default function HomePage() {
                         )}
                       </div>
                     ) : (
-                      filteredMobileOrders.map((order) => (
-                        <div
-                          key={order.id}
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setIsMobileDetailOpen(true);
-                          }}
-                          className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-brand dark:text-red-400 font-mono">
-                              {order.orderNumber}
-                            </span>
-                            <StatusBadge status={order.status} size="sm" language={language} />
-                          </div>
+                      filteredMobileOrders.map((order) => {
+                        const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
+                        const printDisabledTooltip = order.status === "DRAFT"
+                          ? (isId ? "Konfirm dulu untuk cetak resmi" : "Confirm order before official print")
+                          : (isId ? "Dokumen dibatalkan, tidak dapat dicetak" : "Cancelled order cannot be printed");
 
-                          <div>
-                            <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">
-                              {order.recipientName}
-                            </p>
-                            <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
-                              {order.destinationAddress}
-                            </p>
-                          </div>
+                        return (
+                          <div
+                            key={order.id}
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsMobileDetailOpen(true);
+                            }}
+                            className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-xs text-brand dark:text-red-400 font-mono">
+                                {order.orderNumber}
+                              </span>
+                              <StatusBadge status={order.status} size="sm" language={language} />
+                            </div>
 
-                          <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
                             <div>
-                              <span className="text-gray-400">Total: </span>
-                              <span className="font-extrabold text-gray-900 dark:text-white">
-                                {order.totalQuantity} psg
+                              <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">
+                                {order.recipientName}
+                              </p>
+                              <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                                {order.destinationAddress}
+                              </p>
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="text-gray-400">Total: </span>
+                                <span className="font-extrabold text-gray-900 dark:text-white">
+                                  {order.totalQuantity} psg
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-gray-400">
+                                {formatIndonesianDate(order.deliveryDate)}
                               </span>
                             </div>
-                            <span className="text-[11px] text-gray-400">
-                              {formatIndonesianDate(order.deliveryDate)}
-                            </span>
-                          </div>
 
-                          <div className="grid grid-cols-2 gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPrintOrder(order);
-                              }}
-                              className="py-2.5 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
-                            >
-                              <Printer className="h-4 w-4" />
-                              <span>{isId ? "Cetak Slip" : "Print Slip"}</span>
-                            </button>
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <button
+                                type="button"
+                                disabled={!isPrintable}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isPrintable) setPrintOrder(order);
+                                }}
+                                title={!isPrintable ? printDisabledTooltip : (isId ? "Cetak Slip" : "Print Slip")}
+                                className={`py-2.5 min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                                  !isPrintable
+                                    ? "bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60"
+                                    : "bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 active:scale-95"
+                                }`}
+                              >
+                                <Printer className="h-4 w-4" />
+                                <span>{isId ? "Cetak Slip" : "Print Slip"}</span>
+                              </button>
 
                             {order.status === "PRINTED" ? (
                               <button
@@ -631,8 +665,9 @@ export default function HomePage() {
                             )}
                           </div>
                         </div>
-                      ))
-                    )}
+                      );
+                    })
+                  )}
                   </div>
 
                   {/* Desktop & Tablet OrderList */}
@@ -929,6 +964,41 @@ export default function HomePage() {
         onClose={() => setDeliveredCeremonyOrder(null)}
         language={language}
       />
+
+      {/* Global App Toast (Accessible Live Region, replaces native alert) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={
+          appToast
+            ? `fixed top-4 right-4 z-70 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-150 ${
+                appToast.type === "error"
+                  ? "bg-red-950 text-red-100 border-red-800 shadow-red-950/50"
+                  : "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-700 dark:border-gray-300 shadow-xl"
+              }`
+            : "sr-only"
+        }
+      >
+        {appToast && (
+          <>
+            {appToast.type === "error" ? (
+              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
+            )}
+            <span className="leading-snug">{appToast.message}</span>
+            <button
+              type="button"
+              onClick={() => setAppToast(null)}
+              className="ml-2 text-gray-400 hover:text-white p-0.5 rounded focus:outline-none"
+              aria-label="Tutup notifikasi"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

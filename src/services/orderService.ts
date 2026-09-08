@@ -374,10 +374,23 @@ export class OrderService {
   }
 
   /**
-   * Deletes a delivery order (cascades items)
+   * Deletes a delivery order (cascades items).
+   * Only permitted for DRAFT orders. Once an order is CONFIRMED/PRINTED/DISPATCHED/DELIVERED,
+   * it must be Voided & archived via updateOrderStatus to preserve audit trails and prevent
+   * orphaned physical paper-twins circulating on the factory floor.
    */
-  static async deleteOrder(id: string): Promise<boolean> {
+  static async deleteOrder(id: string): Promise<{ success: boolean; error?: string }> {
+    const existing = await this.getOrderById(id);
+    if (!existing) {
+      return { success: false, error: "Order not found" };
+    }
+    if (existing.status !== "DRAFT") {
+      return {
+        success: false,
+        error: `Surat jalan ${existing.orderNumber} berstatus ${existing.status} tidak dapat dihapus permanen karena risiko paper-twin fisik. Gunakan 'Void & Arsip' untuk membatalkan.`,
+      };
+    }
     await db.delete(deliveryOrders).where(eq(deliveryOrders.id, id));
-    return true;
+    return { success: true };
   }
 }
