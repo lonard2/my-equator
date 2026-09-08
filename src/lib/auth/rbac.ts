@@ -25,7 +25,10 @@ export type Permission =
   | "SYSTEM_SNAPSHOT_BACKUP"
   | "SYSTEM_SNAPSHOT_RESTORE"
   | "SYSTEM_USER_MANAGEMENT"
-  | "SYSTEM_AUDIT_LOGS";
+  | "SYSTEM_AUDIT_LOGS"
+  // Tax Filing & Coretax
+  | "TAX_VIEW"
+  | "TAX_MANAGE";
 
 export const ALL_PERMISSIONS: Permission[] = [
   "ORDERS_VIEW",
@@ -48,13 +51,15 @@ export const ALL_PERMISSIONS: Permission[] = [
   "SYSTEM_SNAPSHOT_RESTORE",
   "SYSTEM_USER_MANAGEMENT",
   "SYSTEM_AUDIT_LOGS",
+  "TAX_VIEW",
+  "TAX_MANAGE",
 ];
 
 export interface PermissionDetail {
   id: Permission;
   nameId: string;
   nameEn: string;
-  category: "DELIVERY_ORDERS" | "INVENTORY" | "CAD_STUDIO" | "ANALYTICS" | "SECURITY";
+  category: "DELIVERY_ORDERS" | "INVENTORY" | "CAD_STUDIO" | "ANALYTICS" | "SECURITY" | "TAX";
   categoryLabelId: string;
   categoryLabelEn: string;
   descriptionId: string; // What: Action scope
@@ -346,6 +351,34 @@ export const PERMISSION_METADATA: Record<Permission, PermissionDetail> = {
     securityTier: "RESTRICTED",
     defaultRoles: ["SUPER_ADMIN", "FACTORY_MANAGER"],
   },
+  TAX_VIEW: {
+    id: "TAX_VIEW",
+    nameId: "Lihat Persiapan Pajak (Coretax)",
+    nameEn: "View Tax Preparation (Coretax)",
+    category: "TAX",
+    categoryLabelId: "Perpajakan & Coretax",
+    categoryLabelEn: "Tax & Coretax",
+    descriptionId: "Melihat rekapitulasi Faktur Pajak Keluaran & Masukan serta SPT Masa PPN.",
+    descriptionEn: "View summary of Sales & Purchase Tax Invoices and monthly VAT reconciliation.",
+    effectId: "Menampilkan dokumen perpajakan pabrik tanpa mengubah catatan fiskal.",
+    effectEn: "Displays factory tax records without modifying fiscal records.",
+    securityTier: "RESTRICTED",
+    defaultRoles: ["SUPER_ADMIN", "FACTORY_MANAGER"],
+  },
+  TAX_MANAGE: {
+    id: "TAX_MANAGE",
+    nameId: "Kelola & Ekspor Coretax XML/Excel",
+    nameEn: "Manage & Export Coretax XML/Excel",
+    category: "TAX",
+    categoryLabelId: "Perpajakan & Coretax",
+    categoryLabelEn: "Tax & Coretax",
+    descriptionId: "Membuat Faktur Pajak dari Surat Jalan, mengedit profil PKP, dan mengunduh XML/Excel Coretax.",
+    descriptionEn: "Generate Tax Invoices from DOs, edit PKP tax profile, and export Coretax XML/Excel.",
+    effectId: "Menghasilkan arsip e-Faktur resmi untuk diunggah ke portal DJP Coretax.",
+    effectEn: "Produces official e-Faktur bulk payload for Coretax DJP portal upload.",
+    securityTier: "CRITICAL",
+    defaultRoles: ["SUPER_ADMIN", "FACTORY_MANAGER"],
+  },
 };
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
@@ -370,6 +403,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "SYSTEM_SNAPSHOT_RESTORE",
     "SYSTEM_USER_MANAGEMENT",
     "SYSTEM_AUDIT_LOGS",
+    "TAX_VIEW",
+    "TAX_MANAGE",
   ],
   FACTORY_MANAGER: [
     "ORDERS_VIEW",
@@ -389,6 +424,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "ANALYTICS_EXPORT",
     "SYSTEM_SNAPSHOT_BACKUP",
     "SYSTEM_AUDIT_LOGS",
+    "TAX_VIEW",
+    "TAX_MANAGE",
   ],
   WAREHOUSE_STAFF: [
     "ORDERS_VIEW",
@@ -485,6 +522,11 @@ export function canRestoreDatabase(role?: string | null): boolean {
 }
 
 export function canExportDatabase(role?: string | null): boolean {
+  if (!role) return false;
+  return role === "SUPER_ADMIN" || role === "FACTORY_MANAGER";
+}
+
+export function canAccessTaxFiling(role?: string | null): boolean {
   if (!role) return false;
   return role === "SUPER_ADMIN" || role === "FACTORY_MANAGER";
 }
