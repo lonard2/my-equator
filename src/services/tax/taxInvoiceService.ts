@@ -170,7 +170,7 @@ export class TaxInvoiceService {
     if (invoice.items && invoice.items.length > 0) {
       for (const it of invoice.items) {
         await db.insert(taxInvoiceItems).values({
-          id: it.id || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           taxInvoiceId: id,
           itemCode: it.itemCode || "ITEM-1",
           itemName: it.itemName || "Insole BKP",

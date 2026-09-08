@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
     const filename = `Coretax_Faktur_${timestamp}.xlsx`;
 
-    return new Response(buffer, {
+    return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type":

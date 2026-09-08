@@ -45,13 +45,13 @@ export function identifyUnbilledOrders<T extends DeliveryOrder>(
 export function mapOrderToTaxInvoiceDraft(
   order: DeliveryOrder & { items?: DeliveryOrderItem[] },
   options: BatchGenerateOptions
-): Partial<TaxInvoice> & { items: Array<Partial<TaxInvoiceItem>> } {
+): Partial<TaxInvoice> & { items: TaxInvoiceItem[] } {
   const safeItems = order.items || [];
   const taxRate = options.taxRate ?? 11;
   const isTaxIncluded = options.isTaxIncluded ?? false;
 
   // Compute items
-  const taxItems: Array<Partial<TaxInvoiceItem>> = safeItems.map((item, index) => {
+  const taxItems: TaxInvoiceItem[] = safeItems.map((item, index) => {
     const itemCalculation = calculateItemTax({
       quantity: item.totalPairs || 1,
       unitPrice: item.unitPrice || 0,
@@ -60,6 +60,8 @@ export function mapOrderToTaxInvoiceDraft(
     });
 
     return {
+      id: crypto.randomUUID(),
+      taxInvoiceId: "",
       itemCode: item.articleCode || `ITEM-${index + 1}`,
       itemName: item.articleName || "Insole Footwear",
       quantity: item.totalPairs || 1,

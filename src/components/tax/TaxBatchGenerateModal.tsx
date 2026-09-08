@@ -290,7 +290,7 @@ export function TaxBatchGenerateModal({
                         </div>
                       </div>
                       <div className="text-right font-mono font-semibold text-neutral-200">
-                        {formatRupiahTax(order.totalAmount)}
+                        {formatRupiahTax(order.totalAmount ?? 0)}
                       </div>
                     </div>
                   );

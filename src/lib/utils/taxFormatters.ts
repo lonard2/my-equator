@@ -52,11 +52,12 @@ export function formatNitku22(raw: string): string {
 /**
  * Formats number as formal Indonesian Rupiah.
  */
-export function formatRupiahTax(amount: number): string {
+export function formatRupiahTax(amount?: number | null): string {
+  const safe = typeof amount === "number" && !isNaN(amount) ? amount : 0;
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safe);
 }
