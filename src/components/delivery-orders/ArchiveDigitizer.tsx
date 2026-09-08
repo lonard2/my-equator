@@ -520,24 +520,35 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         ))}
       </datalist>
 
-      {/* Undo Deleted Row Toast Notification */}
-      {deletedRowBuffer && (
-        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
-          <span className="text-xs font-bold">
-            {isId
-              ? `Baris ${deletedRowBuffer.row.orderNumber} (${deletedRowBuffer.row.recipientName || "Tanpa Nama"}) dihapus`
-              : `Row ${deletedRowBuffer.row.orderNumber} removed`}
-          </span>
-          <button
-            type="button"
-            onClick={handleUndoDelete}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs active:scale-95 transition"
-          >
-            <Undo2 className="h-3.5 w-3.5" />
-            <span>{isId ? "Batalkan Hapus" : "Undo"}</span>
-          </button>
-        </div>
-      )}
+      {/* Undo Deleted Row Toast Notification (Accessible Live Region) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={
+          deletedRowBuffer
+            ? "fixed bottom-20 md:bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4"
+            : "sr-only"
+        }
+      >
+        {deletedRowBuffer && (
+          <>
+            <span className="text-xs font-bold">
+              {isId
+                ? `Baris ${deletedRowBuffer.row.orderNumber} (${deletedRowBuffer.row.recipientName || "Tanpa Nama"}) dihapus`
+                : `Row ${deletedRowBuffer.row.orderNumber} removed`}
+            </span>
+            <button
+              type="button"
+              onClick={handleUndoDelete}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+              <span>{isId ? "Batalkan Hapus" : "Undo"}</span>
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Header & Date Batch Control */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 shadow-xs">

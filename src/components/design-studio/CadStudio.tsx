@@ -454,13 +454,24 @@ export function CadStudio({ language }: CadStudioProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-950 text-gray-100">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-5 right-5 z-60 px-4 py-2.5 rounded-xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Toast Notification (Accessible Live Region) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={
+          toastMessage
+            ? "fixed top-5 right-5 z-60 px-4 py-2.5 rounded-xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3"
+            : "sr-only"
+        }
+      >
+        {toastMessage && (
+          <>
+            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span>{toastMessage}</span>
+          </>
+        )}
+      </div>
 
       {/* Top Header Bar */}
       <div className="p-3 sm:p-4 border-b border-gray-800 bg-gray-900/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2.5 z-30">

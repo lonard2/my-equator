@@ -372,13 +372,24 @@ export function OrderDetail({
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto relative">
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Floating Toast Notification (Accessible Live Region) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={
+          toastMessage
+            ? "fixed top-4 right-4 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 dark:border-gray-300 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-150"
+            : "sr-only"
+        }
+      >
+        {toastMessage && (
+          <>
+            <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
+            <span>{toastMessage}</span>
+          </>
+        )}
+      </div>
 
       {/* Top Header Banner */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 sm:p-5 sticky top-0 z-20 shadow-xs">
@@ -389,7 +400,7 @@ export function OrderDetail({
                 type="button"
                 onClick={handleCopyOrderNumber}
                 title={isId ? "Klik untuk menyalin nomor DO" : "Click to copy order number"}
-                className="group flex items-center gap-1 text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono hover:text-brand dark:hover:text-red-400 transition"
+                className="group flex items-center gap-1 text-xl font-bold text-gray-900 dark:text-white tracking-tight font-mono hover:text-brand dark:hover:text-red-400 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg px-1 -mx-1"
               >
                 <span>{order.orderNumber}</span>
                 {copiedOrderNo ? (
@@ -427,7 +438,7 @@ export function OrderDetail({
                           onStatusChange(order.id, nextAction.next);
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-3.5 py-2 text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       <nextAction.icon className="h-3.5 w-3.5" />
                       <span>{nextAction.label}</span>
@@ -442,17 +453,17 @@ export function OrderDetail({
                 {canEdit && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <Edit3 className="h-3.5 w-3.5 text-gray-500" />
-                    <span>{isId ? "Edit" : "Edit"}</span>
+                    <span>{isId ? "Ubah" : "Edit"}</span>
                   </button>
                 )}
 
                 {/* 3. Secondary Primary: Print Trigger */}
                 <button
                   onClick={() => onOpenPrint(order)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <Printer className="h-3.5 w-3.5 text-gray-500" />
                   <span>{isId ? "Cetak" : "Print"}</span>

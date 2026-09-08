@@ -83,11 +83,11 @@ export function OrderList({
     return { bySize: agg, total: totalAll };
   }, [filteredOrders]);
 
-  // Keyboard navigation between orders (ArrowUp / ArrowDown) with auto-scroll into view
+  // Keyboard navigation between orders (ArrowUp / ArrowDown / Home / End) with roving DOM focus
   // Suppressed automatically whenever any modal dialog is open in the DOM
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") {
         return;
       }
 
@@ -116,17 +116,33 @@ export function OrderList({
         const nextIndex = currentIndex < filteredOrders.length - 1 ? currentIndex + 1 : 0;
         const targetOrder = filteredOrders[nextIndex];
         onSelectOrder(targetOrder);
-        // Auto-scroll target into view
-        const el = listContainerRef.current?.querySelector(`[data-order-id="${targetOrder.id}"]`);
+        // Auto-scroll target into view and sync DOM focus (roving tabindex)
+        const el = listContainerRef.current?.querySelector<HTMLElement>(`[data-order-id="${targetOrder.id}"]`);
         el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        el?.focus();
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         const prevIndex = currentIndex > 0 ? currentIndex - 1 : filteredOrders.length - 1;
         const targetOrder = filteredOrders[prevIndex];
         onSelectOrder(targetOrder);
-        // Auto-scroll target into view
-        const el = listContainerRef.current?.querySelector(`[data-order-id="${targetOrder.id}"]`);
+        // Auto-scroll target into view and sync DOM focus (roving tabindex)
+        const el = listContainerRef.current?.querySelector<HTMLElement>(`[data-order-id="${targetOrder.id}"]`);
         el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        el?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        const targetOrder = filteredOrders[0];
+        onSelectOrder(targetOrder);
+        const el = listContainerRef.current?.querySelector<HTMLElement>(`[data-order-id="${targetOrder.id}"]`);
+        el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        el?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        const targetOrder = filteredOrders[filteredOrders.length - 1];
+        onSelectOrder(targetOrder);
+        const el = listContainerRef.current?.querySelector<HTMLElement>(`[data-order-id="${targetOrder.id}"]`);
+        el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        el?.focus();
       }
     }
 
@@ -272,6 +288,7 @@ export function OrderList({
         ref={listContainerRef}
         role="listbox"
         aria-label={isId ? "Daftar Dokumen Surat Jalan" : "Delivery Orders Listbox"}
+        aria-activedescendant={selectedOrderId ? `order-opt-${selectedOrderId}` : undefined}
         className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80"
       >
         {filteredOrders.length === 0 ? (
@@ -299,15 +316,18 @@ export function OrderList({
             )}
           </div>
         ) : (
-          filteredOrders.map((order) => {
+          filteredOrders.map((order, index) => {
             const isSelected = order.id === selectedOrderId;
+            // Roving tabindex: exactly one item is tabIndex=0 (the selected order, or index 0 if no match)
+            const isFocusedTarget = isSelected || (!selectedOrderId && index === 0);
             return (
               <div
                 key={order.id}
+                id={`order-opt-${order.id}`}
                 data-order-id={order.id}
                 role="option"
                 aria-selected={isSelected}
-                tabIndex={0}
+                tabIndex={isFocusedTarget ? 0 : -1}
                 onClick={() => onSelectOrder(order)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -358,7 +378,7 @@ export function OrderList({
                       e.stopPropagation();
                       onOpenPrint(order);
                     }}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all min-h-[28px] min-w-[28px] flex items-center justify-center active:scale-95"
+                    className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 max-md:opacity-100 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all min-h-[28px] min-w-[28px] flex items-center justify-center active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     title={isId ? "Cetak Surat Jalan" : "Print Order"}
                     aria-label={isId ? `Cetak Surat Jalan ${order.orderNumber}` : `Print Order ${order.orderNumber}`}
                   >
@@ -374,7 +394,9 @@ export function OrderList({
       {/* Keyboard Shortcut Guidance Footer */}
       <div className="px-3.5 py-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/60 text-[10px] text-gray-400 flex items-center justify-between">
         <span>{filteredOrders.length} {isId ? "dokumen ditampilkan" : "orders displayed"}</span>
-        <span className="font-mono hidden sm:inline text-gray-400/80">↑/↓ Navigasi Keyboard</span>
+        <span className="font-mono hidden sm:inline text-gray-400/80">
+          {isId ? "↑/↓ / Home / End Navigasi" : "↑/↓ / Home / End Nav"}
+        </span>
       </div>
     </aside>
   );
