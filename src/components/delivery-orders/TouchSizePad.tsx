@@ -73,6 +73,8 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
               key={size}
               type="button"
               onClick={() => setActiveSize(size)}
+              aria-label={isId ? `Pilih ukuran ${size}, saat ini ${qty > 0 ? `${qty} pasang` : "0 pasang"}` : `Select size ${size}, currently ${qty > 0 ? `${qty} pairs` : "0 pairs"}`}
+              aria-pressed={isCurrent}
               className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition min-h-[52px] active:scale-95 ${
                 isCurrent
                   ? "bg-brand text-white border-brand shadow-md ring-2 ring-red-300 dark:ring-red-900"

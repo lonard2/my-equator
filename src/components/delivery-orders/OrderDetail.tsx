@@ -623,7 +623,8 @@ export function OrderDetail({
                   onClick={() => {
                     if (isPrintable) onOpenPrint(order);
                   }}
-                  title={!isPrintable ? printDisabledReason : (isId ? "Cetak Surat Jalan" : "Print Order")}
+                  title={!isPrintable ? printDisabledReason : (isId ? "Cetak Surat Jalan & Spooler ESC/P .PRN" : "Print Order & ESC/P .PRN Spooler")}
+                  aria-label={!isPrintable ? printDisabledReason : (isId ? "Cetak Surat Jalan & Spooler ESC/P .PRN" : "Print Order & ESC/P .PRN Spooler")}
                   className={`inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold shadow-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                     !isPrintable
                       ? "opacity-40 cursor-not-allowed text-gray-400 dark:text-gray-500"
@@ -662,9 +663,14 @@ export function OrderDetail({
                             : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                         }`}
                       >
-                        <FileDown className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <p className="font-semibold">{isId ? "Unduh Stream .PRN" : "Download .PRN File"}</p>
+                        <FileDown className="h-4 w-4 text-gray-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="font-semibold">{isId ? "Unduh Stream .PRN" : "Download .PRN File"}</p>
+                            <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              ESC/P
+                            </span>
+                          </div>
                           <p className="text-[10px] text-gray-400">
                             {!isPrintable ? printDisabledReason : "Epson LX-300/310 Continuous Form"}
                           </p>

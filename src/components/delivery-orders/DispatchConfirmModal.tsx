@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, Language } from "@/types";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
 import { StatusBadge } from "./StatusBadge";
-import { Truck, CheckCircle2, X, AlertTriangle, Building, MapPin, Calendar, Package } from "lucide-react";
+import { Truck, CheckCircle2, X, AlertTriangle, Building, MapPin, Calendar, Package, Loader2 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
 interface DispatchConfirmModalProps {
   isOpen: boolean;
   order: DeliveryOrder | null;
   targetStatus: "DISPATCHED" | "DELIVERED";
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onClose: () => void;
   language: Language;
 }
@@ -27,6 +27,7 @@ export function DispatchConfirmModal({
 }: DispatchConfirmModalProps) {
   const isId = language === "id";
   const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const modalRef = useModalSafety({
     isOpen,
@@ -37,6 +38,16 @@ export function DispatchConfirmModal({
   if (!isOpen || !order) return null;
 
   const isDispatching = targetStatus === "DISPATCHED";
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    try {
+      await onConfirm();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -170,24 +181,31 @@ export function DispatchConfirmModal({
           <button
             ref={cancelButtonRef}
             type="button"
+            disabled={submitting}
             onClick={onClose}
-            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition active:scale-95"
+            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition active:scale-95 disabled:opacity-50"
           >
             {isId ? "Batal" : "Cancel"}
           </button>
           <button
             type="button"
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className={`min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 ${
+            disabled={submitting}
+            onClick={handleConfirm}
+            className={`min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
               STATUS_COLOR_MAP[targetStatus].cta.buttonClasses
             }`}
           >
-            {isDispatching ? <Truck className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isDispatching ? (
+              <Truck className="h-4 w-4" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
             <span>
-              {isDispatching
+              {submitting
+                ? isId ? "Memproses..." : "Processing..."
+                : isDispatching
                 ? isId ? "Ya, Kirimkan ke Armada" : "Yes, Dispatch to Driver"
                 : isId ? "Ya, Konfirmasi Selesai Diterima" : "Yes, Confirm Receipt"}
             </span>
