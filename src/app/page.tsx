@@ -32,6 +32,9 @@ import {
   Printer,
   ChevronRight,
   X,
+  Search,
+  RotateCcw,
+  RefreshCw,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
@@ -76,6 +79,10 @@ export default function HomePage() {
     isOpen: isMobileDetailOpen,
     onClose: () => setIsMobileDetailOpen(false),
   });
+
+  // Mobile feed search & status filter states (P0)
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
+  const [mobileStatusFilter, setMobileStatusFilter] = useState<string>("ALL");
 
   // Restore saved authentication session from localStorage
   useEffect(() => {
@@ -245,6 +252,36 @@ export default function HomePage() {
   const readyOrDispatchedCount = orders.filter((o) => o.status === "PRINTED" || o.status === "DISPATCHED").length;
   const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
 
+  // Mobile Header & Feed Filter Options
+  const mobileFilterOptions: Array<{ id: string; label: string }> = [
+    { id: "ALL", label: isId ? "Semua" : "All" },
+    { id: "CONFIRMED", label: isId ? "Konfirm" : "Confirmed" },
+    { id: "PRINTED", label: isId ? "Tercetak" : "Printed" },
+    { id: "DISPATCHED", label: isId ? "Kirim" : "Dispatched" },
+    { id: "DELIVERED", label: isId ? "Selesai" : "Delivered" },
+    { id: "DRAFT", label: "Draft" },
+    { id: "CANCELLED", label: isId ? "Batal" : "Cancelled" },
+  ];
+
+  const countMobileByStatus = (st: string) => {
+    if (st === "ALL") return orders.length;
+    return orders.filter((o) => o.status === st).length;
+  };
+
+  const filteredMobileOrders = orders.filter((order) => {
+    const q = mobileSearchTerm.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      order.orderNumber.toLowerCase().includes(q) ||
+      order.recipientName.toLowerCase().includes(q) ||
+      (order.destinationAddress && order.destinationAddress.toLowerCase().includes(q)) ||
+      (order.poNumber && order.poNumber.toLowerCase().includes(q)) ||
+      (order.driverName && order.driverName.toLowerCase().includes(q));
+
+    const matchesStatus = mobileStatusFilter === "ALL" || order.status === mobileStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-950 font-sans antialiased text-gray-900 dark:text-gray-100 overflow-hidden">
       {/* Top Header */}
@@ -285,7 +322,7 @@ export default function HomePage() {
           {currentTab === "DELIVERY_ORDERS" ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               {/* Top KPI Micro Strip */}
-              <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+              <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0">
                 <div className="flex items-center gap-3 p-2.5 rounded-xl bg-red-50/70 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 hover:shadow-xs transition">
                   <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-brand dark:text-red-400 shadow-xs">
                     <FileText className="h-4 w-4" />
@@ -341,118 +378,249 @@ export default function HomePage() {
                       : "w-full md:w-80 lg:w-[360px] h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800"
                   }`}
                 >
-                  {/* Mobile Header Card */}
-                  <div className="md:hidden p-3.5 bg-brand text-white flex items-center justify-between shadow-xs">
-                    <div>
-                      <h2 className="font-bold text-sm">Surat Jalan (Warehouse)</h2>
-                      <p className="text-[10px] text-red-200">{orders.length} DO Aktif di Sistem</p>
+                  {/* Mobile Header Card (P0: Search + Status Filter Chips) */}
+                  <div className="md:hidden bg-brand text-white shadow-xs">
+                    {/* Top Bar: Title & Action */}
+                    <div className="p-3.5 pb-2.5 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-bold text-sm leading-tight">
+                          {isId ? "Surat Jalan (Gudang)" : "Delivery Orders (Warehouse)"}
+                        </h2>
+                        <p className="text-[11px] text-red-200 mt-0.5">
+                          {orders.length} {isId ? "DO aktif di sistem" : "active orders in system"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setStagedDraftData(null);
+                          setIsFormOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white text-brand font-bold text-xs shadow-xs active:scale-95 transition"
+                      >
+                        <Plus className="h-4 w-4 stroke-[2.5]" />
+                        <span>{isId ? "Buat DO" : "New DO"}</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        setStagedDraftData(null);
-                        setIsFormOpen(true);
-                      }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-brand font-bold text-xs shadow-xs active:scale-95 transition"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Buat DO</span>
-                    </button>
+
+                    {/* Search Bar */}
+                    <div className="px-3.5 pb-2.5">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-red-300 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir..." : "Search Order, Client, PO, Driver..."}
+                          value={mobileSearchTerm}
+                          onChange={(e) => setMobileSearchTerm(e.target.value)}
+                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-8 text-xs text-white placeholder-red-200/70 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
+                        />
+                        {mobileSearchTerm && (
+                          <button
+                            type="button"
+                            onClick={() => setMobileSearchTerm("")}
+                            aria-label={isId ? "Hapus pencarian" : "Clear search"}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-red-200 hover:text-white"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status Filter Chips */}
+                    <div className="px-3.5 pb-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                      {mobileFilterOptions.map((opt) => {
+                        const isSelected = mobileStatusFilter === opt.id;
+                        const count = countMobileByStatus(opt.id);
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setMobileStatusFilter(opt.id)}
+                            className={`px-2.5 py-1 min-h-[34px] rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1 active:scale-95 ${
+                              isSelected
+                                ? "bg-white text-brand shadow-xs font-black"
+                                : "bg-white/15 text-white hover:bg-white/25 backdrop-blur-xs"
+                            }`}
+                          >
+                            <span>{opt.label}</span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded-full text-[9px] font-mono tabular-nums ${
+                                isSelected ? "bg-red-100 text-brand font-black" : "bg-black/25 text-white/90"
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Mobile Specific Card Feed */}
                   <div className="md:hidden flex-1 overflow-y-auto p-3 space-y-3 pb-20">
-                    {orders.map((order) => (
-                      <div
-                        key={order.id}
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setIsMobileDetailOpen(true);
-                        }}
-                        className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-brand dark:text-red-400 font-mono">
-                            {order.orderNumber}
-                          </span>
-                          <StatusBadge status={order.status} size="sm" language={language} />
-                        </div>
-
-                        <div>
-                          <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">
-                            {order.recipientName}
-                          </p>
-                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
-                            {order.destinationAddress}
-                          </p>
-                        </div>
-
-                        <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
-                          <div>
-                            <span className="text-gray-400">Total: </span>
-                            <span className="font-extrabold text-gray-900 dark:text-white">
-                              {order.totalQuantity} psg
-                            </span>
+                    {loading ? (
+                      <div className="space-y-3 py-2">
+                        {[1, 2, 3].map((n) => (
+                          <div
+                            key={n}
+                            className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 animate-pulse"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                              <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                              <div className="h-3 w-1/2 bg-gray-100 dark:bg-gray-800 rounded-md" />
+                            </div>
+                            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-between">
+                              <div className="h-3 w-20 bg-gray-100 dark:bg-gray-800 rounded-md" />
+                              <div className="h-3 w-20 bg-gray-100 dark:bg-gray-800 rounded-md" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <div className="h-11 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+                              <div className="h-11 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+                            </div>
                           </div>
-                          <span className="text-[11px] text-gray-400">
-                            {formatIndonesianDate(order.deliveryDate)}
-                          </span>
+                        ))}
+                      </div>
+                    ) : filteredMobileOrders.length === 0 ? (
+                      <div className="p-8 my-4 text-center rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 space-y-3">
+                        <FileText className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-700" />
+                        <div>
+                          <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                            {isId ? "Tidak ada surat jalan ditemukan" : "No delivery orders found"}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs mx-auto">
+                            {mobileSearchTerm || mobileStatusFilter !== "ALL"
+                              ? isId
+                                ? "Coba sesuaikan kata kunci pencarian atau filter status yang dipilih."
+                                : "Try adjusting your search query or status filter."
+                              : isId
+                              ? "Belum ada dokumen surat jalan. Buat dokumen pertama untuk memulai."
+                              : "No delivery orders yet. Create the first order to get started."}
+                          </p>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-2 pt-1">
+                        {mobileSearchTerm || mobileStatusFilter !== "ALL" ? (
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPrintOrder(order);
+                            onClick={() => {
+                              setMobileSearchTerm("");
+                              setMobileStatusFilter("ALL");
                             }}
-                            className="py-2.5 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition shadow-xs"
                           >
-                            <Printer className="h-4 w-4" />
-                            <span>Cetak Slip</span>
+                            <RotateCcw className="h-4 w-4 text-brand" />
+                            <span>{isId ? "Reset Filter & Pencarian" : "Reset Filters"}</span>
                           </button>
-
-                          {order.status === "PRINTED" ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrder(order);
-                                setDispatchGuard({ order, targetStatus: "DISPATCHED" });
-                              }}
-                              className="py-2.5 min-h-[44px] rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
-                            >
-                              <Truck className="h-4 w-4" />
-                              <span>Kirimkan</span>
-                            </button>
-                          ) : order.status === "DISPATCHED" ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrder(order);
-                                setDispatchGuard({ order, targetStatus: "DELIVERED" });
-                              }}
-                              className="py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
-                            >
-                              <span>Tiba di Lokasi</span>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrder(order);
-                                setIsMobileDetailOpen(true);
-                              }}
-                              className="py-2.5 min-h-[44px] rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
-                            >
-                              <span>Detail</span>
-                              <ChevronRight className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStagedDraftData(null);
+                              setIsFormOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl bg-brand text-xs font-bold text-white shadow-xs active:scale-95 transition"
+                          >
+                            <Plus className="h-4 w-4 stroke-[2.5]" />
+                            <span>{isId ? "Buat Surat Jalan Pertama" : "Create First Order"}</span>
+                          </button>
+                        )}
                       </div>
-                    ))}
+                    ) : (
+                      filteredMobileOrders.map((order) => (
+                        <div
+                          key={order.id}
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setIsMobileDetailOpen(true);
+                          }}
+                          className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer hover:border-red-300"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs text-brand dark:text-red-400 font-mono">
+                              {order.orderNumber}
+                            </span>
+                            <StatusBadge status={order.status} size="sm" language={language} />
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">
+                              {order.recipientName}
+                            </p>
+                            <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                              {order.destinationAddress}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="text-gray-400">Total: </span>
+                              <span className="font-extrabold text-gray-900 dark:text-white">
+                                {order.totalQuantity} psg
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-gray-400">
+                              {formatIndonesianDate(order.deliveryDate)}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPrintOrder(order);
+                              }}
+                              className="py-2.5 min-h-[44px] rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition"
+                            >
+                              <Printer className="h-4 w-4" />
+                              <span>{isId ? "Cetak Slip" : "Print Slip"}</span>
+                            </button>
+
+                            {order.status === "PRINTED" ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOrder(order);
+                                  setDispatchGuard({ order, targetStatus: "DISPATCHED" });
+                                }}
+                                className="py-2.5 min-h-[44px] rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                              >
+                                <Truck className="h-4 w-4" />
+                                <span>{isId ? "Kirimkan" : "Dispatch"}</span>
+                              </button>
+                            ) : order.status === "DISPATCHED" ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOrder(order);
+                                  setDispatchGuard({ order, targetStatus: "DELIVERED" });
+                                }}
+                                className="py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                              >
+                                <span>{isId ? "Tiba di Lokasi" : "Mark Delivered"}</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOrder(order);
+                                  setIsMobileDetailOpen(true);
+                                }}
+                                className="py-2.5 min-h-[44px] rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1 active:scale-95 transition"
+                              >
+                                <span>{isId ? "Detail" : "Details"}</span>
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   {/* Desktop & Tablet OrderList */}
@@ -552,7 +720,8 @@ export default function HomePage() {
               </span>
               <button
                 onClick={() => setIsMobileDetailOpen(false)}
-                className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+                aria-label={isId ? "Tutup detail surat jalan" : "Close order detail"}
+                className="min-w-[44px] min-h-[44px] rounded-xl text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200/60 dark:hover:bg-gray-800 flex items-center justify-center active:scale-95 transition"
               >
                 <X className="h-5 w-5" />
               </button>
