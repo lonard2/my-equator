@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, Language } from "@/types";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
+import { StatusBadge } from "./StatusBadge";
 import { Truck, CheckCircle2, X, AlertTriangle, Building, MapPin, Calendar, Package } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
@@ -85,9 +86,7 @@ export function DispatchConfirmModal({
                 {isId ? "Status Saat Ini" : "Current Status"}
               </span>
               <div>
-                <span className="font-mono font-extrabold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[11px]">
-                  {order.status}
-                </span>
+                <StatusBadge status={order.status} size="sm" language={language} />
               </div>
             </div>
 
@@ -98,15 +97,7 @@ export function DispatchConfirmModal({
                 {isId ? "Status Baru" : "Target Status"}
               </span>
               <div>
-                <span
-                  className={`font-mono font-extrabold px-2.5 py-0.5 rounded text-[11px] ${
-                    isDispatching
-                      ? "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300"
-                      : "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
-                  }`}
-                >
-                  {targetStatus}
-                </span>
+                <StatusBadge status={targetStatus} size="sm" language={language} />
               </div>
             </div>
           </div>

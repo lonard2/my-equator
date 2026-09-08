@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown } from "@/types";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
 import { getAvailableStatusRollbacks } from "@/lib/orders/status";
@@ -286,6 +286,92 @@ export function OrderDetail({
     );
   };
 
+  // Check whether operator has made unsaved edits
+  const isDirty = useMemo(() => {
+    if (!isEditing) return false;
+    if (recipientName !== order.recipientName) return true;
+    if (destinationAddress !== order.destinationAddress) return true;
+    if (poNumber !== (order.poNumber || "")) return true;
+    if (vehicleNumber !== (order.vehicleNumber || "")) return true;
+    if (driverName !== (order.driverName || "")) return true;
+    if (deliveryDate !== order.deliveryDate) return true;
+    if (notes !== (order.notes || "")) return true;
+    if (editItems.length !== (order.items || []).length) return true;
+    for (let i = 0; i < editItems.length; i++) {
+      const orig = order.items?.[i];
+      if (!orig) return true;
+      if (editItems[i].articleCode !== orig.articleCode) return true;
+      if (editItems[i].articleName !== orig.articleName) return true;
+      if (editItems[i].colorway !== (orig.colorway || "")) return true;
+      if (editItems[i].unitPrice !== (orig.unitPrice || 0)) return true;
+      if (editItems[i].notes !== (orig.notes || "")) return true;
+      const allSizes = new Set([
+        ...Object.keys(editItems[i].sizes || {}),
+        ...Object.keys(orig.sizes || {}),
+      ]);
+      for (const sz of allSizes) {
+        const q1 = editItems[i].sizes[sz as unknown as FootwearSize] || 0;
+        const q2 = orig.sizes[sz as unknown as FootwearSize] || 0;
+        if (q1 !== q2) return true;
+      }
+    }
+    return false;
+  }, [
+    isEditing,
+    recipientName,
+    destinationAddress,
+    poNumber,
+    vehicleNumber,
+    driverName,
+    deliveryDate,
+    notes,
+    editItems,
+    order,
+  ]);
+
+  // Protect against accidental browser tab navigation while unsaved changes exist
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  const handleCancelEdit = () => {
+    if (isDirty) {
+      const discard = window.confirm(
+        isId
+          ? "Ada perubahan data yang belum disimpan. Yakin ingin membatalkan dan membuang perubahan?"
+          : "You have unsaved changes. Discard them?"
+      );
+      if (!discard) return;
+    }
+
+    setRecipientName(order.recipientName);
+    setDestinationAddress(order.destinationAddress);
+    setPoNumber(order.poNumber || "");
+    setVehicleNumber(order.vehicleNumber || "");
+    setDriverName(order.driverName || "");
+    setDeliveryDate(order.deliveryDate);
+    setNotes(order.notes || "");
+    setEditItems(
+      (order.items || []).map((item) => ({
+        id: item.id,
+        articleCode: item.articleCode,
+        articleName: item.articleName,
+        colorway: item.colorway || "",
+        unitPrice: item.unitPrice || 0,
+        sizes: { ...item.sizes },
+        notes: item.notes || "",
+      }))
+    );
+    setIsEditing(false);
+    setErrorMessage(null);
+  };
+
   const handleSaveChanges = async () => {
     setErrorMessage(null);
     if (!recipientName.trim()) {
@@ -480,8 +566,9 @@ export function OrderDetail({
               <StatusBadge status={order.status} size="md" language={language} />
 
               {isEditing && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                  {isId ? "Mode Edit Aktif" : "Editing"}
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1.5">
+                  {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse" />}
+                  <span>{isId ? (isDirty ? "Mode Edit (Belum Disimpan)" : "Mode Edit Aktif") : (isDirty ? "Editing (Unsaved)" : "Editing")}</span>
                 </span>
               )}
             </div>
@@ -664,10 +751,7 @@ export function OrderDetail({
               <>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setErrorMessage(null);
-                  }}
+                  onClick={handleCancelEdit}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <X className="h-3.5 w-3.5" />

@@ -52,7 +52,9 @@ export function OrderList({
         order.orderNumber.toLowerCase().includes(q) ||
         order.recipientName.toLowerCase().includes(q) ||
         order.destinationAddress.toLowerCase().includes(q) ||
-        (order.poNumber && order.poNumber.toLowerCase().includes(q));
+        (order.poNumber && order.poNumber.toLowerCase().includes(q)) ||
+        (order.driverName && order.driverName.toLowerCase().includes(q)) ||
+        (order.vehicleNumber && order.vehicleNumber.toLowerCase().includes(q));
 
       const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -240,7 +242,7 @@ export function OrderList({
           <input
             type="text"
             aria-label={isId ? "Cari surat jalan berdasarkan nomor, customer, atau PO" : "Search delivery orders by number, client, or PO"}
-            placeholder={isId ? "Cari No. SJ, Customer, PO..." : "Search Order, Client, PO..."}
+            placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir..." : "Search Order, Client, PO, Driver..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition-shadow"

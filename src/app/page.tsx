@@ -10,7 +10,7 @@ import { OrderFormModal } from "@/components/delivery-orders/OrderFormModal";
 import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
-import { getOrderFilterOptions } from "@/lib/utils/statusColors";
+import { getOrderFilterOptions, STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
 import { DispatchConfirmModal } from "@/components/delivery-orders/DispatchConfirmModal";
 import { DeliveredCeremonyModal } from "@/components/delivery-orders/DeliveredCeremonyModal";
 import { SlipSpooledCeremonyModal } from "@/components/delivery-orders/SlipSpooledCeremonyModal";
@@ -289,7 +289,8 @@ export default function HomePage() {
 
   // Summary Metrics
   const totalVolumePairs = orders.reduce((sum, o) => sum + (o.totalQuantity || 0), 0);
-  const readyOrDispatchedCount = orders.filter((o) => o.status === "PRINTED" || o.status === "DISPATCHED").length;
+  const readyToLoadCount = orders.filter((o) => o.status === "PRINTED").length;
+  const dispatchedCount = orders.filter((o) => o.status === "DISPATCHED").length;
   const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
 
   // Mobile Header & Feed Filter Options (Canonical shared token config)
@@ -355,12 +356,12 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               {/* Top KPI Micro Strip */}
               <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0">
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 hover:shadow-xs transition">
-                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 shadow-xs">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/60 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-brand dark:text-red-400 shadow-xs">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-blue-900/70 dark:text-blue-300">
+                    <p className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">
                       {isId ? "Total Surat Jalan" : "Total Orders"}
                     </p>
                     <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight font-mono tabular-nums">
@@ -369,12 +370,12 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40 hover:shadow-xs transition">
-                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-amber-700 dark:text-amber-300 shadow-xs">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/60 hover:shadow-xs transition">
+                  <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-brand dark:text-red-400 shadow-xs">
                     <Boxes className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-amber-900/70 dark:text-amber-300">
+                    <p className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">
                       {isId ? "Total Pasang Terjadwal" : "Total Scheduled Pairs"}
                     </p>
                     <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight font-mono tabular-nums">
@@ -384,16 +385,18 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 hover:shadow-xs transition">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/60 hover:shadow-xs transition">
                   <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-xs">
                     <Truck className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-purple-900/70 dark:text-purple-300">
-                      {isId ? "Pengiriman & Selesai" : "Dispatched & Delivered"}
+                    <p className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">
+                      {isId ? "Siap Muat & Pengiriman" : "Ready to Load & Dispatch"}
                     </p>
                     <p className="text-base font-extrabold text-gray-900 dark:text-white leading-tight tabular-nums">
-                      <span className="text-purple-700 dark:text-purple-300 font-bold font-mono">{readyOrDispatchedCount}</span>{" "}
+                      <span className="text-amber-700 dark:text-amber-300 font-bold font-mono">{readyToLoadCount}</span>{" "}
+                      <span className="text-xs font-normal text-gray-500 font-sans">{isId ? "Siap" : "Ready"}</span> •{" "}
+                      <span className="text-purple-700 dark:text-purple-300 font-bold font-mono">{dispatchedCount}</span>{" "}
                       <span className="text-xs font-normal text-gray-500 font-sans">{isId ? "Kirim" : "Transit"}</span> •{" "}
                       <span className="text-emerald-700 dark:text-emerald-400 font-bold font-mono">{completedCount}</span>{" "}
                       <span className="text-xs font-normal text-gray-500 font-sans">{isId ? "Selesai" : "Delivered"}</span>
@@ -633,7 +636,7 @@ export default function HomePage() {
                                   setSelectedOrder(order);
                                   setDispatchGuard({ order, targetStatus: "DISPATCHED" });
                                 }}
-                                className="py-2.5 min-h-[44px] rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                                className={`py-2.5 min-h-[44px] rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition ${STATUS_COLOR_MAP.DISPATCHED.cta.buttonClasses}`}
                               >
                                 <Truck className="h-4 w-4" />
                                 <span>{isId ? "Kirimkan" : "Dispatch"}</span>
@@ -646,7 +649,7 @@ export default function HomePage() {
                                   setSelectedOrder(order);
                                   setDispatchGuard({ order, targetStatus: "DELIVERED" });
                                 }}
-                                className="py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition"
+                                className={`py-2.5 min-h-[44px] rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition ${STATUS_COLOR_MAP.DELIVERED.cta.buttonClasses}`}
                               >
                                 <span>{isId ? "Tiba di Lokasi" : "Mark Delivered"}</span>
                               </button>

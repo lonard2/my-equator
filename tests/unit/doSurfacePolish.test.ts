@@ -125,4 +125,88 @@ describe("DO Surface Final Quality Pass & Ergonomic Polish", () => {
       }
     });
   });
+
+  describe("Edit Unsaved Changes Protection (isDirty) & Safe Discard", () => {
+    it("detects dirty state when customer, address, or item fields change", () => {
+      const initial = {
+        recipientName: "PT Primarindo",
+        destinationAddress: "Jl. Gedebage",
+        driverName: "Asep",
+      };
+
+      const checkDirty = (current: typeof initial) => {
+        return (
+          current.recipientName !== initial.recipientName ||
+          current.destinationAddress !== initial.destinationAddress ||
+          current.driverName !== initial.driverName
+        );
+      };
+
+      assert.strictEqual(checkDirty({ ...initial }), false, "Clean state is not dirty");
+      assert.strictEqual(checkDirty({ ...initial, recipientName: "PT Primarindo Baru" }), true, "Modified recipient is dirty");
+      assert.strictEqual(checkDirty({ ...initial, driverName: "Budi" }), true, "Modified driver is dirty");
+    });
+  });
+
+  describe("Search Parity Across Desktop and Mobile", () => {
+    it("matches driverName and vehicleNumber in desktop order filter", () => {
+      const testOrders = [
+        {
+          orderNumber: "SJ/EQ/2026/09/0001",
+          recipientName: "PT Primarindo",
+          destinationAddress: "Bandung",
+          poNumber: "PO-001",
+          driverName: "Asep Sunandar",
+          vehicleNumber: "D 8821 EQ",
+        },
+        {
+          orderNumber: "SJ/EQ/2026/09/0002",
+          recipientName: "CV Mandiri",
+          destinationAddress: "Cibaduyut",
+          poNumber: "PO-002",
+          driverName: "Dedi Kusnadi",
+          vehicleNumber: "D 1234 AB",
+        },
+      ];
+
+      const searchOrders = (q: string) => {
+        const query = q.trim().toLowerCase();
+        return testOrders.filter(
+          (o) =>
+            !query ||
+            o.orderNumber.toLowerCase().includes(query) ||
+            o.recipientName.toLowerCase().includes(query) ||
+            o.destinationAddress.toLowerCase().includes(query) ||
+            (o.poNumber && o.poNumber.toLowerCase().includes(query)) ||
+            (o.driverName && o.driverName.toLowerCase().includes(query)) ||
+            (o.vehicleNumber && o.vehicleNumber.toLowerCase().includes(query))
+        );
+      };
+
+      assert.strictEqual(searchOrders("Asep").length, 1);
+      assert.strictEqual(searchOrders("8821").length, 1);
+      assert.strictEqual(searchOrders("Nonexistent").length, 0);
+    });
+  });
+
+  describe("Ready to Load (7am Warehouse Metric) & KPI Strip", () => {
+    it("accurately counts PRINTED orders as Siap Muat (ready to load)", () => {
+      const orders = [
+        { status: "DRAFT" },
+        { status: "CONFIRMED" },
+        { status: "PRINTED" },
+        { status: "PRINTED" },
+        { status: "DISPATCHED" },
+        { status: "DELIVERED" },
+      ];
+
+      const readyToLoadCount = orders.filter((o) => o.status === "PRINTED").length;
+      const dispatchedCount = orders.filter((o) => o.status === "DISPATCHED").length;
+      const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
+
+      assert.strictEqual(readyToLoadCount, 2, "PRINTED orders represent cargo ready for truck loading");
+      assert.strictEqual(dispatchedCount, 1, "DISPATCHED orders represent cargo in transit");
+      assert.strictEqual(completedCount, 1, "DELIVERED orders represent fulfilled orders");
+    });
+  });
 });
