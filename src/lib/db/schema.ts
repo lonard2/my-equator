@@ -119,3 +119,97 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+// 8. Company PKP & Coretax Tax Profile
+export const companyTaxProfiles = sqliteTable("company_tax_profiles", {
+  id: text("id").primaryKey(),
+  companyName: text("company_name").notNull(),
+  npwp16: text("npwp16").notNull(),
+  nitku22: text("nitku22").notNull(),
+  kppCode: text("kpp_code").notNull(),
+  kppName: text("kpp_name"),
+  taxAddress: text("tax_address").notNull(),
+  signatoryName: text("signatory_name").notNull(),
+  signatoryRole: text("signatory_role").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// 9. Coretax Tax Invoices (Faktur Pajak Keluaran & Masukan)
+export const taxInvoices = sqliteTable("tax_invoices", {
+  id: text("id").primaryKey(),
+  invoiceType: text("invoice_type", {
+    enum: ["OUTPUT_FPK", "INPUT_FPM"],
+  }).notNull().default("OUTPUT_FPK"),
+  transactionCode: text("transaction_code", {
+    enum: ["01", "02", "03", "04", "05", "07", "08", "09"],
+  }).notNull().default("01"),
+  nomorFaktur: text("nomor_faktur").notNull(),
+  referenceNumber: text("reference_number"),
+  taxPeriod: text("tax_period").notNull(), // YYYY-MM
+  invoiceDate: text("invoice_date").notNull(), // YYYY-MM-DD
+  buyerName: text("buyer_name").notNull(),
+  buyerNpwp16: text("buyer_npwp16").notNull(),
+  buyerNitku22: text("buyer_nitku22").notNull(),
+  buyerAddress: text("buyer_address").notNull(),
+  dpp: integer("dpp").notNull().default(0),
+  ppn: integer("ppn").notNull().default(0),
+  taxRate: integer("tax_rate").notNull().default(11), // 11% standard, 12% configured
+  isTaxIncluded: integer("is_tax_included").notNull().default(0),
+  status: text("status", {
+    enum: [
+      "DRAFT",
+      "READY",
+      "EXPORTED_XML",
+      "EXPORTED_EXCEL",
+      "UPLOADED_CORETAX",
+      "APPROVED",
+      "CANCELLED",
+    ],
+  }).notNull().default("DRAFT"),
+  deliveryOrderId: text("delivery_order_id").references(() => deliveryOrders.id, {
+    onDelete: "set null",
+  }),
+  inventoryMovementId: text("inventory_movement_id").references(() => inventoryMovements.id, {
+    onDelete: "set null",
+  }),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// 10. Tax Invoice Line Items (Detail Transaksi BKP / JKP)
+export const taxInvoiceItems = sqliteTable("tax_invoice_items", {
+  id: text("id").primaryKey(),
+  taxInvoiceId: text("tax_invoice_id")
+    .notNull()
+    .references(() => taxInvoices.id, { onDelete: "cascade" }),
+  itemCode: text("item_code").notNull(),
+  itemName: text("item_name").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: integer("unit_price").notNull().default(0),
+  totalPrice: integer("total_price").notNull().default(0),
+  dpp: integer("dpp").notNull().default(0),
+  ppn: integer("ppn").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+});
+
+// 11. Monthly SPT Masa PPN Reconciliation Staging
+export const sptMasaPeriods = sqliteTable("spt_masa_periods", {
+  id: text("id").primaryKey(),
+  period: text("period").notNull().unique(), // YYYY-MM
+  totalDppKeluaran: integer("total_dpp_keluaran").notNull().default(0),
+  totalPpnKeluaran: integer("total_ppn_keluaran").notNull().default(0),
+  countFpk: integer("count_fpk").notNull().default(0),
+  totalDppMasukan: integer("total_dpp_masukan").notNull().default(0),
+  totalPpnMasukan: integer("total_ppn_masukan").notNull().default(0),
+  countFpm: integer("count_fpm").notNull().default(0),
+  netTaxPayable: integer("net_tax_payable").notNull().default(0),
+  unbilledOrdersCount: integer("unbilled_orders_count").notNull().default(0),
+  unbilledOrdersAmount: integer("unbilled_orders_amount").notNull().default(0),
+  status: text("status", {
+    enum: ["OPEN", "RECONCILED", "REPORTED"],
+  }).notNull().default("OPEN"),
+  updatedAt: text("updated_at").notNull(),
+});
+
