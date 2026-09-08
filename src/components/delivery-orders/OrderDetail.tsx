@@ -349,6 +349,24 @@ export function OrderDetail({
     }
   };
 
+  // Ctrl+Enter / Cmd+Enter keyboard shortcut to save changes while editing
+  const handleSaveChangesRef = useRef(handleSaveChanges);
+  handleSaveChangesRef.current = handleSaveChanges;
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleSaveChangesRef.current();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isEditing]);
+
   const handleExecuteRollback = async () => {
     if (!rollbackReason.trim()) {
       setRollbackError(isId ? "Wajib mengisi alasan rollback atau pembatalan status." : "Rollback reason is required.");
@@ -659,6 +677,8 @@ export function OrderDetail({
                   type="button"
                   onClick={handleSaveChanges}
                   disabled={saving}
+                  title={isId ? "Simpan Perubahan (Ctrl+Enter)" : "Save Changes (Ctrl+Enter)"}
+                  aria-label={isId ? "Simpan Perubahan (Ctrl+Enter)" : "Save Changes (Ctrl+Enter)"}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-brand hover:bg-brand-strong px-4 py-2 text-xs font-bold text-white shadow-xs transition disabled:opacity-50 active:scale-95"
                 >
                   <Save className="h-3.5 w-3.5" />
@@ -671,6 +691,9 @@ export function OrderDetail({
                       ? "Simpan Perubahan"
                       : "Save Changes"}
                   </span>
+                  <kbd className="hidden sm:inline-block text-[10px] font-mono px-1 py-0.5 rounded bg-brand-strong/60 text-white/90 border border-white/20">
+                    Ctrl+↵
+                  </kbd>
                 </button>
               </>
             )}
@@ -765,7 +788,11 @@ export function OrderDetail({
                 const Icon = token.icon;
 
                 return (
-                  <div key={step.key} className="flex flex-col items-center relative z-10">
+                  <div
+                    key={step.key}
+                    className="flex flex-col items-center relative z-10"
+                    aria-current={isCurrent ? "step" : undefined}
+                  >
                     <div
                       className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                         isPassed

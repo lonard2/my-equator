@@ -442,19 +442,20 @@ export default function HomePage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-red-300 pointer-events-none" />
                         <input
                           type="text"
+                          aria-label={isId ? "Cari surat jalan berdasarkan nomor, customer, PO, atau sopir" : "Search delivery orders by number, client, PO, or driver"}
                           placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir..." : "Search Order, Client, PO, Driver..."}
                           value={mobileSearchTerm}
                           onChange={(e) => setMobileSearchTerm(e.target.value)}
-                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-8 text-xs text-white placeholder-red-200/70 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
+                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-11 text-xs text-white placeholder-red-200/70 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
                         />
                         {mobileSearchTerm && (
                           <button
                             type="button"
                             onClick={() => setMobileSearchTerm("")}
                             aria-label={isId ? "Hapus pencarian" : "Clear search"}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-red-200 hover:text-white"
+                            className="absolute right-0.5 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] p-2.5 text-red-200 hover:text-white flex items-center justify-center rounded-lg active:scale-95 transition"
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <X className="h-4 w-4" />
                           </button>
                         )}
                       </div>

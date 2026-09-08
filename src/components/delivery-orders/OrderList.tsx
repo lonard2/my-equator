@@ -239,6 +239,7 @@ export function OrderList({
           <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
           <input
             type="text"
+            aria-label={isId ? "Cari surat jalan berdasarkan nomor, customer, atau PO" : "Search delivery orders by number, client, or PO"}
             placeholder={isId ? "Cari No. SJ, Customer, PO..." : "Search Order, Client, PO..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -282,50 +283,50 @@ export function OrderList({
       <div
         ref={listContainerRef}
         role="listbox"
-        aria-label={isId ? "Daftar Dokumen Surat Jalan" : "Delivery Orders Listbox"}
-        aria-activedescendant={selectedOrderId ? `order-opt-${selectedOrderId}` : undefined}
-        className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80"
+        aria-label={isId ? "Daftar Surat Jalan" : "Delivery Orders List"}
+        className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80 focus:outline-none"
       >
         {loading ? (
-          <div className="p-3 space-y-2.5">
-            {[1, 2, 3, 4, 5].map((i) => (
+          <div className="p-3 space-y-3">
+            {[1, 2, 3, 4, 5].map((n) => (
               <div
-                key={i}
-                className="p-3.5 rounded-xl border border-gray-200/70 dark:border-gray-800/70 bg-white dark:bg-gray-900 space-y-2.5 animate-pulse"
+                key={n}
+                className="p-3 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-white/40 dark:bg-gray-900/40 space-y-2 animate-pulse"
               >
                 <div className="flex items-center justify-between">
-                  <div className="h-3.5 w-28 bg-gray-200 dark:bg-gray-700 rounded-md" />
-                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                  <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded-md" />
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-800 rounded-md" />
                 </div>
-                <div className="h-3 w-40 bg-gray-200 dark:bg-gray-700 rounded-md" />
-                <div className="flex items-center justify-between pt-1">
-                  <div className="h-2.5 w-20 bg-gray-100 dark:bg-gray-800 rounded-md" />
-                  <div className="h-3 w-14 bg-gray-200 dark:bg-gray-700 rounded-md" />
-                </div>
+                <div className="h-3 w-40 bg-gray-100 dark:bg-gray-800/60 rounded-md" />
+                <div className="h-3 w-24 bg-gray-100 dark:bg-gray-800/60 rounded-md" />
               </div>
             ))}
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="p-8 text-center text-gray-400 space-y-3">
-            <FileText className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-700" />
+            <FileText className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-700" />
             <div>
               <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                {isId ? "Tidak ada surat jalan ditemukan" : "No orders found"}
+                {isId ? "Tidak ada surat jalan ditemukan" : "No delivery orders found"}
               </p>
               <p className="text-[11px] text-gray-400 mt-0.5">
                 {searchTerm || statusFilter !== "ALL"
-                  ? isId ? "Coba sesuaikan kata kunci pencarian atau filter status." : "Try adjusting your search query or filter."
-                  : isId ? "Klik 'Buat DO' untuk membuat surat jalan baru." : "Click 'New DO' to create your first order."}
+                  ? isId
+                    ? "Coba sesuaikan kata kunci pencarian atau filter status."
+                    : "Try adjusting search query or status filter."
+                  : isId
+                  ? "Belum ada dokumen surat jalan dalam sistem."
+                  : "No delivery orders in the system yet."}
               </p>
             </div>
             {(searchTerm || statusFilter !== "ALL") && (
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition shadow-xs"
               >
                 <RotateCcw className="h-3.5 w-3.5 text-brand" />
-                <span>{isId ? "Reset Filter & Pencarian" : "Reset Filters"}</span>
+                <span>{isId ? "Reset Filter" : "Reset Filters"}</span>
               </button>
             )}
           </div>
@@ -334,87 +335,97 @@ export function OrderList({
             const isSelected = order.id === selectedOrderId;
             // Roving tabindex: exactly one item is tabIndex=0 (the selected order, or index 0 if no match)
             const isFocusedTarget = isSelected || (!selectedOrderId && index === 0);
+            const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
+            const printDisabledTooltip = order.status === "DRAFT"
+              ? (isId ? "Konfirm dulu untuk cetak resmi" : "Confirm order before official print")
+              : (isId ? "Dokumen dibatalkan, tidak dapat dicetak" : "Cancelled order cannot be printed");
+
             return (
               <div
                 key={order.id}
-                id={`order-opt-${order.id}`}
-                data-order-id={order.id}
-                role="option"
-                aria-selected={isSelected}
-                tabIndex={isFocusedTarget ? 0 : -1}
-                onClick={() => onSelectOrder(order)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onSelectOrder(order);
-                  }
-                }}
-                className={`group p-3.5 cursor-pointer transition-all duration-150 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset ${
-                  isSelected
-                    ? "bg-red-50/80 dark:bg-red-950/40"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                }`}
+                className="group relative border-b border-gray-100 dark:border-gray-800/80 last:border-b-0"
               >
-                {/* Active Inset Indicator Bar without box-sizing layout shift */}
-                {isSelected && (
-                  <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-brand" />
-                )}
+                {/* Selectable Listbox Option (Clean of nested interactive elements for W3C ARIA compliance) */}
+                <div
+                  id={`order-opt-${order.id}`}
+                  data-order-id={order.id}
+                  role="option"
+                  aria-selected={isSelected}
+                  tabIndex={isFocusedTarget ? 0 : -1}
+                  onClick={() => onSelectOrder(order)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectOrder(order);
+                    }
+                  }}
+                  className={`p-3.5 pb-2.5 cursor-pointer transition-all duration-150 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset ${
+                    isSelected
+                      ? "bg-red-50/80 dark:bg-red-950/40"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  }`}
+                >
+                  {/* Active Inset Indicator Bar without box-sizing layout shift */}
+                  {isSelected && (
+                    <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-brand" />
+                  )}
 
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono font-bold text-xs text-gray-900 dark:text-white group-hover:text-brand dark:group-hover:text-red-400 transition-colors">
-                        {order.orderNumber}
-                      </span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-xs text-gray-900 dark:text-white group-hover:text-brand dark:group-hover:text-red-400 transition-colors">
+                          {order.orderNumber}
+                        </span>
+                      </div>
+
+                      <p className="font-bold text-xs text-gray-800 dark:text-gray-200 truncate">
+                        {order.recipientName}
+                      </p>
+
+                      <p className="text-[11px] text-gray-500 truncate">{order.destinationAddress}</p>
                     </div>
 
-                    <p className="font-bold text-xs text-gray-800 dark:text-gray-200 truncate">
-                      {order.recipientName}
-                    </p>
-
-                    <p className="text-[11px] text-gray-500 truncate">{order.destinationAddress}</p>
+                    <div className="flex flex-col items-end space-y-1.5 shrink-0">
+                      <StatusBadge status={order.status} size="sm" language={language} />
+                      <span className="font-extrabold text-xs text-brand dark:text-red-400 tabular-nums">
+                        {order.totalQuantity.toLocaleString("id-ID")} psg
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-end space-y-1.5 shrink-0">
-                    <StatusBadge status={order.status} size="sm" language={language} />
-                    <span className="font-extrabold text-xs text-brand dark:text-red-400 tabular-nums">
-                      {order.totalQuantity.toLocaleString("id-ID")} psg
-                    </span>
+                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px] text-gray-400 pr-9">
+                    <span className="tabular-nums">{formatShortDate(order.deliveryDate)}</span>
+                    {order.poNumber && (
+                      <span className="font-mono text-[10px] truncate max-w-[120px]">
+                        PO: {order.poNumber}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px] text-gray-400">
-                  <span className="tabular-nums">{formatShortDate(order.deliveryDate)}</span>
-                  {(() => {
-                    const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
-                    const printDisabledTooltip = order.status === "DRAFT"
-                      ? (isId ? "Konfirm dulu untuk cetak resmi" : "Confirm order before official print")
-                      : (isId ? "Dokumen dibatalkan, tidak dapat dicetak" : "Cancelled order cannot be printed");
-
-                    return (
-                      <button
-                        type="button"
-                        disabled={!isPrintable}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isPrintable) onOpenPrint(order);
-                        }}
-                        className={`opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 max-md:opacity-100 p-1.5 rounded-lg transition-all min-h-[28px] min-w-[28px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                          !isPrintable
-                            ? "cursor-not-allowed text-gray-300 dark:text-gray-600 hover:bg-transparent"
-                            : "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 active:scale-95"
-                        }`}
-                        title={!isPrintable ? printDisabledTooltip : (isId ? "Cetak Surat Jalan" : "Print Order")}
-                        aria-label={
-                          !isPrintable
-                            ? `${order.orderNumber}: ${printDisabledTooltip}`
-                            : isId ? `Cetak Surat Jalan ${order.orderNumber}` : `Print Order ${order.orderNumber}`
-                        }
-                      >
-                        <Printer className="h-3.5 w-3.5" />
-                      </button>
-                    );
-                  })()}
+                {/* Un-nested Print Quick Action (Outside role="option" to prevent nested interactive ARIA violation) */}
+                <div className="absolute right-3.5 bottom-2 z-10">
+                  <button
+                    type="button"
+                    disabled={!isPrintable}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isPrintable) onOpenPrint(order);
+                    }}
+                    className={`opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 max-md:opacity-100 p-1.5 rounded-lg transition-all min-h-[28px] min-w-[28px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                      !isPrintable
+                        ? "cursor-not-allowed text-gray-300 dark:text-gray-600 hover:bg-transparent"
+                        : "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 active:scale-95"
+                    }`}
+                    title={!isPrintable ? printDisabledTooltip : (isId ? "Cetak Surat Jalan" : "Print Order")}
+                    aria-label={
+                      !isPrintable
+                        ? `${order.orderNumber}: ${printDisabledTooltip}`
+                        : isId ? `Cetak Surat Jalan ${order.orderNumber}` : `Print Order ${order.orderNumber}`
+                    }
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             );

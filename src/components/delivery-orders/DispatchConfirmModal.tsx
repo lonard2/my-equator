@@ -25,12 +25,12 @@ export function DispatchConfirmModal({
   language,
 }: DispatchConfirmModalProps) {
   const isId = language === "id";
-  const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const modalRef = useModalSafety({
     isOpen,
     onClose,
-    initialFocusRef: confirmButtonRef,
+    initialFocusRef: cancelButtonRef,
   });
 
   if (!isOpen || !order) return null;
@@ -69,7 +69,7 @@ export function DispatchConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/80 hover:text-white transition"
+            className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg hover:bg-white/10 text-white/80 hover:text-white transition flex items-center justify-center"
             aria-label={isId ? "Tutup dialog" : "Close dialog"}
           >
             <X className="h-4 w-4" />
@@ -177,20 +177,20 @@ export function DispatchConfirmModal({
         {/* Modal Footer */}
         <div className="p-4 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2.5">
           <button
+            ref={cancelButtonRef}
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition active:scale-95"
           >
             {isId ? "Batal" : "Cancel"}
           </button>
           <button
-            ref={confirmButtonRef}
             type="button"
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 ${
+            className={`min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 ${
               STATUS_COLOR_MAP[targetStatus].cta.buttonClasses
             }`}
           >

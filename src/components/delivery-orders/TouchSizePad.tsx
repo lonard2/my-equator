@@ -98,7 +98,8 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           <button
             type="button"
             onClick={() => handleAdjust(-10)}
-            className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            aria-label={isId ? "Kurangi 10 pasang" : "Decrease 10 pairs"}
+            className="min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
           >
             -10
           </button>
@@ -106,7 +107,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
             type="button"
             onClick={() => handleAdjust(-1)}
             aria-label={isId ? "Kurangi 1 pasang" : "Decrease 1 pair"}
-            className="p-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
           >
             <Minus className="h-4 w-4" />
           </button>
@@ -115,25 +116,27 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
             inputMode="numeric"
             pattern="[0-9]*"
             value={currentQty || ""}
+            aria-label={isId ? `Jumlah pasang ukuran ${activeSize}` : `Quantity for size ${activeSize}`}
             onChange={(e) => {
               const clean = e.target.value.replace(/[^0-9]/g, "");
               handleSetQty(parseInt(clean, 10) || 0);
             }}
             placeholder="0"
-            className="w-16 text-center font-extrabold text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-1 font-mono text-brand dark:text-red-400 focus:border-brand focus:outline-none"
+            className="w-16 min-h-[44px] text-center font-extrabold text-sm rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-1 font-mono text-brand dark:text-red-400 focus:border-brand focus:outline-none"
           />
           <button
             type="button"
             onClick={() => handleAdjust(1)}
             aria-label={isId ? "Tambah 1 pasang" : "Increase 1 pair"}
-            className="p-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
           >
             <Plus className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={() => handleAdjust(10)}
-            className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition"
+            aria-label={isId ? "Tambah 10 pasang" : "Increase 10 pairs"}
+            className="min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
           >
             +10
           </button>
@@ -144,30 +147,30 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           <button
             type="button"
             onClick={() => handleAdjust(50)}
-            className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 active:scale-95 transition"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 active:scale-95 transition flex items-center justify-center"
           >
             +50 psg
           </button>
           <button
             type="button"
             onClick={() => handleAdjust(100)}
-            className="px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 active:scale-95 transition"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 active:scale-95 transition flex items-center justify-center"
           >
             +100 psg
           </button>
           <button
             type="button"
             onClick={() => handleAdjust(200)}
-            className="px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900 text-xs font-bold text-brand dark:text-red-300 hover:bg-red-100 active:scale-95 transition"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900 text-xs font-bold text-brand dark:text-red-300 hover:bg-red-100 active:scale-95 transition flex items-center justify-center"
           >
             +200 psg
           </button>
           <button
             type="button"
             onClick={() => handleSetQty(0)}
-            className="px-2 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-300 active:scale-95 transition flex items-center gap-1"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-300 active:scale-95 transition flex items-center gap-1.5 justify-center"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-3.5 w-3.5" />
             <span>{isId ? "Reset" : "Clear"}</span>
           </button>
         </div>
