@@ -11,6 +11,7 @@ import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
 import { DispatchConfirmModal } from "@/components/delivery-orders/DispatchConfirmModal";
+import { DeliveredCeremonyModal } from "@/components/delivery-orders/DeliveredCeremonyModal";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
@@ -73,6 +74,9 @@ export default function HomePage() {
     order: DeliveryOrder;
     targetStatus: "DISPATCHED" | "DELIVERED";
   } | null>(null);
+
+  // Delivered Ceremony State (Brief full-screen celebration on DELIVERED transition)
+  const [deliveredCeremonyOrder, setDeliveredCeremonyOrder] = useState<DeliveryOrder | null>(null);
 
   // Mobile Bottom Sheet modal safety
   const mobileDetailRef = useModalSafety({
@@ -203,6 +207,9 @@ export default function HomePage() {
       if (json.success) {
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(json.data);
+        }
+        if (newStatus === "DELIVERED") {
+          setDeliveredCeremonyOrder(json.data || orders.find((o) => o.id === orderId) || null);
         }
         fetchOrders();
       } else {
@@ -892,6 +899,14 @@ export default function HomePage() {
           }
         }}
         onClose={() => setDispatchGuard(null)}
+        language={language}
+      />
+
+      {/* Delivered Ceremony Full-Screen Completion Modal */}
+      <DeliveredCeremonyModal
+        isOpen={!!deliveredCeremonyOrder}
+        order={deliveredCeremonyOrder}
+        onClose={() => setDeliveredCeremonyOrder(null)}
         language={language}
       />
     </div>
