@@ -8,17 +8,27 @@ import {
   Compass,
   BarChart3,
   ShieldCheck,
+  FileSpreadsheet,
 } from "lucide-react";
+import { canAccessTaxFiling } from "@/lib/auth/rbac";
 
-export type NavTab = "DELIVERY_ORDERS" | "DIGITIZER" | "INVENTORY" | "CAD_STUDIO" | "ANALYTICS" | "SECURITY";
+export type NavTab =
+  | "DELIVERY_ORDERS"
+  | "DIGITIZER"
+  | "INVENTORY"
+  | "CAD_STUDIO"
+  | "ANALYTICS"
+  | "TAX_FILING"
+  | "SECURITY";
 
 interface SidebarProps {
   currentTab: NavTab;
   onTabChange: (tab: NavTab) => void;
   language: "id" | "en";
+  userRole?: string;
 }
 
-export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
+export function Sidebar({ currentTab, onTabChange, language, userRole }: SidebarProps) {
   const isId = language === "id";
 
   const navItems: { id: NavTab; label: string; icon: React.ElementType }[] = [
@@ -48,11 +58,21 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
       icon: BarChart3,
     },
     {
+      id: "TAX_FILING",
+      label: isId ? "Persiapan Pajak" : "Tax Filing (Coretax)",
+      icon: FileSpreadsheet,
+    },
+    {
       id: "SECURITY",
       label: isId ? "Keamanan & Pengguna" : "Security & Users",
       icon: ShieldCheck,
     },
   ];
+
+  const canAccessTax = canAccessTaxFiling(userRole);
+  const visibleNavItems = navItems.filter(
+    (item) => item.id !== "TAX_FILING" || canAccessTax
+  );
 
   return (
     <aside className="w-60 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col justify-between p-3 shrink-0">
@@ -60,7 +80,7 @@ export function Sidebar({ currentTab, onTabChange, language }: SidebarProps) {
         <div className="px-3 py-2 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
           {isId ? "Modul Pabrik" : "Factory Modules"}
         </div>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
           return (

@@ -15,6 +15,7 @@ import {
   ArrowRight,
   X,
   Command,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface CommandPaletteProps {
@@ -91,6 +92,16 @@ export function CommandPalette({
       category: "NAV",
       icon: BarChart3,
       action: () => onNavigateTab("ANALYTICS"),
+    },
+    {
+      id: "nav-tax",
+      title: isId ? "Persiapan Pengisian Pajak (Coretax)" : "Coretax Tax Filing Preparation",
+      subtitle: isId
+        ? "Rekonsiliasi PPN, faktur pajak keluaran, dan ekspor XML/Excel DJP"
+        : "VAT reconciliation, tax invoices, and DJP XML/Excel bulk export",
+      category: "NAV",
+      icon: FileSpreadsheet,
+      action: () => onNavigateTab("TAX_FILING"),
     },
     // Quick Actions
     {

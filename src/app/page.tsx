@@ -19,6 +19,7 @@ import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { SecurityDashboard } from "@/components/security/SecurityDashboard";
+import { TaxDashboard } from "@/components/tax/TaxDashboard";
 import { CommandPalette } from "@/components/common/CommandPalette";
 import { KhatulistiwaAssistant } from "@/components/assistant/KhatulistiwaAssistant";
 import { SettingsModal } from "@/components/common/SettingsModal";
@@ -346,6 +347,7 @@ export default function HomePage() {
               setIsMobileDetailOpen(false);
             }}
             language={language}
+            userRole={currentUser?.role}
           />
         </div>
 
@@ -761,6 +763,8 @@ export default function HomePage() {
             <CadStudio language={language} />
           ) : currentTab === "ANALYTICS" ? (
             <AnalyticsDashboard language={language} />
+          ) : currentTab === "TAX_FILING" ? (
+            <TaxDashboard language={language} userRole={currentUser?.role} />
           ) : (
             <SecurityDashboard
               currentUser={currentUser}
