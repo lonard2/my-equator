@@ -73,6 +73,7 @@ export default function HomePage() {
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
   const [printOrder, setPrintOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // Dispatch Guard State (P0: Lightweight confirmation sheet on Kirimkan / Tiba di Lokasi)
   const [dispatchGuard, setDispatchGuard] = useState<{
@@ -161,15 +162,19 @@ export default function HomePage() {
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setOrders(json.data);
+        setLoadError(false);
         if (json.data.length > 0 && !selectedOrder) {
           setSelectedOrder(json.data[0]);
         } else if (selectedOrder) {
           const updated = json.data.find((o: DeliveryOrder) => o.id === selectedOrder.id);
           if (updated) setSelectedOrder(updated);
         }
+      } else {
+        setLoadError(true);
       }
     } catch (err) {
       console.error("Failed to load orders:", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -229,9 +234,8 @@ export default function HomePage() {
         if (newStatus === "DELIVERED") {
           setDeliveredCeremonyOrder(json.data || orders.find((o) => o.id === orderId) || null);
         }
-        if (newStatus === "PRINTED") {
-          setSlipSpooledCeremonyOrder(json.data || orders.find((o) => o.id === orderId) || null);
-        }
+        // PRINTED no longer auto-fires the spool ceremony: the ceremony itself
+        // is now the verification gate that triggers handleStatusChange(PRINTED).
         fetchOrders();
       } else {
         showAppToast(json.error || (language === "id" ? "Gagal memperbarui status surat jalan." : "Failed to update order status."), "error");
@@ -498,7 +502,32 @@ export default function HomePage() {
 
                   {/* Mobile Specific Card Feed */}
                   <div className="md:hidden flex-1 overflow-y-auto p-3 space-y-3 pb-20">
-                    {loading ? (
+                    {loadError ? (
+                      <div
+                        role="alert"
+                        className="p-6 my-4 text-center rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/30 space-y-3"
+                      >
+                        <AlertTriangle className="h-10 w-10 mx-auto text-red-400" />
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            {isId ? "Gagal memuat data surat jalan" : "Failed to load delivery orders"}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 max-w-xs mx-auto">
+                            {isId
+                              ? "Koneksi ke server pabrik terputus. Data tidak hilang, silakan coba lagi."
+                              : "Connection to the factory server failed. Data is safe, please retry."}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fetchOrders()}
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl bg-brand text-xs font-bold text-white active:scale-95 transition shadow-xs"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          <span>{isId ? "Coba Lagi" : "Retry"}</span>
+                        </button>
+                      </div>
+                    ) : loading ? (
                       <div className="space-y-3 py-2">
                         {[1, 2, 3].map((n) => (
                           <div
@@ -678,6 +707,30 @@ export default function HomePage() {
 
                   {/* Desktop & Tablet OrderList */}
                   <div className="hidden md:flex flex-col flex-1 overflow-hidden">
+                    {loadError ? (
+                      <div
+                        role="alert"
+                        className="m-3 p-5 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/30 space-y-2.5 text-center"
+                      >
+                        <AlertTriangle className="h-7 w-7 mx-auto text-red-400" />
+                        <p className="text-xs font-bold text-gray-900 dark:text-white">
+                          {isId ? "Gagal memuat data surat jalan" : "Failed to load delivery orders"}
+                        </p>
+                        <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                          {isId
+                            ? "Koneksi ke server pabrik terputus. Data tidak hilang."
+                            : "Connection to the factory server failed. Data is safe."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => fetchOrders()}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl bg-brand text-xs font-bold text-white active:scale-95 transition shadow-xs"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          <span>{isId ? "Coba Lagi" : "Retry"}</span>
+                        </button>
+                      </div>
+                    ) : (
                     <OrderList
                       orders={orders}
                       selectedOrderId={selectedOrder?.id || null}
@@ -690,6 +743,7 @@ export default function HomePage() {
                       language={language}
                       loading={loading}
                     />
+                    )}
                   </div>
                 </div>
 
@@ -937,11 +991,8 @@ export default function HomePage() {
         onClose={() => setPrintOrder(null)}
         language={language}
         onSpoolSuccess={(spooledOrder) => {
-          if (spooledOrder.status === "CONFIRMED") {
-            handleStatusChange(spooledOrder.id, "PRINTED");
-          } else {
-            setSlipSpooledCeremonyOrder(spooledOrder);
-          }
+          // PRINTED is only set after the operator verifies the physical output in the spool ceremony.
+          setSlipSpooledCeremonyOrder(spooledOrder);
         }}
       />
 
@@ -987,6 +1038,10 @@ export default function HomePage() {
         isOpen={!!slipSpooledCeremonyOrder}
         order={slipSpooledCeremonyOrder}
         onClose={() => setSlipSpooledCeremonyOrder(null)}
+        onConfirmPrinted={(confirmedOrder) => {
+          handleStatusChange(confirmedOrder.id, "PRINTED");
+          setSlipSpooledCeremonyOrder(null);
+        }}
         language={language}
       />
 

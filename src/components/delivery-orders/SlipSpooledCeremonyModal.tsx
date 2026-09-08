@@ -21,6 +21,8 @@ interface SlipSpooledCeremonyModalProps {
   isOpen: boolean;
   order: DeliveryOrder | null;
   onClose: () => void;
+  /** Called when the operator verifies the physical print output; promotes CONFIRMED to PRINTED. */
+  onConfirmPrinted?: (order: DeliveryOrder) => void;
   language: Language;
   autoDismissMs?: number;
   onDownloadPrn?: (order: DeliveryOrder) => void;
@@ -30,6 +32,7 @@ export function SlipSpooledCeremonyModal({
   isOpen,
   order,
   onClose,
+  onConfirmPrinted,
   language,
   autoDismissMs = 4000,
   onDownloadPrn,
@@ -38,16 +41,23 @@ export function SlipSpooledCeremonyModal({
   const [remainingMs, setRemainingMs] = useState(autoDismissMs);
   const actionButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  // A CONFIRMED order has not been verified as physically printed yet: the
+  // operator must answer "printed correctly?" before the status advances.
+  // Re-spool of an already-PRINTED order keeps the passive auto-dismiss ritual.
+  const needsVerification = !!order && order.status === "CONFIRMED" && !!onConfirmPrinted;
+
   const modalRef = useModalSafety({
     isOpen,
     onClose,
     initialFocusRef: actionButtonRef,
   });
 
-  // Reset countdown whenever modal opens with a new order
+  // Reset countdown whenever modal opens with a new order. Verification-pending
+  // ceremonies do not auto-dismiss: closing equals "not printed yet".
   useEffect(() => {
     if (!isOpen || !order) return;
     setRemainingMs(autoDismissMs);
+    if (needsVerification) return;
 
     const intervalStep = 50;
     const timer = setInterval(() => {
@@ -62,7 +72,7 @@ export function SlipSpooledCeremonyModal({
     }, intervalStep);
 
     return () => clearInterval(timer);
-  }, [isOpen, order, autoDismissMs, onClose]);
+  }, [isOpen, order, autoDismissMs, onClose, needsVerification]);
 
   if (!isOpen || !order) return null;
 
@@ -215,44 +225,99 @@ export function SlipSpooledCeremonyModal({
             </div>
           </div>
 
-          {/* Action CTAs & Auto-Dismiss Bar */}
-          <div className="w-full space-y-2.5 pt-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleDownloadAgain}
-                className="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-700 hover:border-amber-500/70 bg-gray-900/80 hover:bg-gray-800 text-gray-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-98"
-              >
-                <FileDown className="h-4 w-4 text-amber-400" />
-                <span>{isId ? "Unduh .PRN Ulang" : "Download .PRN Again"}</span>
-              </button>
-
-              <button
-                ref={actionButtonRef}
-                type="button"
-                onClick={onClose}
-                className="min-h-[44px] py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-950 flex items-center justify-center gap-2 active:scale-98 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              >
-                <span>{isId ? "Selesai & Lanjutkan" : "Done & Continue"}</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Subtle Countdown Progress */}
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 transition-all duration-75 ease-linear rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
+          {/* Print Verification Block (CONFIRMED orders only) */}
+          {needsVerification ? (
+            <div className="w-full space-y-2.5 pt-1">
+              <div className="rounded-xl border border-amber-800/60 bg-amber-950/40 px-4 py-3 text-left">
+                <p className="text-sm font-bold text-amber-200">
+                  {isId ? "Sudah tercetak dengan benar?" : "Printed correctly?"}
+                </p>
+                <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                  {isId
+                    ? "Periksa fisik: 3 lapis kertas terpasang rapi, teks terbaca jelas di semua rangkap. Status tetap CONFIRMED sampai Anda konfirmasi."
+                    : "Check physically: 3 plies aligned, text legible on every sheet. Status stays CONFIRMED until you confirm."}
+                </p>
               </div>
-              <p className="text-[10px] text-gray-500 font-mono">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-700 hover:border-amber-500/70 bg-gray-900/80 hover:bg-gray-800 text-gray-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-98"
+                >
+                  <span>{isId ? "Belum, Cetak Ulang Nanti" : "Not Yet, Reprint Later"}</span>
+                </button>
+
+                <button
+                  ref={actionButtonRef}
+                  type="button"
+                  onClick={() => onConfirmPrinted?.(order)}
+                  className="min-h-[44px] py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-950 flex items-center justify-center gap-2 active:scale-98 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>{isId ? "Ya, Tandai Tercetak" : "Yes, Mark Printed"}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1">
+                <button
+                  type="button"
+                  onClick={handleDownloadAgain}
+                  className="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-800 hover:border-gray-600 bg-transparent text-gray-400 hover:text-gray-200 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition active:scale-98"
+                >
+                  <FileDown className="h-3.5 w-3.5 text-amber-400" />
+                  <span>{isId ? "Unduh .PRN Ulang" : "Download .PRN Again"}</span>
+                </button>
+              </div>
+
+              <p className="text-[10px] text-gray-500 font-mono text-center">
                 {isId
-                  ? `Menutup otomatis dalam ${remainingSeconds} detik (atau tekan Enter / Esc)`
-                  : `Auto-dismissing in ${remainingSeconds}s (or press Enter / Esc)`}
+                  ? "Tanpa konfirmasi, dokumen tetap berstatus CONFIRMED dan dapat dicetak ulang kapan saja."
+                  : "Without confirmation, the document stays CONFIRMED and can be reprinted anytime."}
               </p>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Action CTAs & Auto-Dismiss Bar */}
+              <div className="w-full space-y-2.5 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadAgain}
+                    className="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-700 hover:border-amber-500/70 bg-gray-900/80 hover:bg-gray-800 text-gray-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-98"
+                  >
+                    <FileDown className="h-4 w-4 text-amber-400" />
+                    <span>{isId ? "Unduh .PRN Ulang" : "Download .PRN Again"}</span>
+                  </button>
+
+                  <button
+                    ref={actionButtonRef}
+                    type="button"
+                    onClick={onClose}
+                    className="min-h-[44px] py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-950 flex items-center justify-center gap-2 active:scale-98 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                  >
+                    <span>{isId ? "Selesai & Lanjutkan" : "Done & Continue"}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Subtle Countdown Progress */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500 transition-all duration-75 ease-linear rounded-full"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-500 font-mono">
+                    {isId
+                      ? `Menutup otomatis dalam ${remainingSeconds} detik (atau tekan Enter / Esc)`
+                      : `Auto-dismissing in ${remainingSeconds}s (or press Enter / Esc)`}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

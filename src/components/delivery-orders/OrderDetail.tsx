@@ -160,6 +160,109 @@ export function OrderDetail({
   const [notes, setNotes] = useState(order.notes || "");
   const [editItems, setEditItems] = useState<EditableItem[]>([]);
 
+  // Check whether operator has made unsaved edits
+  const isDirty = useMemo(() => {
+    if (!isEditing) return false;
+    if (recipientName !== order.recipientName) return true;
+    if (destinationAddress !== order.destinationAddress) return true;
+    if (poNumber !== (order.poNumber || "")) return true;
+    if (vehicleNumber !== (order.vehicleNumber || "")) return true;
+    if (driverName !== (order.driverName || "")) return true;
+    if (deliveryDate !== order.deliveryDate) return true;
+    if (notes !== (order.notes || "")) return true;
+    if (editItems.length !== (order.items || []).length) return true;
+    for (let i = 0; i < editItems.length; i++) {
+      const orig = order.items?.[i];
+      if (!orig) return true;
+      if (editItems[i].articleCode !== orig.articleCode) return true;
+      if (editItems[i].articleName !== orig.articleName) return true;
+      if (editItems[i].colorway !== (orig.colorway || "")) return true;
+      if (editItems[i].unitPrice !== (orig.unitPrice || 0)) return true;
+      if (editItems[i].notes !== (orig.notes || "")) return true;
+      const allSizes = new Set([
+        ...Object.keys(editItems[i].sizes || {}),
+        ...Object.keys(orig.sizes || {}),
+      ]);
+      for (const sz of allSizes) {
+        const q1 = editItems[i].sizes[sz as unknown as FootwearSize] || 0;
+        const q2 = orig.sizes[sz as unknown as FootwearSize] || 0;
+        if (q1 !== q2) return true;
+      }
+    }
+    return false;
+  }, [
+    isEditing,
+    recipientName,
+    destinationAddress,
+    poNumber,
+    vehicleNumber,
+    driverName,
+    deliveryDate,
+    notes,
+    editItems,
+    order,
+  ]);
+
+  // Discard-edit confirmation modal (replaces native window.confirm)
+  const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
+  const discardCancelRef = useRef<HTMLButtonElement | null>(null);
+  const discardModalRef = useModalSafety({
+    isOpen: isDiscardModalOpen,
+    onClose: () => setIsDiscardModalOpen(false),
+    initialFocusRef: discardCancelRef,
+  });
+
+  // Unsaved-edit autosave (interruption-safe on mobile Safari where beforeunload is unreliable)
+  const editDraftStorageKey = `myequator_do_draft_${order.id}`;
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!isEditing || !isDirty) return;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          editDraftStorageKey,
+          JSON.stringify({
+            recipientName,
+            destinationAddress,
+            poNumber,
+            vehicleNumber,
+            driverName,
+            deliveryDate,
+            notes,
+            items: editItems,
+          })
+        );
+      } catch {
+        // storage unavailable (private mode): autosave is best-effort
+      }
+    }, 800);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [
+    isEditing,
+    isDirty,
+    editDraftStorageKey,
+    recipientName,
+    destinationAddress,
+    poNumber,
+    vehicleNumber,
+    driverName,
+    deliveryDate,
+    notes,
+    editItems,
+  ]);
+
+  const clearEditDraft = () => {
+    try {
+      localStorage.removeItem(editDraftStorageKey);
+    } catch {
+      // ignore
+    }
+  };
+
+
   // Check if current order contains oversized footwear sizes
   const hasOversizedSizes = (order.items || []).some((item) =>
     OVERSIZED_SIZES.some((s) => item.sizes && item.sizes[s] && Number(item.sizes[s]) > 0)
@@ -286,49 +389,6 @@ export function OrderDetail({
     );
   };
 
-  // Check whether operator has made unsaved edits
-  const isDirty = useMemo(() => {
-    if (!isEditing) return false;
-    if (recipientName !== order.recipientName) return true;
-    if (destinationAddress !== order.destinationAddress) return true;
-    if (poNumber !== (order.poNumber || "")) return true;
-    if (vehicleNumber !== (order.vehicleNumber || "")) return true;
-    if (driverName !== (order.driverName || "")) return true;
-    if (deliveryDate !== order.deliveryDate) return true;
-    if (notes !== (order.notes || "")) return true;
-    if (editItems.length !== (order.items || []).length) return true;
-    for (let i = 0; i < editItems.length; i++) {
-      const orig = order.items?.[i];
-      if (!orig) return true;
-      if (editItems[i].articleCode !== orig.articleCode) return true;
-      if (editItems[i].articleName !== orig.articleName) return true;
-      if (editItems[i].colorway !== (orig.colorway || "")) return true;
-      if (editItems[i].unitPrice !== (orig.unitPrice || 0)) return true;
-      if (editItems[i].notes !== (orig.notes || "")) return true;
-      const allSizes = new Set([
-        ...Object.keys(editItems[i].sizes || {}),
-        ...Object.keys(orig.sizes || {}),
-      ]);
-      for (const sz of allSizes) {
-        const q1 = editItems[i].sizes[sz as unknown as FootwearSize] || 0;
-        const q2 = orig.sizes[sz as unknown as FootwearSize] || 0;
-        if (q1 !== q2) return true;
-      }
-    }
-    return false;
-  }, [
-    isEditing,
-    recipientName,
-    destinationAddress,
-    poNumber,
-    vehicleNumber,
-    driverName,
-    deliveryDate,
-    notes,
-    editItems,
-    order,
-  ]);
-
   // Protect against accidental browser tab navigation while unsaved changes exist
   useEffect(() => {
     if (!isDirty) return;
@@ -340,16 +400,57 @@ export function OrderDetail({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
+  const handleStartEdit = () => {
+    // Restore an interrupted editing session (autosaved draft) if one exists
+    let restored = false;
+    try {
+      const raw = localStorage.getItem(editDraftStorageKey);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft && typeof draft === "object") {
+          if (typeof draft.recipientName === "string") setRecipientName(draft.recipientName);
+          if (typeof draft.destinationAddress === "string") setDestinationAddress(draft.destinationAddress);
+          if (typeof draft.poNumber === "string") setPoNumber(draft.poNumber);
+          if (typeof draft.vehicleNumber === "string") setVehicleNumber(draft.vehicleNumber);
+          if (typeof draft.driverName === "string") setDriverName(draft.driverName);
+          if (typeof draft.deliveryDate === "string") setDeliveryDate(draft.deliveryDate);
+          if (typeof draft.notes === "string") setNotes(draft.notes);
+          if (Array.isArray(draft.items) && draft.items.length > 0) {
+            setEditItems(draft.items);
+            setActiveItemIndex(0);
+          }
+          restored = true;
+        }
+      }
+    } catch {
+      // corrupted draft: fall through to fresh edit state
+    }
+    setIsEditing(true);
+    if (restored) {
+      showToast(
+        isId
+          ? "Draf perubahan yang belum tersimpan dipulihkan dari sesi terakhir."
+          : "Unsaved draft restored from your last session."
+      );
+    }
+  };
+
   const handleCancelEdit = () => {
     if (isDirty) {
-      const discard = window.confirm(
-        isId
-          ? "Ada perubahan data yang belum disimpan. Yakin ingin membatalkan dan membuang perubahan?"
-          : "You have unsaved changes. Discard them?"
-      );
-      if (!discard) return;
+      setIsDiscardModalOpen(true);
+      return;
     }
+    setIsEditing(false);
+  };
 
+  const handleConfirmDiscardEdit = () => {
+    clearEditDraft();
+    setIsDiscardModalOpen(false);
+    resetEditFields();
+    setIsEditing(false);
+  };
+
+  const resetEditFields = () => {
     setRecipientName(order.recipientName);
     setDestinationAddress(order.destinationAddress);
     setPoNumber(order.poNumber || "");
@@ -425,6 +526,7 @@ export function OrderDetail({
         throw new Error(data.error || (isId ? "Gagal menyimpan perubahan." : "Failed to update order."));
       }
       setIsEditing(false);
+      clearEditDraft();
       showToast(isId ? "Perubahan surat jalan berhasil disimpan!" : "Delivery order updated successfully!");
       onOrderUpdated();
     } catch (err: unknown) {
@@ -588,6 +690,10 @@ export function OrderDetail({
                       onClick={() => {
                         if (nextAction.next === "DISPATCHED" || nextAction.next === "DELIVERED") {
                           setPendingDispatchStatus(nextAction.next);
+                        } else if (nextAction.next === "PRINTED") {
+                          // PRINTED is the void boundary: route through the real
+                          // print task; status advances only after spool verification.
+                          onOpenPrint(order);
                         } else {
                           onStatusChange(order.id, nextAction.next);
                         }
@@ -608,7 +714,7 @@ export function OrderDetail({
                 {/* 2. Secondary Primary: Edit Order */}
                 {canEdit && (
                   <button
-                    onClick={() => setIsEditing(true)}
+                    onClick={handleStartEdit}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <Edit3 className="h-3.5 w-3.5 text-gray-500" />
@@ -1418,6 +1524,54 @@ export function OrderDetail({
                 className="min-h-[44px] px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
               >
                 {isId ? "Ya, Hapus Draft" : "Yes, Delete Draft"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Discard Edit Confirmation Modal (replaces native window.confirm) */}
+      {isDiscardModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div
+            ref={discardModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="discard-dialog-title"
+            aria-describedby="discard-dialog-desc"
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-150 p-5 space-y-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 id="discard-dialog-title" className="font-bold text-sm text-gray-900 dark:text-white">
+                  {isId ? "Buang Perubahan yang Belum Disimpan?" : "Discard Unsaved Changes?"}
+                </h3>
+                <p id="discard-dialog-desc" className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {isId
+                    ? `Ada perubahan pada surat jalan ${order.orderNumber} yang belum disimpan. Lanjutkan mengedit untuk mempertahankannya.`
+                    : `Order ${order.orderNumber} has unsaved changes. Continue editing to keep them.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <button
+                ref={discardCancelRef}
+                type="button"
+                onClick={() => setIsDiscardModalOpen(false)}
+                className="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {isId ? "Lanjut Mengedit" : "Keep Editing"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDiscardEdit}
+                className="min-h-[44px] px-4 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {isId ? "Ya, Buang Perubahan" : "Yes, Discard"}
               </button>
             </div>
           </div>
