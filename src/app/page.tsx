@@ -12,6 +12,7 @@ import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer"
 import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
 import { DispatchConfirmModal } from "@/components/delivery-orders/DispatchConfirmModal";
 import { DeliveredCeremonyModal } from "@/components/delivery-orders/DeliveredCeremonyModal";
+import { SlipSpooledCeremonyModal } from "@/components/delivery-orders/SlipSpooledCeremonyModal";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
 import { InventoryDashboard } from "@/components/inventory/InventoryDashboard";
 import { CadStudio } from "@/components/design-studio/CadStudio";
@@ -79,6 +80,9 @@ export default function HomePage() {
 
   // Delivered Ceremony State (Brief full-screen celebration on DELIVERED transition)
   const [deliveredCeremonyOrder, setDeliveredCeremonyOrder] = useState<DeliveryOrder | null>(null);
+
+  // Slip Spooled Ceremony State (Dot-matrix print confirmation ritual matching Delivered ceremony)
+  const [slipSpooledCeremonyOrder, setSlipSpooledCeremonyOrder] = useState<DeliveryOrder | null>(null);
 
   // Global App Toast State (Accessible Live Region, replaces native alert)
   const [appToast, setAppToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -222,6 +226,9 @@ export default function HomePage() {
         }
         if (newStatus === "DELIVERED") {
           setDeliveredCeremonyOrder(json.data || orders.find((o) => o.id === orderId) || null);
+        }
+        if (newStatus === "PRINTED") {
+          setSlipSpooledCeremonyOrder(json.data || orders.find((o) => o.id === orderId) || null);
         }
         fetchOrders();
       } else {
@@ -728,6 +735,7 @@ export default function HomePage() {
                       onDeleteOrder={handleDeleteOrder}
                       onOrderUpdated={fetchOrders}
                       language={language}
+                      onSpoolSuccess={(order) => setSlipSpooledCeremonyOrder(order)}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full text-center p-8 text-gray-400">
@@ -799,6 +807,7 @@ export default function HomePage() {
                 onDeleteOrder={handleDeleteOrder}
                 onOrderUpdated={fetchOrders}
                 language={language}
+                onSpoolSuccess={(order) => setSlipSpooledCeremonyOrder(order)}
               />
             </div>
           </div>
@@ -926,6 +935,13 @@ export default function HomePage() {
         order={printOrder}
         onClose={() => setPrintOrder(null)}
         language={language}
+        onSpoolSuccess={(spooledOrder) => {
+          if (spooledOrder.status === "CONFIRMED") {
+            handleStatusChange(spooledOrder.id, "PRINTED");
+          } else {
+            setSlipSpooledCeremonyOrder(spooledOrder);
+          }
+        }}
       />
 
       {/* UI Settings Modal */}
@@ -962,6 +978,14 @@ export default function HomePage() {
         isOpen={!!deliveredCeremonyOrder}
         order={deliveredCeremonyOrder}
         onClose={() => setDeliveredCeremonyOrder(null)}
+        language={language}
+      />
+
+      {/* Slip Spooled Ceremony Full-Screen Print Ritual Modal */}
+      <SlipSpooledCeremonyModal
+        isOpen={!!slipSpooledCeremonyOrder}
+        order={slipSpooledCeremonyOrder}
+        onClose={() => setSlipSpooledCeremonyOrder(null)}
         language={language}
       />
 

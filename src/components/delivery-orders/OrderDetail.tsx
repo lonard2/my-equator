@@ -44,6 +44,7 @@ interface OrderDetailProps {
   onDeleteOrder: (id: string) => void;
   onOrderUpdated: () => void;
   language: "id" | "en";
+  onSpoolSuccess?: (order: DeliveryOrder) => void;
 }
 
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
@@ -59,22 +60,33 @@ const ROLLBACK_SEMANTICS: Record<DeliveryOrderStatus, { id: string; en: string }
     en: "Ready for official re-printing",
   },
   PRINTED: {
-    id: "Siap kirim ulang oleh armada sopir",
-    en: "Ready for driver re-dispatch",
+    id: "Ulangi cetak dokumen fisik (Surat Jalan)",
+    en: "Re-issue physical printed delivery slip",
   },
   DISPATCHED: {
-    id: "Dalam perjalanan ke alamat tujuan",
-    en: "In transit to destination",
+    id: "Koreksi armada / jadwal pengiriman",
+    en: "Update dispatch details or schedule",
   },
   CANCELLED: {
-    id: "Batalkan DO resmi & catat audit",
-    en: "Officially cancel and log audit",
+    id: "Batalkan dokumen resmi dengan jejak audit",
+    en: "Void and archive document with audit log",
   },
   DELIVERED: {
     id: "Telah diterima di lokasi",
     en: "Delivered on site",
   },
 };
+
+interface EditItemRow {
+  articleCode: string;
+  shoeName: string;
+  colorway: string;
+  unitPrice: number;
+  totalPairs: number;
+  subtotal: number;
+  sizes: SizeBreakdown;
+  notes: string;
+}
 
 interface EditableItem {
   id: string;
@@ -93,6 +105,7 @@ export function OrderDetail({
   onDeleteOrder,
   onOrderUpdated,
   language,
+  onSpoolSuccess,
 }: OrderDetailProps) {
   const isId = language === "id";
   const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
@@ -224,6 +237,9 @@ export function OrderDetail({
         ? "File stream biner ESC/P untuk printer dot-matrix Epson LX berhasil diunduh."
         : "Binary ESC/P .PRN stream downloaded for Epson LX dot-matrix printer."
     );
+    if (onSpoolSuccess) {
+      onSpoolSuccess(order);
+    }
   };
 
   const handleAddItem = () => {

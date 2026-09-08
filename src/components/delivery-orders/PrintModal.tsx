@@ -20,11 +20,12 @@ interface PrintModalProps {
   order: DeliveryOrder | null;
   onClose: () => void;
   language: "id" | "en";
+  onSpoolSuccess?: (order: DeliveryOrder) => void;
 }
 
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
-export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps) {
+export function PrintModal({ isOpen, order, onClose, language, onSpoolSuccess }: PrintModalProps) {
   const isId = language === "id";
   const [activeTab, setActiveTab] = useState<"DOT_MATRIX" | "HTML_SHEET">("DOT_MATRIX");
   const [copied, setCopied] = useState(false);
@@ -61,6 +62,10 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
 
   const handleDownloadPrn = () => {
     window.open(`/api/orders/${order.id}/print-escp?format=binary`, "_blank");
+    if (onSpoolSuccess) {
+      onClose();
+      onSpoolSuccess(previewOrder);
+    }
   };
 
   const handleCopyText = () => {
@@ -71,6 +76,10 @@ export function PrintModal({ isOpen, order, onClose, language }: PrintModalProps
 
   const handleBrowserPrint = () => {
     window.print();
+    if (onSpoolSuccess) {
+      onClose();
+      onSpoolSuccess(previewOrder);
+    }
   };
 
   return (
