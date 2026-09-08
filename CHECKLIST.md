@@ -14,6 +14,7 @@
 - [x] **Phase 3: Insole CAD Studio & Generative Vector Design** (Completed)
 - [x] **Phase 4: Visual Analytics Suite & Instant UI Preference Engine** (Completed)
 - [x] **Phase 5: Factory Security, RBAC Lockdown, Audit Trails & Offline Resiliency** (Completed)
+- [x] **Phase 6: Coretax Tax Filing Preparation (Persiapan Pengisian Pajak)** (Completed)
 
 ---
 
@@ -89,3 +90,18 @@
 - [x] 1-Click offline database snapshot export and restore utility (`.json`).
 - [x] End-to-end build and verification across all modules.
 - [x] Complete project documentation audit, Phase 5 walkthrough, and finalized [`docs/lesson_learned.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/lesson_learned.md).
+
+---
+
+### Phase 6: Coretax Tax Filing Preparation (Persiapan Pengisian Pajak)
+- [x] Indonesian Coretax DJP (PSIAP) database schema with Drizzle ORM (`company_tax_profiles`, `tax_invoices`, `tax_invoice_items`, `spt_masa_periods`).
+- [x] 16-Digit NPWP (NIK & Corporate) and 22-digit NITKU validation and formatting utilities.
+- [x] Pure calculation engine for DPP and PPN (standard 11%, transition-ready 12%, tax-exclusive & inclusive) with DJP integer rounding.
+- [x] Standard Coretax XML bulk upload generator (`.xml`) with namespace conformance and XML entity escaping.
+- [x] Official DJP Coretax Excel import workbook generator (`.xlsx`: `Faktur` + `DetailFaktur` sheets).
+- [x] Automated monthly VAT reconciliation comparing Output VAT (Delivery Orders/Invoices) against Input VAT (Raw Material Purchases).
+- [x] Unbilled delivery order detection and 1-click batch tax invoice generator modal.
+- [x] Tax filing preparation UI workbench (`TaxDashboard`, `SptMasaSummaryCard`, `TaxInvoiceList`, `TaxInvoiceDetailDrawer`).
+- [x] Company PKP Tax Profile configuration modal.
+- [x] Two-tier RBAC security gating (`TAX_VIEW` and `TAX_MANAGE` restricted to Super Admin and Factory Manager).
+- [x] Phase 6 educational walkthrough ([`docs/walkthroughs/phase-6-tax-filing-coretax.md`](file:///Users/lonard/Desktop/MyEquator-seconditer/docs/walkthroughs/phase-6-tax-filing-coretax.md)).

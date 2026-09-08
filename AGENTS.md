@@ -36,6 +36,10 @@
 |                    7. Security & Role-Based Access Control (RBAC)                 |
 |       Super Admin | Factory Manager | Warehouse/Inventory | Sales Operator        |
 +-----------------------------------------------------------------------------------+
+|  8. Coretax Tax Filing Preparation (Persiapan Pengisian Pajak)                    |
+|     - NPWP 16 & NITKU 22 validation | Coretax XML bulk import (.xml)              |
+|     - Official DJP Excel (.xlsx)    | SPT Masa PPN 1111 (Output vs Input VAT)     |
++-----------------------------------------------------------------------------------+
 ```
 
 ---
