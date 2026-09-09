@@ -982,7 +982,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         {activeTab === "MATERIALS" ? (
           <div>
             {/* MOBILE TOUCH CARD FEED (md:hidden) */}
-            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
+            <div className="lg:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
               {sortedAndFilteredMaterials.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 space-y-2">
                   <Boxes className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-700" />
@@ -1097,14 +1097,17 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
 
             {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) WITH STICKY HEADER & DYNAMIC SORTING */}
-            <div className="hidden md:block overflow-x-auto max-h-[68vh]">
+            <div className="hidden lg:block overflow-x-auto max-h-[68vh]">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>
                     <th className="p-3.5 w-10 text-center">No</th>
                     <th
                       onClick={() => handleSort("name")}
-                      className="p-3.5 min-w-[220px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
+                      aria-sort={sortColumn === "name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("name"); } }}
+                      className="p-3.5 min-w-[220px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       <div className="flex items-center gap-1">
                         <span>{isId ? "SKU & Nama Bahan" : "SKU & Description"}</span>
@@ -1113,6 +1116,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("category")}
+                      aria-sort={sortColumn === "category" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("category"); } }}
                       className="p-3.5 w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center gap-1">
@@ -1122,6 +1128,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("stock")}
+                      aria-sort={sortColumn === "stock" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("stock"); } }}
                       className="p-3.5 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -1131,6 +1140,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("health")}
+                      aria-sort={sortColumn === "health" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("health"); } }}
                       className="p-3.5 text-center w-36 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -1140,6 +1152,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("unitCost")}
+                      aria-sort={sortColumn === "unitCost" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("unitCost"); } }}
                       className="p-3.5 text-right w-28 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -1149,6 +1164,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("valuation")}
+                      aria-sort={sortColumn === "valuation" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("valuation"); } }}
                       className="p-3.5 text-right w-32 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -1158,6 +1176,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     </th>
                     <th
                       onClick={() => handleSort("location")}
+                      aria-sort={sortColumn === "location" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort("location"); } }}
                       className="p-3.5 min-w-[130px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition group"
                     >
                       <div className="flex items-center gap-1">
@@ -1416,14 +1437,19 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {/* Keyboard Shortcuts Cheatsheet Modal */}
       {isShortcutsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="inventory-shortcuts-title"
+            className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2 text-gray-900 dark:text-white">
                 <span className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
                   <Keyboard className="h-5 w-5" />
                 </span>
                 <div>
-                  <h4 className="font-extrabold text-base leading-tight">
+                  <h4 id="inventory-shortcuts-title" className="font-extrabold text-base leading-tight">
                     {isId ? "Pintasan Keyboard Inventori" : "Inventory Keyboard Shortcuts"}
                   </h4>
                   <p className="text-xs text-gray-500">
@@ -1513,13 +1539,18 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {/* In-App Delete Confirmation Modal */}
       {materialToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-material-title"
+            className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4"
+          >
             <div className="flex items-center gap-3 text-red-600">
               <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70">
                 <Trash2 className="h-6 w-6" />
               </div>
               <div>
-                <h4 className="font-extrabold text-base text-gray-900 dark:text-white">
+                <h4 id="delete-material-title" className="font-extrabold text-base text-gray-900 dark:text-white">
                   {isId ? "Hapus SKU Bahan?" : "Delete Material SKU?"}
                 </h4>
                 <p className="text-xs text-gray-500 font-mono">{materialToDelete.sku}</p>

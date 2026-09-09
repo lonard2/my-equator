@@ -356,6 +356,7 @@ export function StockMovementModal({
                   <button
                     key={t.id}
                     type="button"
+                    aria-pressed={isSelected}
                     disabled={loading}
                     onClick={() => setMovementType(t.id)}
                     className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
