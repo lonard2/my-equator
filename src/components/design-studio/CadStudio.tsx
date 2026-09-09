@@ -1808,7 +1808,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setPendingOverwriteAction(null)}
                 className="px-3.5 py-2 min-h-[44px] rounded-xl border border-gray-700 text-xs font-semibold text-gray-300 hover:bg-gray-800 transition"
               >
-                {isId ? "Batal, Simpan Dulu" : "Cancel, Save First"}
+                {isId ? "Lanjut Mengedit" : "Keep editing"}
               </button>
               <button
                 type="button"

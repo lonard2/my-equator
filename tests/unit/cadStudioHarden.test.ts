@@ -118,5 +118,48 @@ describe("Insole CAD Studio P0 Hardenings (Impeccable Harden)", () => {
       );
     });
   });
+
+  describe("Clarify & Integrity: Truthful 'Keep editing' and Toast Timer Re-fire Clearing", () => {
+    it("verifies overwrite confirm dialog cancel button uses truthful 'Keep editing' rather than deceptive 'Cancel, Save First'", () => {
+      // Must not contain "Cancel, Save First"
+      assert.strictEqual(
+        cadStudioSource.includes("Cancel, Save First"),
+        false,
+        "CadStudio must not promise 'Cancel, Save First' since it does not save"
+      );
+      // Must contain "Keep editing" / "Lanjut Mengedit"
+      assert.ok(
+        cadStudioSource.includes('isId ? "Lanjut Mengedit" : "Keep editing"'),
+        "CadStudio overwrite cancel button must read 'Keep editing' (or 'Lanjut Mengedit')"
+      );
+    });
+
+    it("verifies toast timer is tracked with ref and cleared on re-fire and unmount in CadStudio", () => {
+      assert.ok(
+        cadStudioSource.includes("const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);"),
+        "CadStudio must track toast timeout in a ref"
+      );
+      assert.ok(
+        cadStudioSource.includes("if (toastTimeoutRef.current) {") &&
+          cadStudioSource.includes("clearTimeout(toastTimeoutRef.current);"),
+        "CadStudio must clear existing timer on showToast re-fire"
+      );
+    });
+
+    it("verifies toast timer is tracked with ref and cleared on re-fire and unmount in InventoryDashboard", () => {
+      const inventoryPath = path.resolve(process.cwd(), "src/components/inventory/InventoryDashboard.tsx");
+      const inventorySource = fs.readFileSync(inventoryPath, "utf-8");
+
+      assert.ok(
+        inventorySource.includes("const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);"),
+        "InventoryDashboard must track toast timeout in a ref"
+      );
+      assert.ok(
+        inventorySource.includes("if (toastTimeoutRef.current) {") &&
+          inventorySource.includes("clearTimeout(toastTimeoutRef.current);"),
+        "InventoryDashboard must clear existing timer on showToast re-fire"
+      );
+    });
+  });
 });
 
