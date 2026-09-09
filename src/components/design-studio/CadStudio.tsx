@@ -124,6 +124,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const [savedBlueprints, setSavedBlueprints] = useState<SavedBlueprint[]>([]);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [libraryError, setLibraryError] = useState(false);
+  const [isLibraryLoading, setIsLibraryLoading] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [inspectorTab, setInspectorTab] = useState<"COMPONENTS" | "LAYERS" | "SPECS">("COMPONENTS");
   const [isCncPreFlightOpen, setIsCncPreFlightOpen] = useState(false);
@@ -185,6 +186,8 @@ export function CadStudio({ language }: CadStudioProps) {
     } catch (err) {
       console.error("Failed to load blueprints:", err);
       setLibraryError(true);
+    } finally {
+      setIsLibraryLoading(false);
     }
   };
 
@@ -1867,7 +1870,12 @@ export function CadStudio({ language }: CadStudioProps) {
 
             {/* Blueprints List */}
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-              {libraryError ? (
+              {isLibraryLoading ? (
+                <div className="p-8 text-center space-y-2" aria-busy="true">
+                  <div className="h-8 w-8 mx-auto rounded-full border-2 border-gray-700 border-t-amber-400 animate-spin" />
+                  <p className="text-xs text-gray-500">{isId ? "Memuat arsip blueprint..." : "Loading blueprint archive..."}</p>
+                </div>
+              ) : libraryError ? (
                 <div
                   role="alert"
                   className="p-8 text-center border border-red-900/60 bg-red-950/30 rounded-xl text-red-300 space-y-3"
