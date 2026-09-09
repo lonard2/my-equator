@@ -398,7 +398,7 @@ export function CadAiModal({
           {error && (
             <div
               role="alert"
-              className="p-8 text-center border border-red-900/60 bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-300 dark:border-red-800/60"
+              className="p-8 text-center border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-300"
             >
               <AlertTriangle className="h-8 w-8 mx-auto text-red-400" />
               <p className="text-xs font-bold">{error}</p>
