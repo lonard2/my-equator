@@ -41,6 +41,7 @@ export function OrderList({
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [showAggregateSummary, setShowAggregateSummary] = useState(false);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filterOptions = useMemo(() => getOrderFilterOptions(language), [language]);
 
@@ -146,6 +147,20 @@ export function OrderList({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [filteredOrders, selectedOrderId, onSelectOrder]);
 
+  // "/" focuses the rail search from anywhere (when no modal is open and no field is active)
+  useEffect(() => {
+    function handleSlash(e: KeyboardEvent) {
+      if (e.key !== "/") return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    }
+    window.addEventListener("keydown", handleSlash);
+    return () => window.removeEventListener("keydown", handleSlash);
+  }, []);
+
   // Calculate live counts for filter chips
   const countByStatus = (st: string) => {
     if (st === "ALL") return orders.length;
@@ -238,14 +253,21 @@ export function OrderList({
 
         {/* Search Input */}
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
           <input
+            ref={searchInputRef}
             type="text"
             aria-label={isId ? "Cari surat jalan berdasarkan nomor, customer, atau PO" : "Search delivery orders by number, client, or PO"}
-            placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir..." : "Search Order, Client, PO, Driver..."}
+            placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir ( / )..." : "Search Order, Client, PO, Driver ( / )..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition-shadow"
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && searchTerm) {
+                e.stopPropagation();
+                setSearchTerm("");
+              }
+            }}
+            className="w-full min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-1.5 pl-8 pr-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none transition-shadow"
           />
         </div>
 

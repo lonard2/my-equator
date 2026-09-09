@@ -963,7 +963,10 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar
+          Deliberately 5 tabs (Surat Jalan, Stok, CAD, Analitik, Keamanan): the 4-option working-memory
+          ceiling applies per decision group, and 5 is the practical warehouse floor limit. Digitizer and
+          Tax Filing stay reachable via the command palette (Cmd+K) and header drawer, not the thumb bar. */}
       <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2 px-4 flex items-center justify-around shrink-0 shadow-lg z-30">
         <button
           onClick={() => {

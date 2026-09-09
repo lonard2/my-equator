@@ -721,7 +721,7 @@ export function OrderDetail({
                       <nextAction.icon className="h-3.5 w-3.5" />
                       <span>{nextAction.label}</span>
                     </button>
-                    <span className="hidden lg:block text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    <span className="hidden md:block text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                       {nextAction.subLabel}
                     </span>
                   </div>
