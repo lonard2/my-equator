@@ -80,6 +80,25 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [photoPreviewRowId, setPhotoPreviewRowId] = useState<string | null>(null);
+  const photoOpenerRef = useRef<HTMLElement | null>(null);
+  const photoCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  const openPhotoPreview = (rowId: string) => {
+    photoOpenerRef.current = document.activeElement as HTMLElement | null;
+    setPhotoPreviewRowId(rowId);
+  };
+
+  const closePhotoPreview = () => {
+    setPhotoPreviewRowId(null);
+    photoOpenerRef.current?.focus();
+  };
+
+  // Photo preview overlay: focus the close control on open (modal contract)
+  useEffect(() => {
+    if (photoPreviewRowId) {
+      photoCloseRef.current?.focus();
+    }
+  }, [photoPreviewRowId]);
   const [editingAddressRowId, setEditingAddressRowId] = useState<string | null>(null);
 
   // Undo row deletion buffer
@@ -374,7 +393,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       articleCode: "EQ-EVA-01",
       articleName: "Insole EVA Footbed Standard",
       sizes: {},
-      unitPrice: 18000,
+      unitPrice: 0,
       status: "idle",
       photoPreviewUrl: previewUrl,
     };
@@ -1480,7 +1499,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           <button
                             type="button"
                             data-testid="mobile-photo-preview-trigger"
-                            onClick={() => setPhotoPreviewRowId(row.id)}
+                            onClick={() => openPhotoPreview(row.id)}
                             title={isId ? "Lihat foto referensi" : "View reference photo"}
                             aria-label={isId ? `Lihat foto referensi baris ${idx + 1}` : `View reference photo row ${idx + 1}`}
                             className="text-brand dark:text-red-400 hover:text-brand-strong transition"
@@ -1809,7 +1828,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                             <button
                               type="button"
                               data-testid="photo-slip-badge"
-                              onClick={() => setPhotoPreviewRowId(row.id)}
+                              onClick={() => openPhotoPreview(row.id)}
                               title={isId ? "Lihat foto referensi" : "View reference photo"}
                               aria-label={isId ? `Lihat foto referensi baris ${rIdx + 1}` : `View reference photo row ${rIdx + 1}`}
                               className="text-brand dark:text-red-400 hover:text-brand-strong transition"
@@ -2226,16 +2245,21 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         return (
           <div
             className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
-            onClick={() => setPhotoPreviewRowId(null)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") setPhotoPreviewRowId(null);
-            }}
+            onClick={closePhotoPreview}
           >
             <div
               role="dialog"
               aria-modal="true"
               aria-label={isId ? "Foto referensi slip" : "Slip reference photo"}
-              className="max-w-lg w-full bg-gray-950 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden"
+              tabIndex={-1}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  closePhotoPreview();
+                }
+                trapModalTab(e, photoCloseRef, photoCloseRef);
+              }}
+              className="max-w-lg w-full bg-gray-950 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden outline-none"
               onClick={(e) => e.stopPropagation()}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2252,8 +2276,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                   </p>
                 </div>
                 <button
+                  ref={photoCloseRef}
                   type="button"
-                  onClick={() => setPhotoPreviewRowId(null)}
+                  onClick={closePhotoPreview}
                   className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition"
                   aria-label={isId ? "Tutup foto referensi" : "Close reference photo"}
                 >
