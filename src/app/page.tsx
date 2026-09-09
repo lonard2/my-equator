@@ -319,6 +319,18 @@ export default function HomePage() {
     return { bySize: agg, total: totalAll };
   }, [filteredMobileOrders]);
 
+  const searchMatchingMobileOrders = useMemo(
+    () => orders.filter((o) => matchesOrderSearch(o, mobileSearchTerm)),
+    [orders, mobileSearchTerm]
+  );
+
+  const countMobileByStatus = (st: string) => {
+    if (st === "ALL") return searchMatchingMobileOrders.length;
+    if (st === "ARCHIVED")
+      return searchMatchingMobileOrders.filter((o) => o.status === "DELIVERED" || o.status === "CANCELLED").length;
+    return searchMatchingMobileOrders.filter((o) => o.status === st).length;
+  };
+
   if (!authInitialized) {
     return null;
   }
@@ -340,17 +352,6 @@ export default function HomePage() {
   // Mobile Header & Feed Filter Options (Canonical shared token config)
   const mobileFilterOptions = getOrderFilterOptions(language);
 
-  const searchMatchingMobileOrders = useMemo(
-    () => orders.filter((o) => matchesOrderSearch(o, mobileSearchTerm)),
-    [orders, mobileSearchTerm]
-  );
-
-  const countMobileByStatus = (st: string) => {
-    if (st === "ALL") return searchMatchingMobileOrders.length;
-    if (st === "ARCHIVED")
-      return searchMatchingMobileOrders.filter((o) => o.status === "DELIVERED" || o.status === "CANCELLED").length;
-    return searchMatchingMobileOrders.filter((o) => o.status === st).length;
-  };
 
 
   return (
