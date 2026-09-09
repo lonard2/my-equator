@@ -877,7 +877,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                     <X className="h-3 w-3" />
                   </button>
                 ) : (
-                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-400 font-mono text-[9px]">
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-400 font-mono text-[10px]">
                     /
                   </kbd>
                 )}
