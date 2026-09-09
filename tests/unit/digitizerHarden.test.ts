@@ -336,5 +336,80 @@ describe("Archive Digitizer Hardening & Data Integrity (Impeccable P0 & P1)", ()
       );
     });
   });
+
+  describe("7. Impeccable Distill: Keyboard Contract & Unified Date Cluster", () => {
+    it("verifies Enter in the last size cell (45) commits the row and advances to next row (size 36)", () => {
+      // Must differentiate last size vs non-last size on Enter
+      assert.ok(
+        digitizerSource.includes("LAST_SIZE") && digitizerSource.includes("FIRST_SIZE"),
+        "Component must identify LAST_SIZE and FIRST_SIZE boundaries"
+      );
+      assert.ok(
+        digitizerSource.includes("if (size === LAST_SIZE)"),
+        "handleSizeKeyDown must check if Enter was pressed in the last size cell"
+      );
+      assert.ok(
+        digitizerSource.includes('data-size="${FIRST_SIZE}"'),
+        "Enter in last size cell must advance to FIRST_SIZE (size 36) of next row"
+      );
+    });
+
+    it("verifies auto-spawn focus eliminates querySelector/setTimeout race condition", () => {
+      // Must NOT contain the fragile setTimeout 60ms race condition
+      assert.ok(
+        !digitizerSource.includes("setTimeout(") ||
+          !digitizerSource.includes("setTimeout(() => {\n          const nextInput"),
+        "Must not use fragile setTimeout for auto-spawn input focus"
+      );
+      // Must use pendingFocusRef and useEffect for deterministic focus after DOM commit
+      assert.ok(
+        digitizerSource.includes("pendingFocusRef"),
+        "Must declare and use pendingFocusRef for pending focus target"
+      );
+      assert.ok(
+        digitizerSource.includes("pendingFocusRef.current = null"),
+        "useEffect must consume and reset pendingFocusRef upon mounting new row"
+      );
+    });
+
+    it("verifies date cluster collapses to one unified mental model with real active states", () => {
+      // Unified segmented control container
+      assert.ok(
+        digitizerSource.includes("aria-pressed={isTodayActive}"),
+        "Today chip must have accessible aria-pressed active state"
+      );
+      assert.ok(
+        digitizerSource.includes("aria-pressed={isYesterdayActive}"),
+        "Yesterday chip must have accessible aria-pressed active state"
+      );
+      assert.ok(
+        digitizerSource.includes("aria-pressed={isWeekAgoActive}"),
+        "Week-ago chip must have accessible aria-pressed active state"
+      );
+      assert.ok(
+        digitizerSource.includes("isCustomActive"),
+        "Component must evaluate isCustomActive for custom calendar dates"
+      );
+      // Direct application on calendar change through executeOrConfirmDateChange
+      assert.ok(
+        digitizerSource.includes("executeOrConfirmDateChange(newDate"),
+        "Calendar input onChange must directly route through executeOrConfirmDateChange guard"
+      );
+      // Redundant separate 'Terapkan Semua' text button eliminated
+      assert.ok(
+        !digitizerSource.includes('onClick={requestApplyGlobalDate}'),
+        "Redundant separate 'Terapkan Semua' button must be removed in favor of unified mental model"
+      );
+    });
+
+    it("verifies keyboard shortcuts modal explains Enter on last size row commit", () => {
+      assert.ok(
+        digitizerSource.includes("Selesaikan baris & lanjut baris baru (di ukuran akhir 45)") &&
+          digitizerSource.includes("Commit row & advance to next row (at size 45)"),
+        "Shortcuts cheat sheet modal must describe Enter committing row at size 45"
+      );
+    });
+  });
 });
+
 

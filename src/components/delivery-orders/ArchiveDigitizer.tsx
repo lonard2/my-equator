@@ -71,6 +71,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const helpButtonRef = useRef<HTMLButtonElement | null>(null);
   const clearButtonRef = useRef<HTMLButtonElement | null>(null);
   const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
+  const pendingFocusRef = useRef<{ rowIndex: number; size: FootwearSize } | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
@@ -169,6 +170,21 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setRows((prev) => [...prev, newRow]);
   }, [rows, globalDate, generateOrderNumber]);
 
+  // Deterministic row auto-spawn focus resolution (eliminates querySelector / setTimeout race condition)
+  useEffect(() => {
+    if (pendingFocusRef.current) {
+      const { rowIndex, size } = pendingFocusRef.current;
+      const targetInput = document.querySelector<HTMLInputElement>(
+        `input[data-row-index="${rowIndex}"][data-size="${size}"]`
+      );
+      if (targetInput) {
+        pendingFocusRef.current = null;
+        targetInput.focus();
+        targetInput.select();
+      }
+    }
+  }, [rows.length]);
+
   const getOffsetDateStr = useCallback((offsetDays: number) => {
     const d = new Date();
     d.setDate(d.getDate() - offsetDays);
@@ -178,6 +194,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const isTodayActive = globalDate === getOffsetDateStr(0);
   const isYesterdayActive = globalDate === getOffsetDateStr(1);
   const isWeekAgoActive = globalDate === getOffsetDateStr(7);
+  const isCustomActive = !isTodayActive && !isYesterdayActive && !isWeekAgoActive;
 
   const applyDateChangeWithUndo = useCallback(
     (targetDate: string) => {
@@ -284,15 +301,57 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   };
 
   /**
-   * Vertical column-stepping keydown handler:
-   * When Enter or Down Arrow is pressed inside a size input, jumps downward to the same size in next row.
+   * Keyboard contract for size matrix inputs:
+   * - Enter in the last size cell (45) commits the row and advances to first size (36) of next row (per module AGENTS.md)
+   * - Enter in non-last size cells steps vertically down to the same size in next row
+   * - Down Arrow steps vertically down to same size in next row
+   * - Up Arrow steps vertically up to same size in previous row
+   * - Deterministic row auto-spawn without arbitrary 60ms setTimeout race
    */
   const handleSizeKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     rowIndex: number,
     size: FootwearSize
   ) => {
-    if (e.key === "Enter" || e.key === "ArrowDown") {
+    const LAST_SIZE = STANDARD_SIZES[STANDARD_SIZES.length - 1];
+    const FIRST_SIZE = STANDARD_SIZES[0];
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const nextRowIndex = rowIndex + 1;
+
+      if (size === LAST_SIZE) {
+        // Enter in the last size cell commits the row and advances to first size of next row (per module AGENTS.md)
+        if (nextRowIndex < rows.length) {
+          const nextInput = document.querySelector<HTMLInputElement>(
+            `input[data-row-index="${nextRowIndex}"][data-size="${FIRST_SIZE}"]`
+          );
+          if (nextInput) {
+            nextInput.focus();
+            nextInput.select();
+          }
+        } else {
+          // Last row in batch: spawn new row and focus first size deterministically via ref
+          pendingFocusRef.current = { rowIndex: nextRowIndex, size: FIRST_SIZE };
+          handleAddRow();
+        }
+      } else {
+        // Non-last size: vertical column stepping to same size in next row
+        if (nextRowIndex < rows.length) {
+          const nextInput = document.querySelector<HTMLInputElement>(
+            `input[data-row-index="${nextRowIndex}"][data-size="${size}"]`
+          );
+          if (nextInput) {
+            nextInput.focus();
+            nextInput.select();
+          }
+        } else {
+          // Last row in batch: spawn new row and focus same size deterministically via ref
+          pendingFocusRef.current = { rowIndex: nextRowIndex, size };
+          handleAddRow();
+        }
+      }
+    } else if (e.key === "ArrowDown") {
       e.preventDefault();
       const nextRowIndex = rowIndex + 1;
 
@@ -305,17 +364,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           nextInput.select();
         }
       } else {
-        // Last row: automatically spawn a new row and focus same size
+        // Last row: automatically spawn new row and focus same size deterministically via ref
+        pendingFocusRef.current = { rowIndex: nextRowIndex, size };
         handleAddRow();
-        setTimeout(() => {
-          const nextInput = document.querySelector<HTMLInputElement>(
-            `input[data-row-index="${nextRowIndex}"][data-size="${size}"]`
-          );
-          if (nextInput) {
-            nextInput.focus();
-            nextInput.select();
-          }
-        }, 60);
       }
     } else if (e.key === "ArrowUp") {
       if (rowIndex > 0) {
@@ -783,63 +834,71 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
         {/* Global Date & Action Tools */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Quick Date Offset Chips with active state and confirm/undo guard */}
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => requestDateOffset(0)}
-              className={`px-2.5 py-1 rounded-xl text-[10px] transition ${
-                isTodayActive
-                  ? "font-extrabold bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs"
-                  : "font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
-              }`}
-              title={isId ? "Atur tanggal ke hari ini" : "Set date to today"}
-            >
-              {isId ? "Hari Ini" : "Today"}
-            </button>
-            <button
-              type="button"
-              onClick={() => requestDateOffset(1)}
-              className={`px-2.5 py-1 rounded-xl text-[10px] transition ${
-                isYesterdayActive
-                  ? "font-extrabold bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs"
-                  : "font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
-              }`}
-              title={isId ? "Atur tanggal ke kemarin (-1 hari)" : "Set date to yesterday"}
-            >
-              {isId ? "Kemarin" : "-1 Day"}
-            </button>
-            <button
-              type="button"
-              onClick={() => requestDateOffset(7)}
-              className={`px-2.5 py-1 rounded-xl text-[10px] transition ${
-                isWeekAgoActive
-                  ? "font-extrabold bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs"
-                  : "font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
-              }`}
-              title={isId ? "Atur tanggal ke 7 hari lalu" : "Set date to 7 days ago"}
-            >
-              {isId ? "Minggu Lalu" : "-7 Days"}
-            </button>
-          </div>
+          {/* Unified Batch Date Segmented Control Group */}
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-2xs">
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => requestDateOffset(0)}
+                aria-pressed={isTodayActive}
+                className={`px-2.5 py-1 rounded-lg text-xs transition ${
+                  isTodayActive
+                    ? "font-extrabold bg-white dark:bg-gray-700 text-brand dark:text-red-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10"
+                    : "font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
+                }`}
+                title={isId ? "Atur tanggal massal ke hari ini" : "Set batch date to today"}
+              >
+                {isId ? "Hari Ini" : "Today"}
+              </button>
+              <button
+                type="button"
+                onClick={() => requestDateOffset(1)}
+                aria-pressed={isYesterdayActive}
+                className={`px-2.5 py-1 rounded-lg text-xs transition ${
+                  isYesterdayActive
+                    ? "font-extrabold bg-white dark:bg-gray-700 text-brand dark:text-red-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10"
+                    : "font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
+                }`}
+                title={isId ? "Atur tanggal massal ke kemarin (-1 hari)" : "Set batch date to yesterday"}
+              >
+                {isId ? "Kemarin" : "-1 Day"}
+              </button>
+              <button
+                type="button"
+                onClick={() => requestDateOffset(7)}
+                aria-pressed={isWeekAgoActive}
+                className={`px-2.5 py-1 rounded-lg text-xs transition ${
+                  isWeekAgoActive
+                    ? "font-extrabold bg-white dark:bg-gray-700 text-brand dark:text-red-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10"
+                    : "font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
+                }`}
+                title={isId ? "Atur tanggal massal ke 7 hari lalu" : "Set batch date to 7 days ago"}
+              >
+                {isId ? "Minggu Lalu" : "-7 Days"}
+              </button>
+            </div>
 
-          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1">
-            <Calendar className="h-3.5 w-3.5 text-gray-400" />
-            <input
-              type="date"
-              aria-label={isId ? "Tanggal surat jalan massal" : "Global delivery date"}
-              value={globalDate}
-              onChange={(e) => setGlobalDate(e.target.value)}
-              className="bg-transparent text-xs font-mono font-bold text-gray-800 dark:text-gray-200 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={requestApplyGlobalDate}
-              className="text-[10px] font-bold text-brand dark:text-red-400 hover:underline ml-1 cursor-pointer"
-              title={isId ? "Terapkan tanggal ini ke seluruh baris tabel di bawah" : "Apply this date to all rows"}
-            >
-              {isId ? "Terapkan Semua" : "Apply All"}
-            </button>
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-700 mx-1.5" />
+
+            {/* Calendar Custom Date Picker sharing the exact same confirm & undo guard */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5">
+              <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <input
+                type="date"
+                aria-label={isId ? "Tanggal surat jalan massal" : "Global delivery date"}
+                value={globalDate}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  if (!newDate) return;
+                  executeOrConfirmDateChange(newDate, isId ? `Tanggal ${newDate}` : `Date ${newDate}`);
+                }}
+                className={`bg-transparent text-xs font-mono font-bold focus:outline-none cursor-pointer ${
+                  isCustomActive
+                    ? "text-brand dark:text-red-400 underline decoration-dotted decoration-brand/60"
+                    : "text-gray-800 dark:text-gray-200"
+                }`}
+              />
+            </div>
           </div>
 
           <button
@@ -918,6 +977,15 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </div>
 
             <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
+                <span className="text-gray-600 dark:text-gray-300">
+                  {isId ? "Selesaikan baris & lanjut baris baru (di ukuran akhir 45)" : "Commit row & advance to next row (at size 45)"}
+                </span>
+                <kbd className="px-2 py-0.5 rounded bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 font-mono font-bold text-[10px]">
+                  Enter
+                </kbd>
+              </div>
+
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
                 <span className="text-gray-600 dark:text-gray-300">
                   {isId ? "Lompat vertikal ke baris bawah ukuran sama" : "Step vertically down in same size column"}
