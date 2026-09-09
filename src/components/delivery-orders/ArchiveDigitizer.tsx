@@ -90,6 +90,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [failedOrderNumbers, setFailedOrderNumbers] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successIsCommit, setSuccessIsCommit] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
   const [invalidRowIds, setInvalidRowIds] = useState<string[]>([]);
@@ -379,6 +380,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     };
 
     setRows((prev) => [...prev, newRow]);
+    setSuccessIsCommit(false);
     setSuccessMessage(
       isId
         ? `Foto referensi "${file.name}" dilampirkan ke baris kerja. Baris ini adalah transkrip manual: lengkapi customer, ukuran, dan harga dengan membaca foto.`
@@ -583,10 +585,6 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     return rows.reduce((sum, r) => sum + getRowTotalPairs(r.sizes), 0);
   }, [rows]);
 
-  const isDirty = useMemo(() => {
-    return rows.some((r) => r.recipientName.trim().length > 0 || getRowTotalPairs(r.sizes) > 0);
-  }, [rows]);
-
   /**
    * Clipboard TSV / Excel Paste Ingestion
    */
@@ -660,6 +658,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     });
 
     setRows((prev) => [...prev, ...newParsedRows]);
+    setSuccessIsCommit(false);
 
     const missingPriceCount = newParsedRows.filter((r) => r.unitPrice === 0).length;
     const catalogNotice =
@@ -691,6 +690,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
     setErrorMessage(null);
     setSuccessMessage(null);
+    setSuccessIsCommit(false);
     setInvalidRowIds([]);
     setFailedOrderNumbers([]);
 
@@ -853,7 +853,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
     setSavingProgress({ current: 1, total: rows.length, orderNumber: rows[0].orderNumber });
 
-    const remainingRows: BatchRow[] = [];
+    const failedRowIds = new Set<string>();
+    const errorByRowId = new Map<string, string>();
     const failedSjNumbers: string[] = [];
     let savedCount = 0;
     let failedCount = 0;
@@ -909,20 +910,14 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         } else {
           failedCount++;
           failedSjNumbers.push(row.orderNumber);
-          remainingRows.push({
-            ...row,
-            status: "error",
-            errorMessage: json.error || (isId ? "Gagal menyimpan ke database" : "Failed to commit"),
-          });
+          failedRowIds.add(row.id);
+          errorByRowId.set(row.id, json.error || (isId ? "Gagal menyimpan ke database" : "Failed to commit"));
         }
       } catch (err: any) {
         failedCount++;
         failedSjNumbers.push(row.orderNumber);
-        remainingRows.push({
-          ...row,
-          status: "error",
-          errorMessage: err?.message || (isId ? "Kesalahan jaringan" : "Network error"),
-        });
+        failedRowIds.add(row.id);
+        errorByRowId.set(row.id, err?.message || (isId ? "Kesalahan jaringan" : "Network error"));
       }
     }
 
@@ -930,6 +925,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
     if (failedCount === 0) {
       setFailedOrderNumbers([]);
+      setSuccessIsCommit(true);
       setSuccessMessage(
         isId
           ? `Berhasil menyimpan ${savedCount} Surat Jalan (Total ${totalBatchPairs.toLocaleString("id-ID")} pasang)! Mengalihkan ke daftar Surat Jalan...`
@@ -939,8 +935,13 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         onSuccess();
       }, 1200);
     } else {
-      // Retain only failed rows so user can fix and retry without creating duplicates
-      setRows(remainingRows);
+      // Retain only failed rows so user can fix and retry without creating duplicates.
+      // Built from latest state so edits made during the commit are never reverted.
+      setRows((prev) =>
+        prev
+          .filter((r) => failedRowIds.has(r.id))
+          .map((r) => ({ ...r, status: "error" as const, errorMessage: errorByRowId.get(r.id) }))
+      );
       setFailedOrderNumbers(failedSjNumbers);
       setErrorMessage(
         isId
@@ -1154,19 +1155,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <span className="hidden sm:inline">{isId ? "Lampirkan Foto" : "Attach Photo"}</span>
           </button>
 
-          {/* Clear Table Trigger */}
-          <button
-            ref={clearButtonRef}
-            type="button"
-            onClick={() => setShowClearConfirm(true)}
-            className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand"
-            title={isId ? "Kosongkan seluruh lembar kerja dan mulai baru" : "Clear entire digitizer worksheet and start fresh"}
-          >
-            <RotateCcw className="h-3.5 w-3.5 inline mr-1" />
-            <span>{isId ? "Kosongkan Lembar Kerja" : "Clear Worksheet"}</span>
-          </button>
-
-          {/* Top Quick Commit Trigger (Casey mobile & Jordan desktop convenience) */}
+          {/* Top Quick Commit Trigger (Casey mobile convenience: no scroll past 50 cards) */}
           <button
             type="button"
             onClick={handleSaveBatch}
@@ -1181,6 +1170,19 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             )}
             <span>{isId ? "Simpan ke DB" : "Commit DB"}</span>
           </button>
+
+          {/* Clear Table Trigger */}
+          <button
+            ref={clearButtonRef}
+            type="button"
+            onClick={() => setShowClearConfirm(true)}
+            className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand"
+            title={isId ? "Kosongkan seluruh lembar kerja dan mulai baru" : "Clear entire digitizer worksheet and start fresh"}
+          >
+            <RotateCcw className="h-3.5 w-3.5 inline mr-1" />
+            <span>{isId ? "Kosongkan Lembar Kerja" : "Clear Worksheet"}</span>
+          </button>
+
         </div>
       </div>
 
@@ -1363,8 +1365,20 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       </div>
 
       {successMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-xs animate-in fade-in">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
+        <div
+          role="status"
+          aria-live="polite"
+          className={`p-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold shadow-xs animate-in fade-in ${
+            successIsCommit
+              ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300"
+              : "bg-gray-100 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200"
+          }`}
+        >
+          {successIsCommit ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          ) : (
+            <FileSpreadsheet className="h-4 w-4 shrink-0 text-gray-500" />
+          )}
           <span>{successMessage}</span>
         </div>
       )}
@@ -1445,8 +1459,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                   ? "border-emerald-400 border-l-4 border-l-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/15"
                   : row.status === "error"
                   ? "border-red-500 border-l-4 border-l-red-600 bg-red-50/25 dark:bg-red-950/25"
-                  : isInvalid || isBatchDuplicate
+                  : isInvalid
                   ? "border-red-500 border-l-4 border-l-red-400 ring-2 ring-red-200 dark:ring-red-950"
+                  : isBatchDuplicate
+                  ? "border-amber-400 border-l-4 border-l-amber-400 ring-2 ring-amber-200 dark:ring-amber-950"
                   : "border-gray-200 dark:border-gray-800 border-l-4 border-l-transparent";
 
               return (
@@ -1657,7 +1673,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           key={size}
                           className={`rounded-xl border p-1 text-center transition ${
                             hasQty
-                              ? "border-brand bg-red-50/80 dark:bg-red-950/60"
+                              ? "border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/50"
                               : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40"
                           }`}
                         >
@@ -1703,7 +1719,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
                 {/* Sizing Columns (EU 36-45) with minimum 50px width */}
                 {STANDARD_SIZES.map((size) => (
-                  <th key={size} className="p-2 text-center min-w-[50px] bg-red-50/60 dark:bg-red-950/40 text-brand dark:text-red-300 font-mono font-extrabold border-l border-red-100 dark:border-red-900/40">
+                  <th key={size} className="p-2 text-center min-w-[50px] bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono font-extrabold border-l border-gray-200 dark:border-gray-700">
                     {size}
                   </th>
                 ))}
@@ -1779,8 +1795,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           ? "bg-emerald-50/15 dark:bg-emerald-950/10"
                           : row.status === "error"
                           ? "bg-red-50/25 dark:bg-red-950/15"
-                          : isInvalid || isBatchDuplicate
+                          : isInvalid
                           ? "bg-red-50/20 dark:bg-red-950/10"
+                          : isBatchDuplicate
+                          ? "bg-amber-50/20 dark:bg-amber-950/10"
                           : ""
                       }`}
                     >
@@ -1983,7 +2001,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                             placeholder="·"
                             className={`w-full min-w-[48px] text-center rounded-lg border px-1.5 py-1 font-mono font-extrabold text-xs transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand tabular-nums ${
                               hasQty
-                                ? "bg-red-50/90 dark:bg-red-950/70 border-brand text-brand dark:text-red-300"
+                                ? "bg-amber-50/90 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300"
                                 : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-400"
                             }`}
                           />
