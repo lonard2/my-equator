@@ -24,18 +24,11 @@ describe("Impeccable Audit: Touch Targets, Screen Reader Attributes, and Keyboar
         "TouchSizePad numeric input must have min-h-[44px]"
       );
 
-      // Preset buttons (+50, +100, +200 psg)
+      // Preset buttons (+50, +100, +200 psg) — neutral surfaces; crimson is danger-only
+      const presetCount = (content.match(/min-h-\[44px\] px-3 py-2 rounded-xl bg-white dark:bg-gray-700/g) || []).length;
       assert.ok(
-        content.includes("min-h-[44px] px-3 py-2 rounded-xl bg-blue-50"),
-        "+50 psg preset button must have min-h-[44px]"
-      );
-      assert.ok(
-        content.includes("min-h-[44px] px-3 py-2 rounded-xl bg-amber-50"),
-        "+100 psg preset button must have min-h-[44px]"
-      );
-      assert.ok(
-        content.includes("min-h-[44px] px-3 py-2 rounded-xl bg-red-50"),
-        "+200 psg preset button must have min-h-[44px]"
+        presetCount >= 3,
+        "+50/+100/+200 psg preset buttons must have min-h-[44px] on neutral surfaces"
       );
 
       // Reset / clear button
