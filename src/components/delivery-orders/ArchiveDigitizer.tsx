@@ -76,6 +76,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const cancelClearButtonRef = useRef<HTMLButtonElement | null>(null);
   const confirmClearButtonRef = useRef<HTMLButtonElement | null>(null);
   const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dateOpenerRef = useRef<HTMLElement | null>(null);
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [photoPreviewRowId, setPhotoPreviewRowId] = useState<string | null>(null);
@@ -193,6 +194,39 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     }
   }, [showClearConfirm]);
 
+  // Shortcuts modal: focus the close control on open
+  const shortcutsCloseRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (showShortcuts) {
+      shortcutsCloseRef.current?.focus();
+    }
+  }, [showShortcuts]);
+
+  // Date overwrite modal: cancel-first focus on open
+  useEffect(() => {
+    if (pendingDateChange) {
+      cancelDateButtonRef.current?.focus();
+    }
+  }, [pendingDateChange]);
+
+  // Shared Tab focus trap for the three in-app modals
+  const trapModalTab = (
+    e: React.KeyboardEvent,
+    firstRef: React.RefObject<HTMLElement | null>,
+    lastRef: React.RefObject<HTMLElement | null>
+  ) => {
+    if (e.key !== "Tab") return;
+    if (e.shiftKey) {
+      if (document.activeElement === firstRef.current) {
+        e.preventDefault();
+        lastRef.current?.focus();
+      }
+    } else if (document.activeElement === lastRef.current) {
+      e.preventDefault();
+      firstRef.current?.focus();
+    }
+  };
+
   // Deterministic row auto-spawn focus resolution (eliminates querySelector / setTimeout race condition)
   useEffect(() => {
     if (pendingFocusRef.current) {
@@ -259,6 +293,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       const divergentRows = rows.filter((r) => r.deliveryDate !== globalDate);
 
       if (divergentRows.length > 0) {
+        dateOpenerRef.current = document.activeElement as HTMLElement | null;
         setPendingDateChange({ targetDate, label, offsetDays });
       } else {
         applyDateChangeWithUndo(targetDate);
@@ -461,6 +496,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     rowIndex: number,
     field: NonSizeField
   ) => {
+    // Native date inputs own their arrow keys (segment navigation)
+    if ((e.target as HTMLInputElement).type === "date") return;
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
       const nextRowIndex = rowIndex + 1;
@@ -926,7 +964,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         }
         if (pendingDateChange) {
           setPendingDateChange(null);
-          cancelDateButtonRef.current?.focus();
+          dateOpenerRef.current?.focus();
         }
       }
       if (e.altKey && (e.key === "n" || e.key === "N")) {
@@ -1171,7 +1209,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Keyboard Shortcuts Cheat Sheet Modal */}
       {showShortcuts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onKeyDown={(e) => trapModalTab(e, shortcutsCloseRef, shortcutsCloseRef)}
+        >
           <div
             role="dialog"
             aria-modal="true"
@@ -1186,6 +1227,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 </h3>
               </div>
               <button
+                ref={shortcutsCloseRef}
                 type="button"
                 onClick={() => {
                   setShowShortcuts(false);
@@ -1329,7 +1371,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Live Saving Progress Banner */}
       {savingProgress && (
-        <div className="p-4 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xl flex items-center justify-between gap-3 animate-in fade-in">
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-4 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xl flex items-center justify-between gap-3 animate-in fade-in"
+        >
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-400" />
             <div>
@@ -2110,7 +2156,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Date Change Overwrite Confirmation Dialog */}
       {pendingDateChange && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onKeyDown={(e) => trapModalTab(e, cancelDateButtonRef, cancelDateButtonRef)}
+        >
           <div
             role="dialog"
             aria-modal="true"
@@ -2132,7 +2181,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               <button
                 ref={cancelDateButtonRef}
                 type="button"
-                onClick={() => setPendingDateChange(null)}
+                onClick={() => {
+                  setPendingDateChange(null);
+                  dateOpenerRef.current?.focus();
+                }}
                 className="px-3.5 py-2 min-h-[44px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               >
                 {isId ? "Batal (Pertahankan)" : "Cancel (Keep Dates)"}
