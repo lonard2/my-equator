@@ -3,25 +3,27 @@ import assert from "node:assert/strict";
 import { getOrderFilterOptions } from "@/lib/utils/statusColors";
 
 describe("Shared Filter Configuration & Vocabulary Distillation (Impeccable Distill)", () => {
-  describe("Canonical 7-Status Sequence & Token Label Fidelity", () => {
-    it("returns identical 7-filter options in both Indonesian and English", () => {
+  describe("Canonical 6-Filter Sequence & Token Label Fidelity", () => {
+    it("returns identical 6-filter options in both Indonesian and English", () => {
       const optionsId = getOrderFilterOptions("id");
       const optionsEn = getOrderFilterOptions("en");
 
-      assert.strictEqual(optionsId.length, 7);
-      assert.strictEqual(optionsEn.length, 7);
+      assert.strictEqual(optionsId.length, 6);
+      assert.strictEqual(optionsEn.length, 6);
 
-      const expectedSequence = ["ALL", "DRAFT", "CONFIRMED", "PRINTED", "DISPATCHED", "DELIVERED", "CANCELLED"];
+      // DELIVERED + CANCELLED collapse into one terminal group: keeps the chip
+      // row within scannable range for gloved warehouse use.
+      const expectedSequence = ["ALL", "DRAFT", "CONFIRMED", "PRINTED", "DISPATCHED", "ARCHIVED"];
 
       assert.deepStrictEqual(
         optionsId.map((o) => o.id),
         expectedSequence,
-        "Indonesian filter sequence must match lifecycle order"
+        "Indonesian filter sequence must match lifecycle order with terminal archive group"
       );
       assert.deepStrictEqual(
         optionsEn.map((o) => o.id),
         expectedSequence,
-        "English filter sequence must match lifecycle order"
+        "English filter sequence must match lifecycle order with terminal archive group"
       );
     });
 
@@ -34,8 +36,11 @@ describe("Shared Filter Configuration & Vocabulary Distillation (Impeccable Dist
       assert.strictEqual(labelMap.CONFIRMED, "Terkonfirmasi", "Eliminated 'Konfirm' in favor of Terkonfirmasi");
       assert.strictEqual(labelMap.PRINTED, "Tercetak");
       assert.strictEqual(labelMap.DISPATCHED, "Dikirim", "Eliminated 'Kirim' in favor of Dikirim");
-      assert.strictEqual(labelMap.DELIVERED, "Diterima", "Eliminated 'Selesai' in favor of Diterima");
-      assert.strictEqual(labelMap.CANCELLED, "Dibatalkan", "Eliminated 'Batal' in favor of Dibatalkan");
+      assert.strictEqual(
+        labelMap.ARCHIVED,
+        "Selesai / Arsip",
+        "DELIVERED and CANCELLED collapse into one terminal group label"
+      );
     });
 
     it("enforces authoritative DESIGN.md token labels in English", () => {
@@ -47,8 +52,11 @@ describe("Shared Filter Configuration & Vocabulary Distillation (Impeccable Dist
       assert.strictEqual(labelMap.CONFIRMED, "Confirmed");
       assert.strictEqual(labelMap.PRINTED, "Printed");
       assert.strictEqual(labelMap.DISPATCHED, "Dispatched");
-      assert.strictEqual(labelMap.DELIVERED, "Delivered");
-      assert.strictEqual(labelMap.CANCELLED, "Cancelled");
+      assert.strictEqual(
+        labelMap.ARCHIVED,
+        "Done / Archive",
+        "DELIVERED and CANCELLED collapse into one terminal group label"
+      );
     });
   });
 
