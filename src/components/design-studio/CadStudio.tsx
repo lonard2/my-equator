@@ -692,6 +692,10 @@ export function CadStudio({ language }: CadStudioProps) {
 
   // Unified Pointer Handlers for Mouse & Touch Panning
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Don't start panning when the target is inside the overlay toolbar —
+    // setPointerCapture would redirect events and kill the button clicks.
+    const target = e.target as HTMLElement;
+    if (target.closest("button, [role='button'], input, select, textarea")) return;
     setIsPanning(true);
     setStartPan({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
     (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
@@ -1164,6 +1168,28 @@ export function CadStudio({ language }: CadStudioProps) {
           onPointerCancel={() => setIsPanning(false)}
           style={{ touchAction: "none" }}
         >
+          {/* Full-canvas grid backdrop (CSS pattern, pans + zooms with the viewport) */}
+          {showGrid && (
+            <div
+              className="absolute inset-0 pointer-events-none opacity-15"
+              style={{
+                backgroundImage: `
+                  linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(255,255,255,0.12) 1px, transparent 1px),
+                  linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)
+                `,
+                backgroundSize: `
+                  ${20 * zoomScale}px ${20 * zoomScale}px,
+                  ${20 * zoomScale}px ${20 * zoomScale}px,
+                  ${4 * zoomScale}px ${4 * zoomScale}px,
+                  ${4 * zoomScale}px ${4 * zoomScale}px
+                `,
+                backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
+              }}
+            />
+          )}
+
           {/* Floating Viewport Overlay Toolbar */}
           <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
@@ -1279,15 +1305,15 @@ export function CadStudio({ language }: CadStudioProps) {
                 </pattern>
               </defs>
 
-              {/* True Millimeter CAD Engineering Grid */}
+              {/* mm-true grid (extends 3x beyond viewBox edges so it fills the canvas at any pan) */}
               {showGrid && (
                 <rect
-                  x="-50"
-                  y="-50"
-                  width={vbW + 100}
-                  height={vbH + 100}
+                  x={-vbW}
+                  y={-vbH}
+                  width={vbW * 3}
+                  height={vbH * 3}
                   fill="url(#cad-grid-50mm)"
-                  className="pointer-events-none"
+                  className="pointer-events-none opacity-30"
                 />
               )}
               {/* SINGLE FOOT VIEW */}
