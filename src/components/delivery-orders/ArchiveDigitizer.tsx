@@ -538,14 +538,17 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     const targetIndex = rows.findIndex((r) => r.id === id);
     if (targetIndex === -1) return;
     const targetRow = rows[targetIndex];
-    if (targetRow.photoPreviewUrl) URL.revokeObjectURL(targetRow.photoPreviewUrl);
 
     if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    // A replaced buffer is discarded forever: revoke its photo now
+    if (deletedRowBuffer?.row.photoPreviewUrl) URL.revokeObjectURL(deletedRowBuffer.row.photoPreviewUrl);
     setDeletedRowBuffer({ row: targetRow, index: targetIndex });
 
     setRows((prev) => prev.filter((r) => r.id !== id));
 
     undoTimeoutRef.current = setTimeout(() => {
+      // Undo window closed without restore: the photo URL is dead anyway
+      if (targetRow.photoPreviewUrl) URL.revokeObjectURL(targetRow.photoPreviewUrl);
       setDeletedRowBuffer(null);
     }, 5000);
   };
@@ -563,20 +566,33 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
   const handleClearAllRows = () => {
     rows.forEach((r) => r.photoPreviewUrl && URL.revokeObjectURL(r.photoPreviewUrl));
-    setRows([]);
+    setRows([
+      {
+        id: `row-${Date.now()}`,
+        orderNumber: generateOrderNumber(1, globalDate),
+        recipientName: "",
+        destinationAddress: "Bandung, Jawa Barat",
+        deliveryDate: globalDate,
+        articleCode: "EQ-EVA-01",
+        articleName: "Insole EVA Footbed Standard",
+        sizes: {},
+        unitPrice: 0,
+        status: "idle",
+      },
+    ]);
     setFailedOrderNumbers([]);
     setShowClearConfirm(false);
     setPhotoPreviewRowId(null);
     clearButtonRef.current?.focus();
-    handleAddRow();
   };
 
-  // Revoke any staged object URLs when the surface unmounts
+  // Revoke any staged object URLs when the surface unmounts (live ref, not the mount-time closure)
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
   useEffect(() => {
     return () => {
-      rows.forEach((r) => r.photoPreviewUrl && URL.revokeObjectURL(r.photoPreviewUrl));
+      rowsRef.current.forEach((r) => r.photoPreviewUrl && URL.revokeObjectURL(r.photoPreviewUrl));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getRowTotalPairs = (sizes: SizeBreakdown) => {
