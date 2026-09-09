@@ -94,9 +94,13 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
         })}
       </div>
 
-      {/* Stepper Controls & Color-Coded Presets */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-1">
+      {/* Two labeled control clusters: adjust the count, or jump by preset */}
+      <div className="space-y-2.5 pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+            {isId ? "Ubah Jumlah" : "Adjust Quantity"}
+          </p>
+          <div className="flex items-center space-x-1">
           <button
             type="button"
             onClick={() => handleAdjust(-10)}
@@ -142,10 +146,22 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           >
             +10
           </button>
+          <button
+            type="button"
+            onClick={() => handleSetQty(0)}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-300 active:scale-95 transition flex items-center gap-1.5 justify-center"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>{isId ? "Reset" : "Clear"}</span>
+          </button>
+          </div>
         </div>
 
-        {/* Color-Coded Presets for Fast Visual Recognition */}
-        <div className="flex items-center space-x-1.5">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+            {isId ? "Preset Cepat" : "Quick Presets"}
+          </p>
+          <div className="flex items-center space-x-1.5">
           <button
             type="button"
             onClick={() => handleAdjust(50)}
@@ -167,14 +183,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           >
             +200 psg
           </button>
-          <button
-            type="button"
-            onClick={() => handleSetQty(0)}
-            className="min-h-[44px] px-3 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-300 active:scale-95 transition flex items-center gap-1.5 justify-center"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>{isId ? "Reset" : "Clear"}</span>
-          </button>
+          </div>
         </div>
       </div>
     </div>

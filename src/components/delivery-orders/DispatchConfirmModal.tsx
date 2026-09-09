@@ -62,7 +62,7 @@ export function DispatchConfirmModal({
         {/* Modal Header */}
         <div
           className={`p-4 text-white flex items-center justify-between shadow-xs ${
-            isDispatching ? "bg-purple-800 dark:bg-purple-900" : "bg-emerald-800 dark:bg-emerald-900"
+            STATUS_COLOR_MAP[isDispatching ? "DISPATCHED" : "DELIVERED"].cta.buttonClasses.split(" ")[0]
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -75,7 +75,7 @@ export function DispatchConfirmModal({
                   ? isId ? "Konfirmasi Pengiriman ke Armada" : "Confirm Delivery Dispatch"
                   : isId ? "Konfirmasi Selesai Diterima" : "Confirm Delivery Receipt"}
               </h3>
-              <p className="text-[11px] font-mono text-purple-200 dark:text-emerald-200">{order.orderNumber}</p>
+              <p className="text-[11px] font-mono text-white/80">{order.orderNumber}</p>
             </div>
           </div>
           <button
@@ -153,7 +153,7 @@ export function DispatchConfirmModal({
             className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs leading-relaxed ${
               isDispatching
                 ? "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-300"
-                : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-300"
+                : "bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200"
             }`}
           >
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />

@@ -1146,7 +1146,7 @@ export default function HomePage() {
         aria-atomic="true"
         className={
           appToast
-            ? `fixed top-4 right-4 z-70 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-150 ${
+            ? `fixed top-4 right-4 z-50 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-150 ${
                 appToast.type === "error"
                   ? "bg-red-950 text-red-100 border-red-800 shadow-red-950/50"
                   : "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-700 dark:border-gray-300 shadow-xl"
