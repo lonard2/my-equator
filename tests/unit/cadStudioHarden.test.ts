@@ -323,5 +323,105 @@ describe("Insole CAD Studio P0 Hardenings (Impeccable Harden)", () => {
       );
     });
   });
+
+  describe("Impeccable Sequence: Harden, Adapt, Clarify & Ride-Along Deliverables", () => {
+    const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+    it("1. Harden: provides inline 'Manual — auto-recompute off' chip with 1-click re-enable", () => {
+      assert.ok(
+        freshCadStudio.includes("Manual — auto-recompute off") &&
+          freshCadStudio.includes("Manual — auto-recompute mati"),
+        "Caliper header must display explicit 'Manual — auto-recompute off/mati' indicator"
+      );
+      assert.ok(
+        freshCadStudio.includes("setManualWidths(false)") &&
+          freshCadStudio.includes("calculateDefaultWidths("),
+        "Clicking the manual chip must re-enable auto-calculation and apply default widths"
+      );
+    });
+
+    it("1. Harden: traps focus in Overwrite and Shortcuts dialogs with trapModalTab", () => {
+      assert.ok(
+        freshCadStudio.includes("trapModalTab(e, cancelOverwriteRef, confirmOverwriteRef)"),
+        "Overwrite dialog must trap tab navigation between cancel and confirm buttons"
+      );
+      assert.ok(
+        freshCadStudio.includes("trapModalTab(e, shortcutsCloseRef, shortcutsGotItRef)"),
+        "Shortcuts dialog must trap tab navigation between close and got-it buttons"
+      );
+      assert.ok(
+        freshCadStudio.includes("ref={confirmOverwriteRef}") &&
+          freshCadStudio.includes("ref={shortcutsGotItRef}"),
+        "Dialog buttons must attach the respective ref elements for focus trapping"
+      );
+    });
+
+    it("2. Harden (cont): renders persistent inline save and export error cards with retry and dismiss", () => {
+      assert.ok(
+        freshCadStudio.includes("saveError &&") &&
+          freshCadStudio.includes('onClick={handleSaveBlueprint}') &&
+          freshCadStudio.includes("setSaveError(null)"),
+        "CadStudio must render persistent inline save failure alert with Retry and dismiss buttons"
+      );
+      assert.ok(
+        freshCadStudio.includes("exportError &&") &&
+          freshCadStudio.includes("setExportError(null)"),
+        "CNC pre-flight modal must render persistent inline export failure alert with dismiss button"
+      );
+    });
+
+    it("3. Adapt: supports wheel zoom toward cursor and pinch-to-zoom multi-touch tracking", () => {
+      assert.ok(
+        freshCadStudio.includes("onWheel={handleWheel}") &&
+          freshCadStudio.includes("handleWheel = (e: React.WheelEvent<HTMLDivElement>)"),
+        "CAD viewport div must attach onWheel handler for cursor-centered zooming"
+      );
+      assert.ok(
+        freshCadStudio.includes("activePointersRef.current.size === 2") &&
+          freshCadStudio.includes("Math.hypot"),
+        "CAD viewport must track two active pointers to compute real pinch-to-zoom distance"
+      );
+    });
+
+    it("4. Clarify: validates numeric caliper inputs with onBlur clamping and inline range hints", () => {
+      // Range hints present
+      assert.ok(freshCadStudio.includes("70–130 mm"), "Ball width must render 70-130 mm range hint");
+      assert.ok(freshCadStudio.includes("45–95 mm"), "Heel width must render 45-95 mm range hint");
+      assert.ok(freshCadStudio.includes("0.75–1.45x"), "Arch factor must render 0.75-1.45x range hint");
+      assert.ok(freshCadStudio.includes("0.75–1.35x"), "Arch plate length must render 0.75-1.35x range hint");
+      assert.ok(freshCadStudio.includes("0.70–1.30x"), "Arch plate width must render 0.70-1.30x range hint");
+
+      // Blur clamp handlers
+      assert.ok(freshCadStudio.includes("Math.max(70, Math.min(130,"), "Ball width must clamp to 70-130 mm on blur");
+      assert.ok(freshCadStudio.includes("Math.max(45, Math.min(95,"), "Heel width must clamp to 45-95 mm on blur");
+      assert.ok(freshCadStudio.includes("Math.max(0.75, Math.min(1.45,"), "Arch factor must clamp to 0.75-1.45 on blur");
+    });
+
+    it("4. Clarify: shortcuts legend includes Shift-fine-pan row and pre-flight export buttons meet 44px touch targets", () => {
+      assert.ok(
+        freshCadStudio.includes("Shift + ← ↑ → ↓") &&
+          freshCadStudio.includes("Fine Pan Viewport"),
+        "Shortcuts legend must explain Shift + Arrow keys fine panning"
+      );
+      assert.ok(
+        freshCadStudio.includes('className="px-4 py-2 min-h-[44px] rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 transition active:scale-95"') &&
+          freshCadStudio.includes('min-h-[44px] rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 active:scale-95 transition'),
+        "Pre-flight SVG and DXF export buttons must have min-h-[44px]"
+      );
+    });
+
+    it("5. Ride-along cleanups: toast z-index set to z-50 and yield estimate has nesting caveat", () => {
+      assert.ok(
+        freshCadStudio.includes("z-50 px-4 py-2.5 rounded-xl bg-gray-900 text-white border border-gray-700"),
+        "Toast notification container must use z-50 to stay beneath modals"
+      );
+      assert.ok(
+        freshCadStudio.includes("Estimasi teoritis bounding-box") &&
+          freshCadStudio.includes("Theoretical bounding-box estimate"),
+        "EVA Sheet Yield estimate must feature bilingual nesting loss caveat text"
+      );
+    });
+  });
 });
+
 

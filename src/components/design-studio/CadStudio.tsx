@@ -133,6 +133,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const cncOpenerRef = useRef<HTMLElement | null>(null);
   const libraryCloseRef = useRef<HTMLButtonElement | null>(null);
   const cncCloseRef = useRef<HTMLButtonElement | null>(null);
+  const cncLastBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Shared modal focus contract: move focus in on open, restore on close
   useEffect(() => {
@@ -165,6 +166,8 @@ export function CadStudio({ language }: CadStudioProps) {
   };
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
   const [isSavingBlueprint, setIsSavingBlueprint] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTone, setToastTone] = useState<"success" | "error">("success");
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -176,7 +179,26 @@ export function CadStudio({ language }: CadStudioProps) {
   const [manualWidths, setManualWidths] = useState(false);
   const [pendingOverwriteAction, setPendingOverwriteAction] = useState<(() => void) | null>(null);
   const cancelOverwriteRef = useRef<HTMLButtonElement | null>(null);
+  const confirmOverwriteRef = useRef<HTMLButtonElement | null>(null);
+  const shortcutsCloseRef = useRef<HTMLButtonElement | null>(null);
+  const shortcutsGotItRef = useRef<HTMLButtonElement | null>(null);
+  const shortcutsOpenerRef = useRef<HTMLButtonElement | null>(null);
+  const activePointersRef = useRef<Map<number, { clientX: number; clientY: number }>>(new Map());
+  const initialPinchDistRef = useRef<number | null>(null);
+  const initialPinchZoomRef = useRef<number>(1);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (isShortcutsOpen) shortcutsCloseRef.current?.focus();
+    if (!isShortcutsOpen && shortcutsOpenerRef.current) {
+      shortcutsOpenerRef.current.focus();
+      shortcutsOpenerRef.current = null;
+    }
+  }, [isShortcutsOpen]);
+
+  useEffect(() => {
+    if (pendingOverwriteAction) cancelOverwriteRef.current?.focus();
+  }, [pendingOverwriteAction]);
 
   const showToast = (msg: string, tone: "success" | "error" = "success") => {
     if (toastTimeoutRef.current) {
@@ -583,10 +605,13 @@ export function CadStudio({ language }: CadStudioProps) {
       a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}_R12.dxf`;
       a.click();
       window.URL.revokeObjectURL(url);
+      setExportError(null);
       showToast(isId ? "File AutoCAD R12 DXF berhasil diunduh" : "AutoCAD R12 DXF file downloaded");
     } catch (err) {
       console.error("DXF export failed:", err);
-      showToast(isId ? "Gagal mengekspor file DXF." : "Failed to export DXF file.", "error");
+      const msg = isId ? "Gagal mengekspor file DXF." : "Failed to export DXF file.";
+      setExportError(msg);
+      showToast(msg, "error");
     } finally {
       setExporting(null);
     }
@@ -596,6 +621,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const handleExportSvg = async () => {
     try {
       setExporting("SVG");
+      setExportError(null);
       const res = await fetch("/api/cad/export-svg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -631,10 +657,13 @@ export function CadStudio({ language }: CadStudioProps) {
       a.download = `Equator_Insole_${geometry.sizingLabel.replace(/\s+/g, "_")}_${foot}.svg`;
       a.click();
       window.URL.revokeObjectURL(url);
+      setExportError(null);
       showToast(isId ? "File Vector SVG berhasil diunduh" : "Vector SVG file downloaded");
     } catch (err) {
       console.error("SVG export failed:", err);
-      showToast(isId ? "Gagal mengekspor file SVG." : "Failed to export SVG file.", "error");
+      const msg = isId ? "Gagal mengekspor file SVG." : "Failed to export SVG file.";
+      setExportError(msg);
+      showToast(msg, "error");
     } finally {
       setExporting(null);
     }
@@ -644,6 +673,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const handleSaveBlueprint = async () => {
     if (isSavingBlueprint) return;
     setIsSavingBlueprint(true);
+    setSaveError(null);
     try {
       const res = await fetch("/api/cad/blueprints", {
         method: "POST",
@@ -676,41 +706,95 @@ export function CadStudio({ language }: CadStudioProps) {
 
       const json = await res.json();
       if (json.success) {
+        setSaveError(null);
         showToast(isId ? "Blueprint CAD berhasil disimpan ke database!" : "CAD Blueprint saved to database!");
         markClean();
         fetchBlueprints();
       } else {
+        const msg = json.error || (isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint.");
+        setSaveError(msg);
         showToast(json.error || (isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint."), "error");
       }
     } catch (err) {
       console.error("Failed to save blueprint:", err);
+      const msg = isId ? "Terjadi kesalahan saat menyimpan blueprint." : "Error saving blueprint.";
+      setSaveError(msg);
       showToast(isId ? "Terjadi kesalahan saat menyimpan blueprint." : "Error saving blueprint.", "error");
     } finally {
       setIsSavingBlueprint(false);
     }
   };
 
-  // Unified Pointer Handlers for Mouse & Touch Panning
+  // Wheel zoom toward cursor on canvas viewport
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+    const nextZoom = Math.max(0.5, Math.min(2.5, Math.round(zoomScale * zoomFactor * 100) / 100));
+    if (nextZoom === zoomScale) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left - rect.width / 2;
+    const mouseY = e.clientY - rect.top - rect.height / 2;
+
+    const scaleRatio = nextZoom / zoomScale;
+    const nextPanX = mouseX - (mouseX - panOffset.x) * scaleRatio;
+    const nextPanY = mouseY - (mouseY - panOffset.y) * scaleRatio;
+
+    setZoomScale(nextZoom);
+    setPanOffset({ x: nextPanX, y: nextPanY });
+  };
+
+  // Unified Pointer Handlers for Mouse & Touch Panning + Pinch-to-Zoom
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     // Don't start panning when the target is inside the overlay toolbar —
     // setPointerCapture would redirect events and kill the button clicks.
     const target = e.target as HTMLElement;
     if (target.closest("button, [role='button'], input, select, textarea")) return;
-    setIsPanning(true);
-    setStartPan({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
-    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+
+    activePointersRef.current.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+    if (activePointersRef.current.size === 2) {
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
+      initialPinchDistRef.current = dist;
+      initialPinchZoomRef.current = zoomScale;
+      setIsPanning(false);
+    } else if (activePointersRef.current.size === 1) {
+      setIsPanning(true);
+      setStartPan({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+    }
+    try {
+      (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+    } catch (_) {}
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isPanning) return;
-    setPanOffset({
-      x: e.clientX - startPan.x,
-      y: e.clientY - startPan.y,
-    });
+    if (activePointersRef.current.has(e.pointerId)) {
+      activePointersRef.current.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+    }
+
+    if (activePointersRef.current.size === 2 && initialPinchDistRef.current) {
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
+      const ratio = dist / initialPinchDistRef.current;
+      const nextZoom = Math.max(0.5, Math.min(2.5, Math.round(initialPinchZoomRef.current * ratio * 100) / 100));
+      setZoomScale(nextZoom);
+    } else if (isPanning && activePointersRef.current.size === 1) {
+      setPanOffset({
+        x: e.clientX - startPan.x,
+        y: e.clientY - startPan.y,
+      });
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsPanning(false);
+    activePointersRef.current.delete(e.pointerId);
+    if (activePointersRef.current.size < 2) {
+      initialPinchDistRef.current = null;
+    }
+    if (activePointersRef.current.size === 0) {
+      setIsPanning(false);
+    }
     try {
       (e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId);
     } catch (_) {}
@@ -739,7 +823,7 @@ export function CadStudio({ language }: CadStudioProps) {
         aria-atomic="true"
         className={
           toastMessage
-            ? "fixed top-5 right-5 z-60 px-4 py-2.5 rounded-xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3"
+            ? "fixed top-5 right-5 z-50 px-4 py-2.5 rounded-xl bg-gray-900 text-white border border-gray-700 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3"
             : "sr-only"
         }
       >
@@ -839,6 +923,37 @@ export function CadStudio({ language }: CadStudioProps) {
           </button>
         </div>
       </div>
+
+      {/* Persistent Inline Save Failure Card (mirroring Library/AI pattern) */}
+      {saveError && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mx-3 mt-2 sm:mx-4 sm:mt-3 p-3 rounded-xl bg-red-950/70 border border-red-800 text-xs text-red-200 flex items-center justify-between gap-3 shrink-0 animate-in fade-in"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleSaveBlueprint}
+              className="px-3 py-1.5 rounded-lg bg-red-900 hover:bg-red-800 text-white font-bold text-xs transition"
+            >
+              {isId ? "Coba Lagi" : "Retry"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSaveError(null)}
+              className="p-1 rounded-lg hover:bg-red-900/50 text-red-300 transition"
+              aria-label={isId ? "Tutup peringatan" : "Dismiss alert"}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Mode Switcher Bar (md:hidden) */}
       <div className="md:hidden p-2 border-b border-gray-800 bg-gray-900 flex items-center justify-between text-xs font-bold">
@@ -941,11 +1056,17 @@ export function CadStudio({ language }: CadStudioProps) {
             </div>
 
             {/* Size Slider or Custom Input */}
+            {/* Size Slider or Custom Input */}
             {sizingSystem === "CUSTOM_MM" ? (
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-gray-400">
-                  {isId ? "Panjang Kustom (mm)" : "Custom Length (mm)"}
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase text-gray-400">
+                    {isId ? "Panjang Kustom" : "Custom Length"}
+                  </label>
+                  <span className="text-[10px] text-gray-500 font-mono">
+                    {SIZING_BOUNDS.CUSTOM_MM.min}–{SIZING_BOUNDS.CUSTOM_MM.max} mm
+                  </span>
+                </div>
                 <input
                   type="number"
                   step={SIZING_BOUNDS.CUSTOM_MM.step}
@@ -954,7 +1075,14 @@ export function CadStudio({ language }: CadStudioProps) {
                   value={customLengthMm}
                   onChange={(e) => {
                     const v = parseFloat(e.target.value);
-                    if (!isNaN(v) && v >= 180 && v <= 340) setCustomLengthMm(v);
+                    setCustomLengthMm(isNaN(v) ? (e.target.value as any) : v);
+                  }}
+                  onBlur={(e) => {
+                    const v = parseFloat(e.target.value);
+                    const clamped = isNaN(v)
+                      ? 260
+                      : Math.max(SIZING_BOUNDS.CUSTOM_MM.min, Math.min(SIZING_BOUNDS.CUSTOM_MM.max, v));
+                    setCustomLengthMm(clamped);
                   }}
                   className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 font-mono font-bold text-white text-xs focus:border-brand focus:outline-none"
                 />
@@ -1031,19 +1159,29 @@ export function CadStudio({ language }: CadStudioProps) {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setManualWidths(false)}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide transition ${
+                  onClick={() => {
+                    setManualWidths(false);
+                    const conversion = convertSizing(sizingSystem, sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue);
+                    const targetLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
+                    const defaults = calculateDefaultWidths(targetLength);
+                    setBallWidth(defaults.ballWidth);
+                    setHeelWidth(defaults.heelWidth);
+                    setWaistWidth(defaults.waistWidth);
+                  }}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition ${
                     manualWidths
-                      ? "bg-amber-900/60 text-amber-300 border border-amber-700/60 hover:bg-amber-900"
-                      : "bg-gray-800 text-gray-500 border border-gray-700/60"
+                      ? "bg-amber-900/60 text-amber-300 border border-amber-600/70 hover:bg-amber-800"
+                      : "bg-gray-800/80 text-gray-400 border border-gray-700/60 hover:text-gray-300"
                   }`}
                   title={
                     manualWidths
-                      ? isId ? "Auto-recompute dimatikan — klik untuk aktifkan ulang" : "Manual mode — click to re-enable auto-recompute"
+                      ? isId ? "Manual — auto-recompute mati (klik untuk aktifkan ulang)" : "Manual — auto-recompute off (click to re-enable)"
                       : isId ? "Lebar mengikuti ukuran otomatis" : "Widths follow size auto-recompute"
                   }
                 >
-                  {manualWidths ? (isId ? "Manual" : "Manual") : (isId ? "Auto ✓" : "Auto ✓")}
+                  {manualWidths
+                    ? (isId ? "Manual — auto-recompute mati" : "Manual — auto-recompute off")
+                    : (isId ? "Auto ✓" : "Auto ✓")}
                 </button>
                 <Wrench className="h-3.5 w-3.5 text-gray-400" />
               </div>
@@ -1052,9 +1190,12 @@ export function CadStudio({ language }: CadStudioProps) {
             {/* Forefoot Ball Width */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold uppercase text-gray-400">
-                  {isId ? "Lebar Bola Kaki (Ball)" : "Forefoot Ball Width"}
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-gray-400">
+                    {isId ? "Lebar Bola Kaki (Ball)" : "Forefoot Ball Width"}
+                  </label>
+                  <span className="text-[10px] text-gray-500 font-mono">70–130 mm</span>
+                </div>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
@@ -1063,7 +1204,16 @@ export function CadStudio({ language }: CadStudioProps) {
                     max={130}
                     value={ballWidth}
                     aria-label={isId ? "Lebar Bola Kaki (mm)" : "Forefoot Ball Width (mm)"}
-                    onChange={(e) => { setManualWidths(true); setBallWidth(Math.max(70, Math.min(130, parseFloat(e.target.value) || 70))); }}
+                    onChange={(e) => {
+                      setManualWidths(true);
+                      const v = parseFloat(e.target.value);
+                      setBallWidth(isNaN(v) ? (e.target.value as any) : v);
+                    }}
+                    onBlur={(e) => {
+                      const v = parseFloat(e.target.value);
+                      const clamped = isNaN(v) ? 100 : Math.max(70, Math.min(130, Math.round(v * 10) / 10));
+                      setBallWidth(clamped);
+                    }}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-amber-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">mm</span>
@@ -1074,9 +1224,12 @@ export function CadStudio({ language }: CadStudioProps) {
                 min={70}
                 max={130}
                 step={0.5}
-                value={ballWidth}
+                value={typeof ballWidth === "number" ? ballWidth : 100}
                 aria-label={isId ? "Slider Lebar Bola Kaki" : "Forefoot Ball Width Slider"}
-                onChange={(e) => setBallWidth(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  setManualWidths(true);
+                  setBallWidth(parseFloat(e.target.value));
+                }}
                 className="w-full accent-amber-500"
               />
             </div>
@@ -1084,9 +1237,12 @@ export function CadStudio({ language }: CadStudioProps) {
             {/* Rearfoot Heel Width */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold uppercase text-gray-400">
-                  {isId ? "Lebar Mangkuk Tumit (Heel)" : "Rearfoot Heel Width"}
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-gray-400">
+                    {isId ? "Lebar Mangkuk Tumit (Heel)" : "Rearfoot Heel Width"}
+                  </label>
+                  <span className="text-[10px] text-gray-500 font-mono">45–95 mm</span>
+                </div>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
@@ -1095,7 +1251,16 @@ export function CadStudio({ language }: CadStudioProps) {
                     max={95}
                     value={heelWidth}
                     aria-label={isId ? "Lebar Mangkuk Tumit (mm)" : "Rearfoot Heel Width (mm)"}
-                    onChange={(e) => { setManualWidths(true); setHeelWidth(Math.max(45, Math.min(95, parseFloat(e.target.value) || 45))); }}
+                    onChange={(e) => {
+                      setManualWidths(true);
+                      const v = parseFloat(e.target.value);
+                      setHeelWidth(isNaN(v) ? (e.target.value as any) : v);
+                    }}
+                    onBlur={(e) => {
+                      const v = parseFloat(e.target.value);
+                      const clamped = isNaN(v) ? 65 : Math.max(45, Math.min(95, Math.round(v * 10) / 10));
+                      setHeelWidth(clamped);
+                    }}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">mm</span>
@@ -1106,9 +1271,12 @@ export function CadStudio({ language }: CadStudioProps) {
                 min={45}
                 max={95}
                 step={0.5}
-                value={heelWidth}
+                value={typeof heelWidth === "number" ? heelWidth : 65}
                 aria-label={isId ? "Slider Lebar Mangkuk Tumit" : "Rearfoot Heel Width Slider"}
-                onChange={(e) => setHeelWidth(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  setManualWidths(true);
+                  setHeelWidth(parseFloat(e.target.value));
+                }}
                 className="w-full accent-emerald-500"
               />
             </div>
@@ -1116,9 +1284,12 @@ export function CadStudio({ language }: CadStudioProps) {
             {/* Arch Flange Factor */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold uppercase text-gray-400">
-                  {isId ? "Tinggi Lekukan Arch (Flange)" : "Arch Flange Height"}
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold uppercase text-gray-400">
+                    {isId ? "Tinggi Lekukan Arch (Flange)" : "Arch Flange Height"}
+                  </label>
+                  <span className="text-[10px] text-gray-500 font-mono">0.75–1.45x</span>
+                </div>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
@@ -1127,7 +1298,15 @@ export function CadStudio({ language }: CadStudioProps) {
                     max={1.45}
                     value={archFactor}
                     aria-label={isId ? "Faktor Tinggi Lekukan Arch" : "Arch Flange Height Factor"}
-                    onChange={(e) => setArchFactor(Math.max(0.75, Math.min(1.45, parseFloat(e.target.value) || 1.0)))}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setArchFactor(isNaN(v) ? (e.target.value as any) : v);
+                    }}
+                    onBlur={(e) => {
+                      const v = parseFloat(e.target.value);
+                      const clamped = isNaN(v) ? 1.0 : Math.max(0.75, Math.min(1.45, Math.round(v * 100) / 100));
+                      setArchFactor(clamped);
+                    }}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">x</span>
@@ -1138,7 +1317,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 min={0.75}
                 max={1.45}
                 step={0.05}
-                value={archFactor}
+                value={typeof archFactor === "number" ? archFactor : 1.0}
                 aria-label={isId ? "Slider Faktor Tinggi Lekukan Arch" : "Arch Flange Height Factor Slider"}
                 onChange={(e) => setArchFactor(parseFloat(e.target.value))}
                 className="w-full accent-brand"
@@ -1180,10 +1359,15 @@ export function CadStudio({ language }: CadStudioProps) {
           className={`flex-1 relative bg-gray-900 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none ${
             mobileCadView === "CANVAS" ? "flex" : "hidden md:flex"
           }`}
+          onWheel={handleWheel}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={() => setIsPanning(false)}
+          onPointerCancel={() => {
+            setIsPanning(false);
+            activePointersRef.current.clear();
+            initialPinchDistRef.current = null;
+          }}
           style={{ touchAction: "none" }}
         >
           {/* Full-canvas grid backdrop (CSS pattern, pans + zooms with the viewport) */}
@@ -1243,7 +1427,10 @@ export function CadStudio({ language }: CadStudioProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setIsShortcutsOpen(!isShortcutsOpen)}
+                onClick={(e) => {
+                  shortcutsOpenerRef.current = e.currentTarget;
+                  setIsShortcutsOpen(!isShortcutsOpen);
+                }}
                 className={`p-1.5 rounded-xl hover:bg-gray-800 active:scale-90 transition-transform ${
                   isShortcutsOpen ? "bg-gray-800 text-red-400" : "text-gray-300 hover:text-white"
                 }`}
@@ -1617,9 +1804,12 @@ export function CadStudio({ language }: CadStudioProps) {
                   {/* Arch Plate Length */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase text-gray-400">
-                        {isId ? "Panjang Bridge TPU" : "TPU Bridge Length"}
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-gray-400">
+                          {isId ? "Panjang Bridge TPU" : "TPU Bridge Length"}
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-mono">0.75–1.35x</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -1627,7 +1817,16 @@ export function CadStudio({ language }: CadStudioProps) {
                           min={0.75}
                           max={1.35}
                           value={archPlateLength}
-                          onChange={(e) => setArchPlateLength(Math.max(0.75, Math.min(1.35, parseFloat(e.target.value) || 1.0)))}
+                          aria-label={isId ? "Panjang Bridge TPU" : "TPU Bridge Length"}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            setArchPlateLength(isNaN(v) ? (e.target.value as any) : v);
+                          }}
+                          onBlur={(e) => {
+                            const v = parseFloat(e.target.value);
+                            const clamped = isNaN(v) ? 1.0 : Math.max(0.75, Math.min(1.35, Math.round(v * 100) / 100));
+                            setArchPlateLength(clamped);
+                          }}
                           className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
@@ -1638,7 +1837,8 @@ export function CadStudio({ language }: CadStudioProps) {
                       min={0.75}
                       max={1.35}
                       step={0.05}
-                      value={archPlateLength}
+                      value={typeof archPlateLength === "number" ? archPlateLength : 1.0}
+                      aria-label={isId ? "Slider Panjang Bridge TPU" : "TPU Bridge Length Slider"}
                       onChange={(e) => setArchPlateLength(parseFloat(e.target.value))}
                       className="w-full accent-red-500"
                     />
@@ -1647,9 +1847,12 @@ export function CadStudio({ language }: CadStudioProps) {
                   {/* Arch Plate Width */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase text-gray-400">
-                        {isId ? "Lebar Flange Medial" : "Medial Flange Spread"}
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-gray-400">
+                          {isId ? "Lebar Flange Medial" : "Medial Flange Spread"}
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-mono">0.70–1.30x</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -1657,7 +1860,16 @@ export function CadStudio({ language }: CadStudioProps) {
                           min={0.70}
                           max={1.30}
                           value={archPlateWidth}
-                          onChange={(e) => setArchPlateWidth(Math.max(0.70, Math.min(1.30, parseFloat(e.target.value) || 1.0)))}
+                          aria-label={isId ? "Lebar Flange Medial" : "Medial Flange Spread"}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            setArchPlateWidth(isNaN(v) ? (e.target.value as any) : v);
+                          }}
+                          onBlur={(e) => {
+                            const v = parseFloat(e.target.value);
+                            const clamped = isNaN(v) ? 1.0 : Math.max(0.70, Math.min(1.30, Math.round(v * 100) / 100));
+                            setArchPlateWidth(clamped);
+                          }}
                           className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-red-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
@@ -1668,7 +1880,8 @@ export function CadStudio({ language }: CadStudioProps) {
                       min={0.70}
                       max={1.30}
                       step={0.05}
-                      value={archPlateWidth}
+                      value={typeof archPlateWidth === "number" ? archPlateWidth : 1.0}
+                      aria-label={isId ? "Slider Lebar Flange Medial" : "Medial Flange Spread Slider"}
                       onChange={(e) => setArchPlateWidth(parseFloat(e.target.value))}
                       className="w-full accent-red-500"
                     />
@@ -1708,9 +1921,12 @@ export function CadStudio({ language }: CadStudioProps) {
                   {/* Heel Cup Radius Factor */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase text-gray-400">
-                        {isId ? "Diameter Mangkuk Tumit" : "Heel Cup Radius"}
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-gray-400">
+                          {isId ? "Diameter Mangkuk Tumit" : "Heel Cup Radius"}
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-mono">0.70–1.30x</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -1718,7 +1934,16 @@ export function CadStudio({ language }: CadStudioProps) {
                           min={0.70}
                           max={1.30}
                           value={heelCupRadius}
-                          onChange={(e) => setHeelCupRadius(Math.max(0.70, Math.min(1.30, parseFloat(e.target.value) || 1.0)))}
+                          aria-label={isId ? "Diameter Mangkuk Tumit" : "Heel Cup Radius"}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            setHeelCupRadius(isNaN(v) ? (e.target.value as any) : v);
+                          }}
+                          onBlur={(e) => {
+                            const v = parseFloat(e.target.value);
+                            const clamped = isNaN(v) ? 1.0 : Math.max(0.70, Math.min(1.30, Math.round(v * 100) / 100));
+                            setHeelCupRadius(clamped);
+                          }}
                           className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
@@ -1729,7 +1954,8 @@ export function CadStudio({ language }: CadStudioProps) {
                       min={0.70}
                       max={1.30}
                       step={0.05}
-                      value={heelCupRadius}
+                      value={typeof heelCupRadius === "number" ? heelCupRadius : 1.0}
+                      aria-label={isId ? "Slider Diameter Mangkuk Tumit" : "Heel Cup Radius Slider"}
                       onChange={(e) => setHeelCupRadius(parseFloat(e.target.value))}
                       className="w-full accent-emerald-500"
                     />
@@ -1769,9 +1995,12 @@ export function CadStudio({ language }: CadStudioProps) {
                   {/* Metatarsal Size Factor */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase text-gray-400">
-                        {isId ? "Ukuran Kubah Dome" : "Dome Size Factor"}
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-gray-400">
+                          {isId ? "Ukuran Kubah Dome" : "Dome Size Factor"}
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-mono">0.60–1.40x</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -1779,7 +2008,16 @@ export function CadStudio({ language }: CadStudioProps) {
                           min={0.60}
                           max={1.40}
                           value={metatarsalSize}
-                          onChange={(e) => setMetatarsalSize(Math.max(0.60, Math.min(1.40, parseFloat(e.target.value) || 1.0)))}
+                          aria-label={isId ? "Ukuran Kubah Dome" : "Dome Size Factor"}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            setMetatarsalSize(isNaN(v) ? (e.target.value as any) : v);
+                          }}
+                          onBlur={(e) => {
+                            const v = parseFloat(e.target.value);
+                            const clamped = isNaN(v) ? 1.0 : Math.max(0.60, Math.min(1.40, Math.round(v * 100) / 100));
+                            setMetatarsalSize(clamped);
+                          }}
                           className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                         <span className="text-[10px] text-gray-400 font-semibold">x</span>
@@ -1790,7 +2028,8 @@ export function CadStudio({ language }: CadStudioProps) {
                       min={0.60}
                       max={1.40}
                       step={0.05}
-                      value={metatarsalSize}
+                      value={typeof metatarsalSize === "number" ? metatarsalSize : 1.0}
+                      aria-label={isId ? "Slider Ukuran Kubah Dome" : "Dome Size Factor Slider"}
                       onChange={(e) => setMetatarsalSize(parseFloat(e.target.value))}
                       className="w-full accent-cyan-500"
                     />
@@ -1799,9 +2038,12 @@ export function CadStudio({ language }: CadStudioProps) {
                   {/* Metatarsal Y Pos */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase text-gray-400">
-                        {isId ? "Posisi Longitudinal (Y)" : "Longitudinal Y Position"}
-                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold uppercase text-gray-400">
+                          {isId ? "Posisi Longitudinal (Y)" : "Longitudinal Y Position"}
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-mono">0.58–0.72</span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -1809,7 +2051,16 @@ export function CadStudio({ language }: CadStudioProps) {
                           min={0.58}
                           max={0.72}
                           value={metatarsalYPos}
-                          onChange={(e) => setMetatarsalYPos(Math.max(0.58, Math.min(0.72, parseFloat(e.target.value) || 0.65)))}
+                          aria-label={isId ? "Posisi Longitudinal (Y)" : "Longitudinal Y Position"}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            setMetatarsalYPos(isNaN(v) ? (e.target.value as any) : v);
+                          }}
+                          onBlur={(e) => {
+                            const v = parseFloat(e.target.value);
+                            const clamped = isNaN(v) ? 0.65 : Math.max(0.58, Math.min(0.72, Math.round(v * 100) / 100));
+                            setMetatarsalYPos(clamped);
+                          }}
                           className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-cyan-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                         />
                       </div>
@@ -1819,7 +2070,8 @@ export function CadStudio({ language }: CadStudioProps) {
                       min={0.58}
                       max={0.72}
                       step={0.01}
-                      value={metatarsalYPos}
+                      value={typeof metatarsalYPos === "number" ? metatarsalYPos : 0.65}
+                      aria-label={isId ? "Slider Posisi Longitudinal (Y)" : "Longitudinal Y Position Slider"}
                       onChange={(e) => setMetatarsalYPos(parseFloat(e.target.value))}
                       className="w-full accent-cyan-500"
                     />
@@ -1926,6 +2178,11 @@ export function CadStudio({ language }: CadStudioProps) {
                   <p className="font-mono text-base font-black text-emerald-400">
                     ~{Math.floor((1200 * 2400) / ((geometry.bounds.width + 10) * (geometry.bounds.height + 10) * (foot === "PAIR" ? 2 : 1)))}{" "}
                     <span className="text-xs font-normal text-gray-400">{foot === "PAIR" ? (isId ? "pasang / lembar" : "pairs / sheet") : (isId ? "pcs / lembar" : "pcs / sheet")}</span>
+                  </p>
+                  <p className="text-[10px] text-gray-400 leading-tight">
+                    {isId
+                      ? "* Estimasi teoritis bounding-box. Hasil riil dapat berbeda 10–25% akibat toleransi nesting & kurvatur."
+                      : "* Theoretical bounding-box estimate. Actual yield varies 10–25% based on nesting orientation & curvature."}
                   </p>
                 </div>
               </div>
@@ -2044,7 +2301,7 @@ export function CadStudio({ language }: CadStudioProps) {
       {isCncPreFlightOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
-          onKeyDown={(e) => trapModalTab(e, cncCloseRef, cncCloseRef)}
+          onKeyDown={(e) => trapModalTab(e, cncCloseRef, cncLastBtnRef)}
         >
           <div
             role="dialog"
@@ -2133,21 +2390,44 @@ export function CadStudio({ language }: CadStudioProps) {
               </div>
             </div>
 
+            {/* Persistent Inline Export Error Card (mirroring Library/AI pattern) */}
+            {exportError && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="p-3 rounded-xl bg-red-950/70 border border-red-800 text-xs text-red-200 flex items-center justify-between gap-3 animate-in fade-in"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+                  <span>{exportError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExportError(null)}
+                  className="p-1 rounded-lg hover:bg-red-900/50 text-red-300 transition"
+                  aria-label={isId ? "Tutup peringatan" : "Dismiss alert"}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
               <button
                 type="button"
                 onClick={handleExportSvg}
                 disabled={exporting !== null || !manifoldVerified}
-                className="px-4 py-2 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 transition"
+                className="px-4 py-2 min-h-[44px] rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 transition active:scale-95"
               >
                 {exporting === "SVG" ? "Exporting..." : isId ? "Unduh Vector SVG" : "Download SVG"}
               </button>
               <button
+                ref={cncLastBtnRef}
                 type="button"
                 onClick={handleExportDxf}
                 disabled={exporting !== null || !manifoldVerified}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 active:scale-95 transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 active:scale-95 transition"
               >
                 <Download className="h-4 w-4" />
                 <span>{exporting === "DXF" ? "Exporting..." : isId ? "Unduh AutoCAD R12 DXF" : "Download R12 DXF"}</span>
@@ -2164,7 +2444,7 @@ export function CadStudio({ language }: CadStudioProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="cad-overwrite-title"
-            onKeyDown={(e) => trapModalTab(e, cancelOverwriteRef, cancelOverwriteRef)}
+            onKeyDown={(e) => trapModalTab(e, cancelOverwriteRef, confirmOverwriteRef)}
             className="w-full max-w-sm rounded-xl bg-gray-900 border border-amber-700/60 shadow-2xl p-6 space-y-4"
           >
             <div className="flex items-center gap-2.5 text-amber-400">
@@ -2189,6 +2469,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 {isId ? "Lanjut Mengedit" : "Keep editing"}
               </button>
               <button
+                ref={confirmOverwriteRef}
                 type="button"
                 onClick={() => {
                   const action = pendingOverwriteAction;
@@ -2214,6 +2495,7 @@ export function CadStudio({ language }: CadStudioProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="cad-shortcuts-title"
+            onKeyDown={(e) => trapModalTab(e, shortcutsCloseRef, shortcutsGotItRef)}
             className="w-full max-w-md rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
@@ -2225,6 +2507,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 </h3>
               </div>
               <button
+                ref={shortcutsCloseRef}
                 type="button"
                 onClick={() => setIsShortcutsOpen(false)}
                 className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition"
@@ -2266,6 +2549,18 @@ export function CadStudio({ language }: CadStudioProps) {
                 </kbd>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Geser Halus Kanvas (5mm)" : "Fine Pan Viewport (5mm)"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  Shift + ← ↑ → ↓
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Zoom Kursor / Cubit Layar" : "Wheel Zoom / Pinch-to-Zoom"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  {isId ? "Roda Mouse / 2 Jari" : "Mouse Wheel / 2-Finger"}
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
                 <span className="text-gray-300">{isId ? "Buka Panduan Pintasan" : "Toggle Shortcuts"}</span>
                 <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
                   ?
@@ -2281,6 +2576,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
             <div className="pt-2 flex justify-end">
               <button
+                ref={shortcutsGotItRef}
                 type="button"
                 autoFocus
                 onClick={() => setIsShortcutsOpen(false)}
