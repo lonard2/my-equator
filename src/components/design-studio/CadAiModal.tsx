@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SizingSystem, ArchProfile, ToeShape } from "@/lib/cad/insoleEngine";
 import {
   Sparkles,
@@ -53,18 +53,30 @@ export function CadAiModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedResult, setGeneratedResult] = useState<any | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
+        if (loading && abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, loading]);
 
   if (!isOpen) return null;
 
@@ -87,9 +99,36 @@ export function CadAiModal({
     },
   ];
 
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort("CANCELLED");
+      abortControllerRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setLoading(false);
+  };
+
   const handleGenerate = async (textToSend?: string) => {
     const text = textToSend || prompt;
     if (!text.trim() || loading) return;
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const timeoutId = setTimeout(() => {
+      controller.abort("TIMEOUT");
+    }, 25000);
+    timeoutRef.current = timeoutId;
 
     setLoading(true);
     setError(null);
@@ -99,6 +138,7 @@ export function CadAiModal({
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           messages: [
             {
@@ -181,8 +221,19 @@ export function CadAiModal({
               : "Failed to generate AI insole design from server.")
         );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Generation error:", err);
+      if (err.name === "AbortError" || controller.signal.aborted) {
+        if (controller.signal.reason === "CANCELLED") {
+          return;
+        }
+        setError(
+          isId
+            ? "Waktu tunggu perancangan AI habis (timeout 25 detik). Silakan coba lagi."
+            : "AI design request timed out (25 seconds). Please try again."
+        );
+        return;
+      }
       // Offline fallback: an honest, clearly-labeled template — never a fake success.
       setGeneratedResult({
         name: "Offline Template EU 42",
@@ -208,6 +259,10 @@ export function CadAiModal({
           : "Generic offline template — the AI gateway connection failed. Parameters do NOT reflect your request.",
       });
     } finally {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       setLoading(false);
     }
   };
@@ -315,14 +370,28 @@ export function CadAiModal({
                 className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none"
               />
             </div>
-            <button
-              onClick={() => handleGenerate()}
-              disabled={!prompt.trim() || loading}
-              className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>{loading ? (isId ? "Khatulistiwa AI Sedang Merancang..." : "AI Designing...") : isId ? "Generate Model CAD" : "Generate CAD Model"}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleGenerate()}
+                disabled={!prompt.trim() || loading}
+                className="flex-1 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>{loading ? (isId ? "Khatulistiwa AI Sedang Merancang..." : "AI Designing...") : isId ? "Generate Model CAD" : "Generate CAD Model"}</span>
+              </button>
+              {loading && (
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2.5 min-h-[44px] rounded-xl border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/60 transition active:scale-95 flex items-center gap-1.5"
+                  aria-label={isId ? "Batalkan pembuatan CAD AI" : "Cancel AI CAD generation"}
+                >
+                  <X className="h-4 w-4" />
+                  <span>{isId ? "Batal" : "Cancel"}</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Error Card (Mirroring Library Card) */}

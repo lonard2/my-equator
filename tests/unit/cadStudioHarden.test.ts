@@ -222,5 +222,106 @@ describe("Insole CAD Studio P0 Hardenings (Impeccable Harden)", () => {
       );
     });
   });
+
+  describe("Rubric Improvements: True mm SVG Grid, Cursor Coordinates, Shortcuts, Cancel/Timeout & Anatomical Tooltips", () => {
+    it("verifies CadAiModal includes 25s timeout, AbortController, and visible Cancel button", () => {
+      const freshCadAiModal = fs.readFileSync(cadAiModalPath, "utf-8");
+
+      assert.ok(
+        freshCadAiModal.includes("const abortControllerRef = useRef<AbortController | null>(null);") &&
+          freshCadAiModal.includes("const timeoutRef = useRef<NodeJS.Timeout | null>(null);"),
+        "CadAiModal must maintain refs for abort controller and timeout"
+      );
+      assert.ok(
+        freshCadAiModal.includes("setTimeout(() => {") &&
+          freshCadAiModal.includes('controller.abort("TIMEOUT")') &&
+          freshCadAiModal.includes("25000"),
+        "CadAiModal must set 25-second auto-abort timeout"
+      );
+      assert.ok(
+        freshCadAiModal.includes("handleCancel") &&
+          freshCadAiModal.includes('isId ? "Batal" : "Cancel"'),
+        "CadAiModal must provide a visible Cancel button while generating"
+      );
+    });
+
+    it("verifies CadStudio renders true mm SVG grid pattern and eliminates static CSS grid", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+      assert.ok(
+        freshCadStudio.includes('pattern id="cad-grid-10mm"') &&
+          freshCadStudio.includes('pattern id="cad-grid-50mm"'),
+        "CadStudio must define true millimeter patterns (10mm minor, 50mm major) inside SVG defs"
+      );
+      assert.ok(
+        freshCadStudio.includes('fill="url(#cad-grid-50mm)"'),
+        "CadStudio must fill grid rect with the millimeter pattern"
+      );
+      assert.strictEqual(
+        freshCadStudio.includes('backgroundSize: "20px 20px"'),
+        false,
+        "CadStudio must not rely on static 20px CSS background grid that does not scale with CAD"
+      );
+    });
+
+    it("verifies CadStudio tracks live cursor mm coordinates and displays them in HUD", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+      assert.ok(
+        freshCadStudio.includes("setCursorMm") &&
+          freshCadStudio.includes("matrixTransform") &&
+          freshCadStudio.includes("getScreenCTM()"),
+        "CadStudio must convert pointer events to exact SVG millimeter coordinates via getScreenCTM"
+      );
+      assert.ok(
+        freshCadStudio.includes("cursorMm.x") &&
+          freshCadStudio.includes("cursorMm.y"),
+        "CadStudio must display cursor X/Y millimeter coordinates in the live HUD strip"
+      );
+    });
+
+    it("verifies CadStudio supports arrow key panning and keyboard shortcuts legend dialog", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+      assert.ok(
+        freshCadStudio.includes('e.key === "ArrowLeft"') &&
+          freshCadStudio.includes('e.key === "ArrowRight"') &&
+          freshCadStudio.includes('e.key === "ArrowUp"') &&
+          freshCadStudio.includes('e.key === "ArrowDown"'),
+        "CadStudio must support arrow key viewport panning"
+      );
+      assert.ok(
+        freshCadStudio.includes("isShortcutsOpen") &&
+          freshCadStudio.includes("cad-shortcuts-title") &&
+          freshCadStudio.includes("Pintasan Keyboard CAD"),
+        "CadStudio must provide a dedicated keyboard shortcuts legend dialog"
+      );
+    });
+
+    it("verifies clinical-grade anatomical tooltips for Heel Cup, Metatarsal Pad, and Caliper measurements", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+      // Heel cup tooltip
+      assert.ok(
+        freshCadStudio.includes('activeTooltip === "heel"') &&
+          freshCadStudio.includes("calcaneal fat pad"),
+        "CadStudio must provide an anatomical tooltip for the heel cup (calcaneal fat pad)"
+      );
+
+      // Metatarsal dome tooltip
+      assert.ok(
+        freshCadStudio.includes('activeTooltip === "metatarsal"') &&
+          freshCadStudio.includes("metatarsalgia"),
+        "CadStudio must provide an anatomical tooltip for the metatarsal pad (metatarsalgia relief)"
+      );
+
+      // Caliper measurement tooltip
+      assert.ok(
+        freshCadStudio.includes('activeTooltip === "caliper"') &&
+          freshCadStudio.includes("skala 1:1"),
+        "CadStudio must provide an informative tooltip for 1:1 caliper measurements"
+      );
+    });
+  });
 });
 

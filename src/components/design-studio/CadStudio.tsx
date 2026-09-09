@@ -35,6 +35,7 @@ import {
   AlertTriangle,
   X,
   HelpCircle,
+  Keyboard,
 } from "lucide-react";
 import { CadAiModal } from "./CadAiModal";
 
@@ -130,6 +131,8 @@ export function CadStudio({ language }: CadStudioProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTone, setToastTone] = useState<"success" | "error">("success");
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [cursorMm, setCursorMm] = useState<{ x: number; y: number } | null>(null);
   const [baselineRef, setBaselineRef] = useState<string>("");
   const [pendingOverwriteAction, setPendingOverwriteAction] = useState<(() => void) | null>(null);
   const cancelOverwriteRef = useRef<HTMLButtonElement | null>(null);
@@ -195,6 +198,9 @@ export function CadStudio({ language }: CadStudioProps) {
         if (pendingOverwriteAction) {
           e.preventDefault();
           setPendingOverwriteAction(null);
+        } else if (isShortcutsOpen) {
+          e.preventDefault();
+          setIsShortcutsOpen(false);
         } else if (isCncPreFlightOpen) {
           e.preventDefault();
           setIsCncPreFlightOpen(false);
@@ -204,6 +210,9 @@ export function CadStudio({ language }: CadStudioProps) {
         } else if (isAiModalOpen) {
           e.preventDefault();
           setIsAiModalOpen(false);
+        } else if (activeTooltip) {
+          e.preventDefault();
+          setActiveTooltip(null);
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
@@ -218,12 +227,27 @@ export function CadStudio({ language }: CadStudioProps) {
         e.preventDefault();
         setZoomScale(1.0);
         setPanOffset({ x: 0, y: 0 });
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setPanOffset((p) => ({ ...p, x: p.x + 25 }));
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setPanOffset((p) => ({ ...p, x: p.x - 25 }));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setPanOffset((p) => ({ ...p, y: p.y + 25 }));
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setPanOffset((p) => ({ ...p, y: p.y - 25 }));
+      } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setIsShortcutsOpen((v) => !v);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [blueprintName, sizingSystem, rawSizeValue, customLengthMm, foot, archProfile, archFactor, toeShape, ballWidth, heelWidth, waistWidth, forefootThickness, heelThickness, materialType, archPlateLength, archPlateWidth, archPlateLateralWing, heelCupDepth, heelCupRadius, metatarsalSize, metatarsalYPos, pendingOverwriteAction, isCncPreFlightOpen, isLibraryOpen, isAiModalOpen]);
+  }, [blueprintName, sizingSystem, rawSizeValue, customLengthMm, foot, archProfile, archFactor, toeShape, ballWidth, heelWidth, waistWidth, forefootThickness, heelThickness, materialType, archPlateLength, archPlateWidth, archPlateLateralWing, heelCupDepth, heelCupRadius, metatarsalSize, metatarsalYPos, pendingOverwriteAction, isCncPreFlightOpen, isLibraryOpen, isAiModalOpen, isShortcutsOpen, activeTooltip]);
 
   // Compute Active Sizing Conversion
   const conversion = convertSizing(sizingSystem, sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue);
@@ -970,20 +994,6 @@ export function CadStudio({ language }: CadStudioProps) {
           onPointerCancel={() => setIsPanning(false)}
           style={{ touchAction: "none" }}
         >
-          {/* Millimeter Grid Backdrop */}
-          {showGrid && (
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, #ffffff 1px, transparent 1px),
-                  linear-gradient(to bottom, #ffffff 1px, transparent 1px)
-                `,
-                backgroundSize: "20px 20px",
-              }}
-            />
-          )}
-
           {/* Floating Viewport Overlay Toolbar */}
           <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
@@ -1016,6 +1026,17 @@ export function CadStudio({ language }: CadStudioProps) {
                 aria-label={isId ? "Reset tampilan" : "Reset view"}
               >
                 <RotateCcw className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsShortcutsOpen(!isShortcutsOpen)}
+                className={`p-1.5 rounded-xl hover:bg-gray-800 active:scale-90 transition-transform ${
+                  isShortcutsOpen ? "bg-gray-800 text-red-400" : "text-gray-300 hover:text-white"
+                }`}
+                title={isId ? "Pintasan Keyboard (?)" : "Keyboard Shortcuts (?)"}
+                aria-label={isId ? "Buka panduan pintasan keyboard" : "Open keyboard shortcuts guide"}
+              >
+                <Keyboard className="h-4 w-4" />
               </button>
               <div className="h-4 w-px bg-gray-700 mx-1" />
               <span className="text-[11px] font-mono font-bold px-1.5 text-gray-300">
@@ -1062,7 +1083,43 @@ export function CadStudio({ language }: CadStudioProps) {
                 width: `${vbW * (foot === "PAIR" ? 1.15 : 1.45)}px`,
                 height: `${vbH * (foot === "PAIR" ? 1.15 : 1.45)}px`,
               }}
+              onPointerMove={(e) => {
+                const svg = e.currentTarget;
+                const pt = svg.createSVGPoint();
+                pt.x = e.clientX;
+                pt.y = e.clientY;
+                const ctm = svg.getScreenCTM();
+                if (ctm) {
+                  const svgPt = pt.matrixTransform(ctm.inverse());
+                  setCursorMm({
+                    x: Math.round(svgPt.x * 10) / 10,
+                    y: Math.round(svgPt.y * 10) / 10,
+                  });
+                }
+              }}
+              onPointerLeave={() => setCursorMm(null)}
             >
+              <defs>
+                <pattern id="cad-grid-10mm" width="10" height="10" patternUnits="userSpaceOnUse">
+                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.25" className="text-gray-700/60" />
+                </pattern>
+                <pattern id="cad-grid-50mm" width="50" height="50" patternUnits="userSpaceOnUse">
+                  <rect width="50" height="50" fill="url(#cad-grid-10mm)" />
+                  <path d="M 50 0 L 0 0 0 50" fill="none" stroke="currentColor" strokeWidth="0.65" className="text-gray-600/80" />
+                </pattern>
+              </defs>
+
+              {/* True Millimeter CAD Engineering Grid */}
+              {showGrid && (
+                <rect
+                  x="-50"
+                  y="-50"
+                  width={vbW + 100}
+                  height={vbH + 100}
+                  fill="url(#cad-grid-50mm)"
+                  className="pointer-events-none"
+                />
+              )}
               {/* SINGLE FOOT VIEW */}
               {foot !== "PAIR" ? (
                 <g id="single-insole-viewport">
@@ -1214,25 +1271,62 @@ export function CadStudio({ language }: CadStudioProps) {
             role="status"
             aria-live="polite"
             aria-label={isId ? "Dimensi insole langsung" : "Live insole dimensions"}
-            className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between p-2.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs"
+            className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex flex-col gap-1.5 p-2.5 rounded-xl bg-gray-900/90 backdrop-blur-md border border-gray-800 text-white text-xs shadow-2xl"
           >
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 font-mono text-[11px]">
-              <span>
-                <strong className="text-red-400">{geometry.sizingLabel}</strong> ({foot})
-              </span>
-              <span>
-                {isId ? "Pjg" : "Len"}: <strong className="text-blue-400">{geometry.length} mm</strong>
-              </span>
-              <span>
-                {isId ? "Bola" : "Ball"}: <strong className="text-amber-400">{ballWidth} mm</strong>
-              </span>
-              <span>
-                {isId ? "Tumit" : "Heel"}: <strong className="text-emerald-400">{heelWidth} mm</strong>
-              </span>
-              <span>
-                {isId ? "Keliling" : "Perimeter"}: <strong className="text-cyan-400">{totalPerimeter} mm</strong>
-              </span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 font-mono text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-red-400">{geometry.sizingLabel} ({foot})</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTooltip(activeTooltip === "caliper" ? null : "caliper")}
+                    className="text-gray-400 hover:text-white p-0.5 rounded transition"
+                    title={isId ? "Info Pengukuran Kaliper" : "Caliper Measurement Info"}
+                    aria-label={isId ? "Info pengukuran kaliper" : "Caliper measurement info"}
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <span>
+                  {isId ? "Pjg" : "Len"}: <strong className="text-blue-400">{geometry.length} mm</strong>
+                </span>
+                <span>
+                  {isId ? "Bola" : "Ball"}: <strong className="text-amber-400">{ballWidth} mm</strong>
+                </span>
+                <span>
+                  {isId ? "Tumit" : "Heel"}: <strong className="text-emerald-400">{heelWidth} mm</strong>
+                </span>
+                <span>
+                  {isId ? "Keliling" : "Perimeter"}: <strong className="text-cyan-400">{totalPerimeter} mm</strong>
+                </span>
+              </div>
+
+              {/* Live Cursor Coordinate Readout */}
+              {cursorMm && (
+                <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] text-gray-400 bg-gray-950/80 px-2 py-0.5 rounded-md border border-gray-800 shrink-0">
+                  <span>X: <strong className="text-gray-200">{cursorMm.x} mm</strong></span>
+                  <span>Y: <strong className="text-gray-200">{cursorMm.y} mm</strong></span>
+                </div>
+              )}
             </div>
+
+            {activeTooltip === "caliper" && (
+              <div className="p-2 rounded-lg bg-gray-950/90 border border-gray-700 text-[11px] text-gray-300 leading-snug flex items-center justify-between gap-2 animate-in fade-in duration-150">
+                <span>
+                  {isId
+                    ? "Pengukuran kaliper parametrik presisi CAD (Panjang total, Lebar bola metatarsal, Lebar tumit, dan Keliling perimeter) dalam milimeter sejati (skala 1:1)."
+                    : "True millimeter parametric caliper measurements (Total length, Ball width, Heel width, and Perimeter) at 1:1 scale for exact footwear mold matching."}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTooltip(null)}
+                  className="text-gray-400 hover:text-white shrink-0 p-0.5"
+                  aria-label={isId ? "Tutup info" : "Close info"}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1370,13 +1464,32 @@ export function CadStudio({ language }: CadStudioProps) {
                 {/* Heel Cup Pad */}
                 <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-900/40 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-300">
-                      {isId ? "Mangkuk Tumit (Heel Cup)" : "Heel Cup Profile"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-emerald-300">
+                        {isId ? "Mangkuk Tumit (Heel Cup)" : "Heel Cup Profile"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTooltip(activeTooltip === "heel" ? null : "heel")}
+                        className="text-emerald-400 hover:text-emerald-300 p-0.5"
+                        title={isId ? "Info Anatomi" : "Anatomical Info"}
+                        aria-label={isId ? "Info anatomi mangkuk tumit" : "Heel cup anatomical info"}
+                      >
+                        <HelpCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-200 font-mono font-bold">
                       LAYER: GREEN
                     </span>
                   </div>
+
+                  {activeTooltip === "heel" && (
+                    <div className="p-2 rounded-xl bg-emerald-950/80 border border-emerald-900/60 text-[11px] text-emerald-200 leading-snug">
+                      {isId
+                        ? "Mangkuk tumit (heel cup) menstabilkan bantalan lemak kalkaneus (calcaneal fat pad) untuk meredam tumbukan hentakan saat fase heel-strike."
+                        : "Heel cup cradles the calcaneal fat pad to absorb impact shock during heel strike and prevent rearfoot eversion."}
+                    </div>
+                  )}
 
                   {/* Heel Cup Radius Factor */}
                   <div className="space-y-1">
@@ -1412,13 +1525,32 @@ export function CadStudio({ language }: CadStudioProps) {
                 {/* Metatarsal Pad */}
                 <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-900/40 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-cyan-300">
-                      {isId ? "Bantalan Metatarsal (Dome)" : "Metatarsal Pad Dome"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-cyan-300">
+                        {isId ? "Bantalan Metatarsal (Dome)" : "Metatarsal Pad Dome"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTooltip(activeTooltip === "metatarsal" ? null : "metatarsal")}
+                        className="text-cyan-400 hover:text-cyan-300 p-0.5"
+                        title={isId ? "Info Anatomi" : "Anatomical Info"}
+                        aria-label={isId ? "Info anatomi bantalan metatarsal" : "Metatarsal pad anatomical info"}
+                      >
+                        <HelpCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-900/60 text-cyan-200 font-mono font-bold">
                       LAYER: CYAN
                     </span>
                   </div>
+
+                  {activeTooltip === "metatarsal" && (
+                    <div className="p-2 rounded-xl bg-cyan-950/80 border border-cyan-900/60 text-[11px] text-cyan-200 leading-snug">
+                      {isId
+                        ? "Kubah metatarsal mengangkat arkus transversal kaki depan guna mengurangi tekanan berlebih pada kaput metatarsal 2-4 dan meredakan metatarsalgia."
+                        : "Metatarsal dome elevates transverse arch to distribute forefoot plantar pressure and relieve metatarsalgia."}
+                    </div>
+                  )}
 
                   {/* Metatarsal Size Factor */}
                   <div className="space-y-1">
@@ -1842,6 +1974,95 @@ export function CadStudio({ language }: CadStudioProps) {
                 className="px-4 py-2 min-h-[44px] rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-xs active:scale-95 transition"
               >
                 {isId ? "Ya, Timpa" : "Yes, Overwrite"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Legend Dialog */}
+      {isShortcutsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setIsShortcutsOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cad-shortcuts-title"
+            className="w-full max-w-md rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-400">
+                <Keyboard className="h-5 w-5" />
+                <h3 id="cad-shortcuts-title" className="font-extrabold text-sm text-white">
+                  {isId ? "Pintasan Keyboard CAD" : "CAD Keyboard Shortcuts"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShortcutsOpen(false)}
+                className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition"
+                aria-label={isId ? "Tutup panduan pintasan" : "Close shortcuts guide"}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Simpan Blueprint" : "Save Blueprint"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  Ctrl + S / Cmd + S
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Perbesar Tampilan" : "Zoom In"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  + atau =
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Perkecil Tampilan" : "Zoom Out"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  - atau _
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Reset Zoom & Posisi" : "Reset View"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  0
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Geser Kanvas CAD" : "Pan Viewport"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  ← ↑ → ↓
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Buka Panduan Pintasan" : "Toggle Shortcuts"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  ?
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Tutup Dialog / Batal" : "Close Dialog / Cancel"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  Esc
+                </kbd>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setIsShortcutsOpen(false)}
+                className="px-4 py-2 min-h-[44px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition"
+              >
+                {isId ? "Mengerti" : "Got it"}
               </button>
             </div>
           </div>
