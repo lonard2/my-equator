@@ -23,33 +23,43 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Layers,
   Sparkles,
   FolderOpen,
-  Share2,
-  Info,
-  Sliders,
-  Globe2,
-  PanelRightClose,
-  PanelRightOpen,
   Wrench,
-  Shield,
-  Eye,
-  SlidersHorizontal,
-  FileCode,
+  Scissors,
   CheckCircle2,
   AlertTriangle,
   X,
-  Printer,
-  Cpu,
-  Scissors,
-  Check,
   HelpCircle,
-  Clock,
-  Trash2,
-  Keyboard,
 } from "lucide-react";
 import { CadAiModal } from "./CadAiModal";
+
+interface SavedBlueprint {
+  id: string;
+  name: string;
+  articleCode?: string;
+  customLengthMm?: number;
+  sizingSystem?: SizingSystem;
+  rawSizeValue?: number;
+  shoeSize?: number;
+  foot?: FootType;
+  archProfile?: ArchProfile;
+  archFactor?: number;
+  toeShape?: ToeShape;
+  ballWidthMm?: number;
+  heelWidthMm?: number;
+  waistWidthMm?: number;
+  thicknessForefootMm?: number;
+  thicknessHeelMm?: number;
+  materialType?: string;
+  archPlateLengthFactor?: number;
+  archPlateWidthFactor?: number;
+  archPlateLateralWing?: boolean;
+  heelCupDepth?: HeelCupDepthProfile;
+  heelCupRadiusFactor?: number;
+  metatarsalPadSizeFactor?: number;
+  metatarsalPadYPosition?: number;
+}
 
 interface CadStudioProps {
   language: "id" | "en";
@@ -106,7 +116,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
   // Modals & Feedback States
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [savedBlueprints, setSavedBlueprints] = useState<any[]>([]);
+  const [savedBlueprints, setSavedBlueprints] = useState<SavedBlueprint[]>([]);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [libraryError, setLibraryError] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -266,7 +276,7 @@ export function CadStudio({ language }: CadStudioProps) {
   };
 
   // Load Saved Blueprint
-  const handleLoadSavedBlueprint = (bp: any) => {
+  const handleLoadSavedBlueprint = (bp: SavedBlueprint) => {
     confirmOverwrite(() => {
     if (bp.name) setBlueprintName(bp.name);
     if (bp.sizingSystem) setSizingSystem(bp.sizingSystem);
@@ -296,6 +306,7 @@ export function CadStudio({ language }: CadStudioProps) {
   };
 
   // Apply Generative AI Insole Parameters
+  // Payload boundary with the AI modal: fields are optional and loosely typed at the edge.
   const handleApplyAiGeneration = (aiData: any) => {
     confirmOverwrite(() => {
     if (aiData.sizingSystem) setSizingSystem(aiData.sizingSystem);
