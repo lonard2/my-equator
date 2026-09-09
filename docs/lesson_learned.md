@@ -42,6 +42,12 @@
 - **Trade-Offs & Limitations:**
   - Single-machine deployment uses local sessions; enterprise multi-branch expansion can layer OAuth2 / SAML SSO seamlessly on top of the established `UserRole` interface.
 
+### 2.5 Cross-Browser Vector CAD: SVG Filter Caching & DOM Reconciliation
+- **Insight & Incident:** In Firefox, applying CSS `filter: drop-shadow(...)` (e.g. `drop-shadow-2xl`) to an SVG `<g>` viewport containing dynamic `<path>` children causes the hardware-accelerated compositor to cache an offscreen raster texture. Because the outer insole contour boundary remains static, unmounting an internal orthotic child (such as the medial arch plate or heel cup) fails to invalidate the dirty rect of the filter's cached texture, causing the disabled element's pixels to remain visually rendered until the entire group's bounding box changes.
+- **Resolution & Architecture Standard:**
+  - CAD drafting viewports must remain pure vector graphics: avoid CSS filters or Gaussian blur drop-shadows on SVG container groups.
+  - Every dynamic CAD layer must be wrapped in its own discrete, uniquely keyed SVG group (`<g key="layer-id">`) with strict boolean conditional rendering, preventing React DOM array index shifting and ensuring instantaneous, deterministic layer toggling across all browsers (Firefox, Chrome, Safari, Edge).
+
 ---
 
 ## 3. Key Strengths of the Architecture
