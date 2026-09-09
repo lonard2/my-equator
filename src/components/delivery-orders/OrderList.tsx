@@ -283,6 +283,7 @@ export function OrderList({
               <button
                 key={f.id}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => setStatusFilter(f.id)}
                 className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1 active:scale-95 ${
                   isSelected

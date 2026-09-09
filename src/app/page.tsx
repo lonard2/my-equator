@@ -540,6 +540,7 @@ export default function HomePage() {
                           <button
                             key={opt.id}
                             type="button"
+                            aria-pressed={isSelected}
                             onClick={() => setMobileStatusFilter(opt.id)}
                             className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-1.5 active:scale-95 ${
                               isSelected
