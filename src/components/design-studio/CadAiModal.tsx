@@ -452,23 +452,28 @@ export function CadAiModal({
                 </span>
               </div>
 
+              {/* Full parameter delta: what will change, not a cherry-picked sample */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-emerald-950 dark:text-emerald-200">
-                <div className="p-2 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900">
-                  <span className="text-[10px] text-gray-500 block">{isId ? "Kontur Arch" : "Arch Contour"}</span>
-                  <strong className="text-emerald-900 dark:text-emerald-300">
-                    {generatedResult.archProfile} ({generatedResult.archOffsetFactor}x)
-                  </strong>
-                </div>
-                <div className="p-2 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900">
-                  <span className="text-[10px] text-gray-500 block">Toe Box</span>
-                  <strong className="text-emerald-900 dark:text-emerald-300">{generatedResult.toeShape}</strong>
-                </div>
-                <div className="p-2 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900">
-                  <span className="text-[10px] text-gray-500 block">{isId ? "Tebal (Depan / Tumit)" : "Thickness (Forefoot / Heel)"}</span>
-                  <strong className="text-emerald-900 dark:text-emerald-300">
-                    {generatedResult.thicknessForefootMm}mm / {generatedResult.thicknessHeelMm}mm
-                  </strong>
-                </div>
+                {[
+                  { label: isId ? "Kontur Arch" : "Arch Contour", value: `${generatedResult.archProfile} (${generatedResult.archOffsetFactor}x)` },
+                  { label: isId ? "Bentuk Toe Box" : "Toe Box Shape", value: generatedResult.toeShape },
+                  { label: isId ? "Tebal Depan / Tumit" : "Thickness (Fore / Heel)", value: `${generatedResult.thicknessForefootMm}mm / ${generatedResult.thicknessHeelMm}mm` },
+                  { label: isId ? "Lebar Bola Kaki" : "Ball Width", value: generatedResult.ballWidthMm ? `${generatedResult.ballWidthMm} mm` : undefined },
+                  { label: isId ? "Lebar Tumit" : "Heel Width", value: generatedResult.heelWidthMm ? `${generatedResult.heelWidthMm} mm` : undefined },
+                  { label: isId ? "Lebar Pinggang" : "Waist Width", value: generatedResult.waistWidthMm ? `${generatedResult.waistWidthMm} mm` : undefined },
+                  { label: isId ? "Panjang Plat Arch" : "Arch Plate Length", value: generatedResult.archPlateLengthFactor ? `${generatedResult.archPlateLengthFactor}x` : undefined },
+                  { label: isId ? "Lebar Plat Arch" : "Arch Plate Width", value: generatedResult.archPlateWidthFactor ? `${generatedResult.archPlateWidthFactor}x` : undefined },
+                  { label: isId ? "Sayap Lateral" : "Lateral Wing", value: generatedResult.archPlateLateralWing !== undefined ? (generatedResult.archPlateLateralWing ? (isId ? "Ya" : "Yes") : (isId ? "Tidak" : "No")) : undefined },
+                  { label: isId ? "Kedalaman Heel Cup" : "Heel Cup Depth", value: generatedResult.heelCupDepthProfile },
+                  { label: isId ? "Radius Heel Cup" : "Heel Cup Radius", value: generatedResult.heelCupRadiusFactor ? `${generatedResult.heelCupRadiusFactor}x` : undefined },
+                  { label: isId ? "Ukuran Metatarsal" : "Metatarsal Size", value: generatedResult.metatarsalPadSizeFactor ? `${generatedResult.metatarsalPadSizeFactor}x` : undefined },
+                  { label: isId ? "Posisi Metatarsal (Y)" : "Metatarsal Y Position", value: generatedResult.metatarsalPadYPosition ? `${generatedResult.metatarsalPadYPosition}` : undefined },
+                ].filter((p) => p.value !== undefined && p.value !== null).map((p, i) => (
+                  <div key={i} className="p-2 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900">
+                    <span className="text-[10px] text-gray-500 block">{p.label}</span>
+                    <strong className="text-emerald-900 dark:text-emerald-300">{p.value}</strong>
+                  </div>
+                ))}
               </div>
 
               <div className="p-2.5 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900 text-xs">
