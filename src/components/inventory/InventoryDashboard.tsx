@@ -40,6 +40,14 @@ interface InventoryDashboardProps {
 
 type SortColumn = "name" | "sku" | "category" | "stock" | "health" | "unitCost" | "valuation" | "location";
 
+const MOVEMENT_TYPE_LABELS: Record<MovementType, { id: string; en: string }> = {
+  IN_PURCHASE: { id: "Pembelian (PO Masuk)", en: "Purchase (PO In)" },
+  IN_RETURN: { id: "Retur Produksi", en: "Production Return" },
+  OUT_PRODUCTION: { id: "Pengeluaran Produksi", en: "Production Out" },
+  OUT_WASTAGE: { id: "Susut / Rusak", en: "Wastage / Damage" },
+  ADJUSTMENT: { id: "Opname / Penyesuaian", en: "Stock Opname" },
+};
+
 const CATEGORY_NAMES: Record<MaterialCategory, { id: string; en: string }> = {
   EVA_SHEET: { id: "EVA Foam Sheet", en: "EVA Foam Sheet" },
   LATEX: { id: "Latex Roll", en: "Latex Roll" },
@@ -58,6 +66,33 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
   // Active view tab: "MATERIALS" | "HISTORY"
   const [activeTab, setActiveTab] = useState<"MATERIALS" | "HISTORY">("MATERIALS");
+  // Movement log period filter (30/90 days or all history)
+  const [logPeriod, setLogPeriod] = useState<"30D" | "90D" | "ALL">("ALL");
+  // Shift-scoped critical-stock acknowledgment: hides the red banner for today
+  // unless a NEW critical item appears (count change) or the day rolls over.
+  const [lowStockAck, setLowStockAck] = useState<{ date: string; count: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("myequator_lowstock_ack");
+      if (raw) setLowStockAck(JSON.parse(raw));
+    } catch {
+      // storage unavailable: banner simply stays visible
+    }
+  }, []);
+
+  const acknowledgeLowStock = () => {
+    const ack = { date: new Date().toISOString().split("T")[0], count: criticalItems.length };
+    setLowStockAck(ack);
+    try {
+      localStorage.setItem("myequator_lowstock_ack", JSON.stringify(ack));
+    } catch {
+      // storage unavailable: acknowledgment lives for this session only
+    }
+  };
+
+  const todayKey = new Date().toISOString().split("T")[0];
+  const lowStockMuted = !!lowStockAck && lowStockAck.date === todayKey && lowStockAck.count === criticalItems.length;
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +124,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   const [materialToDelete, setMaterialToDelete] = useState<MaterialItem | null>(null);
   const [recentlyMutatedId, setRecentlyMutatedId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
 
   const showToast = (msg: string) => {
@@ -184,9 +220,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       if (json.success) {
         showToast(isId ? `SKU ${materialToDelete.sku} berhasil dihapus` : `SKU ${materialToDelete.sku} deleted`);
         fetchInventory();
+      } else {
+        setErrorMessage(json.error || (isId ? "Gagal menghapus SKU bahan baku." : "Failed to delete material SKU."));
       }
     } catch (err) {
       console.error("Failed to delete material:", err);
+      setErrorMessage(isId ? "Gagal menghapus SKU bahan baku." : "Failed to delete material SKU.");
     } finally {
       setMaterialToDelete(null);
     }
@@ -226,6 +265,14 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       setSortDirection("asc");
     }
   };
+
+  const periodFilteredMovements = useMemo(() => {
+    if (logPeriod === "ALL") return movements;
+    const days = logPeriod === "30D" ? 30 : 90;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return movements.filter((m) => new Date(m.createdAt) >= cutoff);
+  }, [movements, logPeriod]);
 
   const sortedAndFilteredMaterials = useMemo(() => {
     const filtered = materials.filter((m) => {
@@ -408,6 +455,27 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </>
         )}
       </div>
+
+      {/* In-App Error Banner (Accessible Live Region) — delete/fetch failures never vanish silently */}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center justify-between gap-2 text-xs text-red-800 dark:text-red-300 font-semibold shadow-xs animate-in fade-in"
+        >
+          <span className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {errorMessage}
+          </span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition"
+            aria-label={isId ? "Tutup notifikasi galat" : "Dismiss error notification"}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 shadow-xs">
@@ -702,30 +770,58 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         </div>
       </div>
 
-      {/* Critical Stock Alert Banner */}
+      {/* Critical Stock Alert Banner (shift-scoped acknowledgment; re-arms on new criticals) */}
       {criticalItems.length > 0 && (
-        <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-xs text-red-900 dark:text-red-200">
-                {isId ? "Peringatan Stok Kritis (Under Safety Stock)" : "Critical Stock Warning"}
-              </h4>
-              <p className="text-[11px] text-red-700 dark:text-red-300 mt-0.5">
-                {criticalItems.length} {isId ? "bahan baku berada di bawah 50% safety stock:" : "materials below 50% safety stock:"}{" "}
-                <strong>{criticalItems.map((c) => c.name).join(", ")}</strong>.
-              </p>
+        lowStockMuted ? (
+          <div className="px-3.5 py-2 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400 shadow-xs">
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+              {isId
+                ? `${criticalItems.length} stok kritis dilaporkan untuk shift ini.`
+                : `${criticalItems.length} critical stocks acknowledged for this shift.`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setLowStockAck(null)}
+              className="text-[11px] font-bold text-gray-600 dark:text-gray-300 hover:text-brand dark:hover:text-red-400 transition min-h-[44px] px-2"
+            >
+              {isId ? "Tampilkan Peringatan" : "Show Warning"}
+            </button>
+          </div>
+        ) : (
+          <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
+              <div>
+                <h4 className="font-bold text-xs text-red-900 dark:text-red-200">
+                  {isId ? "Peringatan Stok Kritis (Under Safety Stock)" : "Critical Stock Warning"}
+                </h4>
+                <p className="text-[11px] text-red-700 dark:text-red-300 mt-0.5">
+                  {criticalItems.length} {isId ? "bahan baku berada di bawah 50% safety stock:" : "materials below 50% safety stock:"}{" "}
+                  <strong>{criticalItems.map((c) => c.name).join(", ")}</strong>.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={acknowledgeLowStock}
+                className="inline-flex items-center justify-center px-3 py-1.5 min-h-[38px] rounded-xl border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95 transition"
+                title={isId ? "Laporkan untuk shift ini (muncul lagi jika ada stok kritis baru)" : "Acknowledge for this shift (re-arms on new criticals)"}
+              >
+                {isId ? "Laporkan Shift Ini" : "Acknowledge Shift"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenMovement(criticalItems[0]?.id)}
+                className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs active:scale-95 transition"
+              >
+                <ArrowDownRight className="h-3.5 w-3.5" />
+                <span>{isId ? "Restock Pembelian" : "Restock Purchase"}</span>
+              </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => handleOpenMovement(criticalItems[0]?.id)}
-            className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-brand text-white text-xs font-bold shadow-xs active:scale-95 transition shrink-0"
-          >
-            <ArrowDownRight className="h-3.5 w-3.5" />
-            <span>{isId ? "Restock Pembelian" : "Restock Purchase"}</span>
-          </button>
-        </div>
+        )
       )}
 
       {/* Workspace Card with Tabs & Search */}
@@ -852,6 +948,34 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {activeTab === "HISTORY" && (
+          <div className="px-3 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase text-gray-400">
+              {isId ? "Periode" : "Period"}
+            </span>
+            <div className="flex items-center rounded-xl bg-gray-200/80 dark:bg-gray-800 p-0.5 text-[11px] font-bold">
+              {(["30D", "90D", "ALL"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={logPeriod === p}
+                  onClick={() => setLogPeriod(p)}
+                  className={`px-2.5 py-1 rounded-lg transition ${
+                    logPeriod === p
+                      ? "bg-white dark:bg-gray-900 text-brand dark:text-red-400 shadow-xs"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                  }`}
+                >
+                  {p === "30D" ? (isId ? "30 Hari" : "30 Days") : p === "90D" ? (isId ? "90 Hari" : "90 Days") : isId ? "Semua" : "All"}
+                </button>
+              ))}
+            </div>
+            <span className="text-[10px] text-gray-400 font-mono tabular-nums ml-auto">
+              {periodFilteredMovements.length} {isId ? "mutasi" : "movements"}
+            </span>
           </div>
         )}
 
@@ -1155,12 +1279,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <div>
             {/* Mobile History Card Feed */}
             <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-2.5">
-              {movements.length === 0 ? (
+              {periodFilteredMovements.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 text-xs">
                   {isId ? "Belum ada riwayat mutasi stok." : "No movement logs found."}
                 </div>
               ) : (
-                movements.map((mov) => (
+                periodFilteredMovements.map((mov) => (
                   <div
                     key={mov.id}
                     className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs space-y-2 text-xs"
@@ -1178,7 +1302,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                             : "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200"
                         }`}
                       >
-                        {mov.type}
+                        {isId ? MOVEMENT_TYPE_LABELS[mov.type]?.id : MOVEMENT_TYPE_LABELS[mov.type]?.en}
                       </span>
                     </div>
 
@@ -1226,15 +1350,15 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
-                  {movements.length === 0 ? (
+                  {periodFilteredMovements.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="p-8 text-center text-gray-400">
                         <History className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-700" />
-                        <p>{isId ? "Belum ada riwayat mutasi stok" : "No movement logs recorded yet"}</p>
+                        <p>{isId ? "Belum ada riwayat mutasi stok pada periode ini" : "No movement logs in this period"}</p>
                       </td>
                     </tr>
                   ) : (
-                    movements.map((mov, idx) => (
+                    periodFilteredMovements.map((mov, idx) => (
                       <tr key={mov.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
                         <td className="p-3.5 text-center text-gray-400 font-mono tabular-nums">{idx + 1}</td>
                         <td className="p-3.5 text-gray-500 font-mono text-[11px] tabular-nums">
@@ -1253,7 +1377,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                                 : "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
                             }`}
                           >
-                            {mov.type}
+                            {isId ? MOVEMENT_TYPE_LABELS[mov.type]?.id : MOVEMENT_TYPE_LABELS[mov.type]?.en}
                           </span>
                         </td>
                         <td className="p-3.5 text-right font-extrabold font-mono text-sm text-gray-900 dark:text-white tabular-nums">
