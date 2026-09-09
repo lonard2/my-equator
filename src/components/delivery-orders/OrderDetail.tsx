@@ -47,6 +47,8 @@ interface OrderDetailProps {
   onSpoolSuccess?: (order: DeliveryOrder) => void;
   /** Delegate notifications to the single page-level toast system. */
   onToast?: (message: string) => void;
+  /** Sticky thumb-zone action bar for the mobile detail sheet. */
+  showBottomActionBar?: boolean;
 }
 
 const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
@@ -109,6 +111,7 @@ export function OrderDetail({
   language,
   onSpoolSuccess,
   onToast,
+  showBottomActionBar,
 }: OrderDetailProps) {
   const isId = language === "id";
   const isPrintable = order.status !== "DRAFT" && order.status !== "CANCELLED";
@@ -1492,6 +1495,63 @@ export function OrderDetail({
           </div>
         )}
       </div>
+
+      {/* Sticky Thumb-Zone Action Bar (mobile detail sheet only) */}
+      {showBottomActionBar && order.status !== "CANCELLED" && (
+        <div className="sticky bottom-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs border-t border-gray-200 dark:border-gray-800 p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+          {isEditing ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="min-h-[48px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 active:scale-95 transition"
+              >
+                {isId ? "Batal Edit" : "Cancel Edit"}
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveChanges}
+                disabled={saving}
+                className="min-h-[48px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <Save className="h-4 w-4" />
+                <span>{saving ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Perubahan" : "Save Changes"}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="min-h-[48px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-200 active:scale-95 transition flex items-center justify-center gap-1.5"
+                >
+                  <Edit3 className="h-4 w-4 text-gray-500" />
+                  <span>{isId ? "Edit" : "Edit"}</span>
+                </button>
+              )}
+              {nextAction && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (nextAction.next === "DISPATCHED" || nextAction.next === "DELIVERED") {
+                      setPendingDispatchStatus(nextAction.next);
+                    } else if (nextAction.next === "PRINTED") {
+                      onOpenPrint(order);
+                    } else {
+                      onStatusChange(order.id, nextAction.next);
+                    }
+                  }}
+                  className={`min-h-[48px] rounded-xl text-xs font-bold active:scale-95 transition flex items-center justify-center gap-1.5 ${STATUS_COLOR_MAP[nextAction.next].cta.buttonClasses}`}
+                >
+                  <nextAction.icon className="h-4 w-4" />
+                  <span>{nextAction.label}</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* In-App Delete Confirmation Modal */}
       {isDeleteModalOpen && (

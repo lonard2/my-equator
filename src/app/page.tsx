@@ -467,7 +467,7 @@ export default function HomePage() {
                           setStagedDraftData(null);
                           setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] rounded-xl bg-white text-brand font-bold text-xs shadow-xs active:scale-95 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl bg-white text-brand font-bold text-xs shadow-xs active:scale-95 transition"
                       >
                         <Plus className="h-4 w-4 stroke-[2.5]" />
                         <span>{isId ? "Buat DO" : "New DO"}</span>
@@ -956,6 +956,7 @@ export default function HomePage() {
                 language={language}
                 onSpoolSuccess={(order) => setSlipSpooledCeremonyOrder(order)}
                       onToast={showAppToast}
+                showBottomActionBar
               />
             </div>
           </div>
