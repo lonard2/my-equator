@@ -134,6 +134,9 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [cursorMm, setCursorMm] = useState<{ x: number; y: number } | null>(null);
   const [baselineRef, setBaselineRef] = useState<string>("");
+  // Once the operator types a caliper value, auto-recompute on size change stops.
+  // Preset / blueprint load / AI apply reset this to auto (they legitimately set widths).
+  const [manualWidths, setManualWidths] = useState(false);
   const [pendingOverwriteAction, setPendingOverwriteAction] = useState<(() => void) | null>(null);
   const cancelOverwriteRef = useRef<HTMLButtonElement | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -155,15 +158,18 @@ export function CadStudio({ language }: CadStudioProps) {
     };
   }, []);
 
-  // Recalculate derived dimensions when sizing changes
+
+  // Recalculate derived dimensions when sizing changes — unless the operator
+  // has hand-entered caliper widths; measured data must survive size nudges.
   useEffect(() => {
+    if (manualWidths) return;
     const conversion = convertSizing(sizingSystem, sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue);
     const targetLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
     const defaults = calculateDefaultWidths(targetLength);
     setBallWidth(defaults.ballWidth);
     setHeelWidth(defaults.heelWidth);
     setWaistWidth(defaults.waistWidth);
-  }, [sizingSystem, rawSizeValue, customLengthMm]);
+  }, [sizingSystem, rawSizeValue, customLengthMm, manualWidths]);
 
   // Fetch Blueprints
   const fetchBlueprints = async () => {
@@ -293,7 +299,108 @@ export function CadStudio({ language }: CadStudioProps) {
     }
   };
 
-  const markClean = () => setBaselineRef(JSON.stringify(geometryParams) + blueprintName);
+  const markClean = () => {
+    setBaselineRef(JSON.stringify(geometryParams) + blueprintName);
+    try {
+      sessionStorage.removeItem("myequator_cad_draft");
+    } catch {
+      // ignore
+    }
+  };
+
+  // Exit gate: browser-level guard (refresh/close) while the workspace is dirty
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  // Session draft: switching tabs unmounts this component — dirty params survive in
+  // sessionStorage and are restored (and re-based) on return, with an honest notice.
+  useEffect(() => {
+    if (!isDirty) return;
+    const draft = {
+      blueprintName,
+      sizingSystem,
+      rawSizeValue,
+      customLengthMm,
+      foot,
+      archProfile,
+      archFactor,
+      toeShape,
+      ballWidth,
+      heelWidth,
+      waistWidth,
+      forefootThickness,
+      heelThickness,
+      materialType,
+      archPlateLength,
+      archPlateWidth,
+      archPlateLateralWing,
+      heelCupDepth,
+      heelCupRadius,
+      metatarsalSize,
+      metatarsalYPos,
+      manualWidths,
+    };
+    try {
+      sessionStorage.setItem("myequator_cad_draft", JSON.stringify(draft));
+    } catch {
+      // storage unavailable: exit gate (beforeunload) still covers refresh/close
+    }
+  }, [isDirty, blueprintName, sizingSystem, rawSizeValue, customLengthMm, foot, archProfile, archFactor, toeShape, ballWidth, heelWidth, waistWidth, forefootThickness, heelThickness, materialType, archPlateLength, archPlateWidth, archPlateLateralWing, heelCupDepth, heelCupRadius, metatarsalSize, metatarsalYPos, manualWidths]);
+
+  useEffect(() => {
+    let restored = false;
+    try {
+      const raw = sessionStorage.getItem("myequator_cad_draft");
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && typeof d === "object" && d.blueprintName) {
+          if (typeof d.blueprintName === "string") setBlueprintName(d.blueprintName);
+          if (d.sizingSystem) setSizingSystem(d.sizingSystem);
+          if (typeof d.rawSizeValue === "number") setRawSizeValue(d.rawSizeValue);
+          if (typeof d.customLengthMm === "number") setCustomLengthMm(d.customLengthMm);
+          if (d.foot) setFoot(d.foot);
+          if (d.archProfile) setArchProfile(d.archProfile);
+          if (typeof d.archFactor === "number") setArchFactor(d.archFactor);
+          if (d.toeShape) setToeShape(d.toeShape);
+          if (typeof d.ballWidth === "number") setBallWidth(d.ballWidth);
+          if (typeof d.heelWidth === "number") setHeelWidth(d.heelWidth);
+          if (typeof d.waistWidth === "number") setWaistWidth(d.waistWidth);
+          if (typeof d.forefootThickness === "number") setForefootThickness(d.forefootThickness);
+          if (typeof d.heelThickness === "number") setHeelThickness(d.heelThickness);
+          if (typeof d.materialType === "string") setMaterialType(d.materialType);
+          if (typeof d.archPlateLength === "number") setArchPlateLength(d.archPlateLength);
+          if (typeof d.archPlateWidth === "number") setArchPlateWidth(d.archPlateWidth);
+          if (typeof d.archPlateLateralWing === "boolean") setArchPlateLateralWing(d.archPlateLateralWing);
+          if (d.heelCupDepth) setHeelCupDepth(d.heelCupDepth);
+          if (typeof d.heelCupRadius === "number") setHeelCupRadius(d.heelCupRadius);
+          if (typeof d.metatarsalSize === "number") setMetatarsalSize(d.metatarsalSize);
+          if (typeof d.metatarsalYPos === "number") setMetatarsalYPos(d.metatarsalYPos);
+          if (typeof d.manualWidths === "boolean") setManualWidths(d.manualWidths);
+          restored = true;
+          setBaselineRef(""); // force isDirty=false on the next markClean pass
+          sessionStorage.removeItem("myequator_cad_draft");
+        }
+      }
+    } catch {
+      // corrupted draft: start fresh
+    }
+    if (restored) {
+      showToast(
+        isId
+          ? "Draf CAD yang belum disimpan dipulihkan dari sesi terakhir."
+          : "Unsaved CAD draft restored from your last session."
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // Real closed-loop manifold check from the generated outline points
   const isClosedLoop = (pts: { x: number; y: number }[] | undefined) => {
@@ -317,6 +424,7 @@ export function CadStudio({ language }: CadStudioProps) {
     setHeelThickness(preset.thicknessHeelMm);
     setMaterialType(preset.materialType);
     setBlueprintName(preset.name);
+    setManualWidths(false);
     if (preset.archPlateLengthFactor) setArchPlateLength(preset.archPlateLengthFactor);
     if (preset.archPlateWidthFactor) setArchPlateWidth(preset.archPlateWidthFactor);
     if (preset.archPlateLateralWing !== undefined) setArchPlateLateralWing(preset.archPlateLateralWing);
@@ -346,6 +454,7 @@ export function CadStudio({ language }: CadStudioProps) {
     if (bp.thicknessForefootMm) setForefootThickness(bp.thicknessForefootMm);
     if (bp.thicknessHeelMm) setHeelThickness(bp.thicknessHeelMm);
     if (bp.materialType) setMaterialType(bp.materialType);
+    setManualWidths(false);
     if (bp.archPlateLengthFactor) setArchPlateLength(bp.archPlateLengthFactor);
     if (bp.archPlateWidthFactor) setArchPlateWidth(bp.archPlateWidthFactor);
     if (bp.archPlateLateralWing !== undefined) setArchPlateLateralWing(bp.archPlateLateralWing);
@@ -377,6 +486,7 @@ export function CadStudio({ language }: CadStudioProps) {
     if (aiData.thicknessHeelMm) setHeelThickness(aiData.thicknessHeelMm);
     if (aiData.materialType) setMaterialType(aiData.materialType);
     if (aiData.name) setBlueprintName(aiData.name);
+    setManualWidths(false);
     if (aiData.archPlateLengthFactor) setArchPlateLength(aiData.archPlateLengthFactor);
     if (aiData.archPlateWidthFactor) setArchPlateWidth(aiData.archPlateWidthFactor);
     if (aiData.archPlateLateralWing !== undefined) setArchPlateLateralWing(aiData.archPlateLateralWing);
@@ -874,7 +984,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     max={130}
                     value={ballWidth}
                     aria-label={isId ? "Lebar Bola Kaki (mm)" : "Forefoot Ball Width (mm)"}
-                    onChange={(e) => setBallWidth(Math.max(70, Math.min(130, parseFloat(e.target.value) || 70)))}
+                    onChange={(e) => { setManualWidths(true); setBallWidth(Math.max(70, Math.min(130, parseFloat(e.target.value) || 70))); }}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-amber-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">mm</span>
@@ -906,7 +1016,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     max={95}
                     value={heelWidth}
                     aria-label={isId ? "Lebar Mangkuk Tumit (mm)" : "Rearfoot Heel Width (mm)"}
-                    onChange={(e) => setHeelWidth(Math.max(45, Math.min(95, parseFloat(e.target.value) || 45)))}
+                    onChange={(e) => { setManualWidths(true); setHeelWidth(Math.max(45, Math.min(95, parseFloat(e.target.value) || 45))); }}
                     className="w-16 px-1.5 py-0.5 rounded-lg border border-gray-700 bg-gray-900 font-mono font-bold text-xs text-right text-emerald-400 tabular-nums focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                   />
                   <span className="text-[10px] text-gray-400 font-semibold">mm</span>
