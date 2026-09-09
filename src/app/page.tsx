@@ -289,11 +289,6 @@ export default function HomePage() {
     setIsFormOpen(true);
   };
 
-  if (!authInitialized) {
-    return null;
-  }
-
-  // If user is not logged in, render the factory login portal
   const filteredMobileOrders = orders.filter((order) => {
     const q = mobileSearchTerm.trim().toLowerCase();
     const matchesSearch =
@@ -327,6 +322,12 @@ export default function HomePage() {
     });
     return { bySize: agg, total: totalAll };
   }, [filteredMobileOrders]);
+
+  if (!authInitialized) {
+    return null;
+  }
+
+  // If user is not logged in, render the factory login portal
 
   if (!currentUser) {
     return <LoginView onLoginSuccess={handleLoginSuccess} language={language} />;
