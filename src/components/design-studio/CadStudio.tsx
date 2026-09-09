@@ -274,16 +274,20 @@ export function CadStudio({ language }: CadStudioProps) {
         setPanOffset({ x: 0, y: 0 });
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
-        setPanOffset((p) => ({ ...p, x: p.x + 25 }));
+        const step = e.shiftKey ? 5 : 25;
+        setPanOffset((p) => ({ ...p, x: p.x + step }));
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        setPanOffset((p) => ({ ...p, x: p.x - 25 }));
+        const step = e.shiftKey ? 5 : 25;
+        setPanOffset((p) => ({ ...p, x: p.x - step }));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setPanOffset((p) => ({ ...p, y: p.y + 25 }));
+        const step = e.shiftKey ? 5 : 25;
+        setPanOffset((p) => ({ ...p, y: p.y + step }));
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        setPanOffset((p) => ({ ...p, y: p.y - 25 }));
+        const step = e.shiftKey ? 5 : 25;
+        setPanOffset((p) => ({ ...p, y: p.y - step }));
       } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
         setIsShortcutsOpen((v) => !v);
@@ -944,7 +948,10 @@ export function CadStudio({ language }: CadStudioProps) {
                   min={SIZING_BOUNDS.CUSTOM_MM.min}
                   max={SIZING_BOUNDS.CUSTOM_MM.max}
                   value={customLengthMm}
-                  onChange={(e) => setCustomLengthMm(parseFloat(e.target.value) || 260)}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (!isNaN(v) && v >= 180 && v <= 340) setCustomLengthMm(v);
+                  }}
                   className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 font-mono font-bold text-white text-xs focus:border-brand focus:outline-none"
                 />
               </div>
@@ -1130,11 +1137,14 @@ export function CadStudio({ language }: CadStudioProps) {
                   onClick={() => handleApplyPreset(preset)}
                   className="p-2.5 rounded-xl border border-gray-800 bg-gray-800/60 hover:bg-gray-800 text-left transition flex items-center justify-between group active:scale-98"
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-bold text-xs text-gray-200 group-hover:text-white">{preset.name}</p>
                     <p className="text-[10px] text-gray-400">{preset.description}</p>
+                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">
+                      {preset.materialType} • {preset.thicknessForefootMm}/{preset.thicknessHeelMm} mm
+                    </p>
                   </div>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 font-mono">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 font-mono shrink-0">
                     {preset.archProfile}
                   </span>
                 </button>
@@ -1200,7 +1210,7 @@ export function CadStudio({ language }: CadStudioProps) {
               </button>
               <div className="h-4 w-px bg-gray-700 mx-1" />
               <span className="text-[11px] font-mono font-bold px-1.5 text-gray-300">
-                {Math.round(zoomScale * 100)}%
+                <span role="status" aria-live="polite" aria-atomic="true">{Math.round(zoomScale * 100)}%</span>
               </span>
             </div>
 
@@ -1870,8 +1880,8 @@ export function CadStudio({ language }: CadStudioProps) {
                     {isId ? "Lembar Standar" : "Standard Sheet"}: <strong>1200 x 2400 mm</strong>
                   </p>
                   <p className="font-mono text-base font-black text-emerald-400">
-                    ~{Math.floor((1200 * 2400) / ((geometry.bounds.width + 10) * (geometry.bounds.height + 10) * 2))}{" "}
-                    <span className="text-xs font-normal text-gray-400">pasang / lembar</span>
+                    ~{Math.floor((1200 * 2400) / ((geometry.bounds.width + 10) * (geometry.bounds.height + 10) * (foot === "PAIR" ? 2 : 1)))}{" "}
+                    <span className="text-xs font-normal text-gray-400">{foot === "PAIR" ? (isId ? "pasang / lembar" : "pairs / sheet") : (isId ? "pcs / lembar" : "pcs / sheet")}</span>
                   </p>
                 </div>
               </div>
