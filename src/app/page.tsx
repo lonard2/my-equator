@@ -394,8 +394,29 @@ export default function HomePage() {
           <div key={currentTab} className="flex-1 flex flex-col overflow-hidden animate-view-enter">
           {currentTab === "DELIVERY_ORDERS" ? (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
-              {/* Top KPI Micro Strip */}
-              <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0">
+              {/* Top KPI Micro Strip: one compact lifecycle line on mobile, full cards from tablet up */}
+              <div className="sm:hidden px-3 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
+                <p className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2 whitespace-nowrap overflow-x-auto">
+                  <FileText className="h-3.5 w-3.5 text-brand shrink-0" />
+                  <span className="font-mono tabular-nums">{orders.length}</span>
+                  <span className="text-gray-400 font-semibold">{isId ? "dok" : "docs"}</span>
+                  <span className="text-gray-300">•</span>
+                  <Boxes className="h-3.5 w-3.5 text-brand shrink-0" />
+                  <span className="font-mono tabular-nums">{totalVolumePairs.toLocaleString("id-ID")}</span>
+                  <span className="text-gray-400 font-semibold">psg</span>
+                  <span className="text-gray-300">•</span>
+                  <Truck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span className="font-mono tabular-nums text-amber-700 dark:text-amber-300">{readyToLoadCount}</span>
+                  <span className="text-gray-400 font-semibold">{isId ? "siap" : "ready"}</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="font-mono tabular-nums text-purple-700 dark:text-purple-300">{dispatchedCount}</span>
+                  <span className="text-gray-400 font-semibold">{isId ? "kirim" : "transit"}</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="font-mono tabular-nums text-emerald-700 dark:text-emerald-400">{completedCount}</span>
+                  <span className="text-gray-400 font-semibold">{isId ? "selesai" : "done"}</span>
+                </p>
+              </div>
+              <div className="hidden sm:grid p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sm:grid-cols-3 gap-2.5 shrink-0">
                 <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/60 hover:shadow-xs transition">
                   <div className="p-2 rounded-xl bg-white dark:bg-gray-800 text-brand dark:text-red-400 shadow-xs">
                     <FileText className="h-4 w-4" />

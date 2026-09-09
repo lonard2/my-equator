@@ -705,12 +705,12 @@ export function OrderDetail({
             </p>
           </div>
 
-          {/* Distilled Action Header */}
-          <div className="flex items-center gap-2">
+          {/* Distilled Action Header (wraps on narrow phones; CTA/Edit yield to the sheet bottom bar) */}
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {!isEditing ? (
               <>
                 {/* 1. Primary Forward Action CTA with Explanatory Tooltip Subtext */}
-                {nextAction && order.status !== "CANCELLED" && (
+                {nextAction && order.status !== "CANCELLED" && !showBottomActionBar && (
                   <div className="flex flex-col items-end">
                     <button
                       onClick={() => {
@@ -737,8 +737,8 @@ export function OrderDetail({
                   </div>
                 )}
 
-                {/* 2. Secondary Primary: Edit Order */}
-                {canEdit && (
+                {/* 2. Secondary Primary: Edit Order (sheet carries it in the bottom bar) */}
+                {canEdit && !showBottomActionBar && (
                   <button
                     onClick={handleStartEdit}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xs transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
