@@ -330,33 +330,43 @@ export function OrderDetail({
     setIsMoreMenuOpen(false);
   }, [order]);
 
-  const handleCopyOrderNumber = () => {
-    const fallbackCopy = () => {
-      const ta = document.createElement("textarea");
-      ta.value = order.orderNumber;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand("copy");
-      } catch {
-        // no clipboard API and no execCommand: leave the number visible for manual copy
-      }
-      document.body.removeChild(ta);
-    };
+  const handleCopyOrderNumber = async () => {
+    // Only report success on a verified write; otherwise surface the number for manual copy.
+    let copied = false;
     try {
       if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(order.orderNumber).catch(fallbackCopy);
-      } else {
-        fallbackCopy();
+        await navigator.clipboard.writeText(order.orderNumber);
+        copied = true;
       }
     } catch {
-      fallbackCopy();
+      copied = false;
     }
-    setCopiedOrderNo(true);
-    showToast(isId ? `Nomor ${order.orderNumber} berhasil disalin ke clipboard!` : `Order ${order.orderNumber} copied!`);
-    setTimeout(() => setCopiedOrderNo(false), 2000);
+    if (!copied) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = order.orderNumber;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        copied = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        copied = false;
+      }
+    }
+    if (copied) {
+      setCopiedOrderNo(true);
+      setTimeout(() => setCopiedOrderNo(false), 2000);
+      showToast(isId ? `Nomor ${order.orderNumber} berhasil disalin ke clipboard!` : `Order ${order.orderNumber} copied!`);
+    } else {
+      showToast(
+        isId
+          ? `Penyalinan diblokir browser. Salin manual: ${order.orderNumber}`
+          : `Copy blocked by browser. Copy manually: ${order.orderNumber}`
+      );
+    }
+    return;
   };
 
   const handleDownloadPrn = () => {
@@ -915,7 +925,10 @@ export function OrderDetail({
 
       {/* Non-blocking Error Banner with Retry Path (Heuristic 9) */}
       {errorMessage && (
-        <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between">
+        <div
+          role="alert"
+          className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center justify-between"
+        >
           <div className="flex items-center gap-2.5 text-xs text-red-800 dark:text-red-300 font-medium">
             <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
             <span>{errorMessage}</span>
@@ -1804,11 +1817,9 @@ export function OrderDetail({
         isOpen={!!pendingDispatchStatus}
         order={order}
         targetStatus={pendingDispatchStatus || "DISPATCHED"}
-        onConfirm={() => {
-          if (pendingDispatchStatus) {
-            onStatusChange(order.id, pendingDispatchStatus);
-            setPendingDispatchStatus(null);
-          }
+        onConfirm={async () => {
+          if (!pendingDispatchStatus) return false;
+          return onStatusChange(order.id, pendingDispatchStatus);
         }}
         onClose={() => setPendingDispatchStatus(null)}
         language={language}

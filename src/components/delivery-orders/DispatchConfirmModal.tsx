@@ -12,7 +12,7 @@ interface DispatchConfirmModalProps {
   isOpen: boolean;
   order: DeliveryOrder | null;
   targetStatus: "DISPATCHED" | "DELIVERED";
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => boolean | Promise<boolean>;
   onClose: () => void;
   language: Language;
 }
@@ -28,6 +28,7 @@ export function DispatchConfirmModal({
   const isId = language === "id";
   const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const modalRef = useModalSafety({
     isOpen,
@@ -39,11 +40,26 @@ export function DispatchConfirmModal({
 
   const isDispatching = targetStatus === "DISPATCHED";
 
+  // Truth gate: the modal stays open on rejection and names the failure inline,
+  // mirroring the rollback pattern. Success closes via onClose.
   const handleConfirm = async () => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
-      await onConfirm();
-      onClose();
+      const ok = await onConfirm();
+      if (ok) {
+        onClose();
+      } else {
+        setSubmitError(
+          isId
+            ? "Perubahan status gagal diproses server. Periksa notifikasi lalu coba lagi."
+            : "The status change was rejected by the server. Check the notification and retry."
+        );
+      }
+    } catch {
+      setSubmitError(
+        isId ? "Terjadi kesalahan jaringan. Coba lagi." : "A network error occurred. Try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -175,6 +191,17 @@ export function DispatchConfirmModal({
             </div>
           </div>
         </div>
+
+        {/* Inline Rejection Error (stays-open truth gate) */}
+        {submitError && (
+          <div
+            role="alert"
+            className="mx-4 mb-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs font-semibold text-red-800 dark:text-red-300 flex items-center gap-2"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{submitError}</span>
+          </div>
+        )}
 
         {/* Modal Footer */}
         <div className="p-4 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2.5">

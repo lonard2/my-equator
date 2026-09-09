@@ -1113,11 +1113,9 @@ export default function HomePage() {
         isOpen={!!dispatchGuard}
         order={dispatchGuard?.order || null}
         targetStatus={dispatchGuard?.targetStatus || "DISPATCHED"}
-        onConfirm={() => {
-          if (dispatchGuard) {
-            handleStatusChange(dispatchGuard.order.id, dispatchGuard.targetStatus);
-            setDispatchGuard(null);
-          }
+        onConfirm={async () => {
+          if (!dispatchGuard) return false;
+          return handleStatusChange(dispatchGuard.order.id, dispatchGuard.targetStatus);
         }}
         onClose={() => setDispatchGuard(null)}
         language={language}
