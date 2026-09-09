@@ -130,6 +130,11 @@ export function OrderDetail({
   // More Actions Dropdown State
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const moreMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const closeMoreMenu = () => {
+    setIsMoreMenuOpen(false);
+    moreMenuTriggerRef.current?.focus();
+  };
 
   // Dispatch Guard State (P0: lightweight confirm sheet on Kirimkan / Tiba di Lokasi)
   const [pendingDispatchStatus, setPendingDispatchStatus] = useState<"DISPATCHED" | "DELIVERED" | null>(null);
@@ -286,12 +291,12 @@ export function OrderDetail({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMoreMenuOpen(false);
+        closeMoreMenu();
       }
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setIsMoreMenuOpen(false);
+        closeMoreMenu();
       }
     }
     if (isMoreMenuOpen) {
@@ -770,6 +775,7 @@ export function OrderDetail({
                 {/* 4. Consolidated More Actions Menu (•••) */}
                 <div className="relative" ref={menuRef}>
                   <button
+                    ref={moreMenuTriggerRef}
                     type="button"
                     onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                     aria-expanded={isMoreMenuOpen}
@@ -815,7 +821,7 @@ export function OrderDetail({
                         <button
                           type="button"
                           onClick={() => {
-                            setIsMoreMenuOpen(false);
+                            closeMoreMenu();
                             const rollbacks = getAvailableStatusRollbacks(order.status);
                             setRollbackTarget(rollbacks.length > 0 ? rollbacks[0] : "DRAFT");
                             setIsRollbackModalOpen(true);
@@ -837,7 +843,7 @@ export function OrderDetail({
                         <button
                           type="button"
                           onClick={() => {
-                            setIsMoreMenuOpen(false);
+                            closeMoreMenu();
                             setRollbackTarget("CANCELLED");
                             setIsRollbackModalOpen(true);
                           }}
@@ -866,7 +872,7 @@ export function OrderDetail({
                           <button
                             type="button"
                             onClick={() => {
-                              setIsMoreMenuOpen(false);
+                              closeMoreMenu();
                               setIsDeleteModalOpen(true);
                             }}
                             className="w-full px-3.5 py-2 text-left flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition font-semibold"
@@ -1040,6 +1046,13 @@ export function OrderDetail({
                       }`}
                     >
                       {isId ? token.labelId : token.labelEn}
+                      <span className="sr-only">
+                        {isCurrent
+                          ? isId ? " (posisi sekarang)" : " (current step)"
+                          : isPassed
+                          ? isId ? " (selesai)" : " (done)"
+                          : isId ? " (belum)" : " (pending)"}
+                      </span>
                     </span>
                   </div>
                 );
