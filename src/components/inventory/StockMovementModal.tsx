@@ -87,6 +87,7 @@ export function StockMovementModal({
   const [quantity, setQuantity] = useState<number>(10);
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [operatorName, setOperatorName] = useState<string>("Staff Gudang");
+  const [skuFilter, setSkuFilter] = useState("");
   const [notes, setNotes] = useState<string>("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -118,6 +119,7 @@ export function StockMovementModal({
     setQuantity(selectedQty);
     setReferenceNumber(selectedRef);
     setNotes(selectedNotes);
+    setSkuFilter("");
     setValidationError(null);
     setShowDiscardConfirm(false);
 
@@ -129,6 +131,16 @@ export function StockMovementModal({
       notes: selectedNotes,
     };
   }, [preselectedMaterialId, initialMovementType, initialQuantity, initialReferenceNumber, initialNotes, materials, isOpen]);
+
+  // Operator persistence: the last operator name loads for the next shift
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem("myequator_last_operator");
+      if (last) setOperatorName(last);
+    } catch {
+      // storage unavailable: default applies
+    }
+  }, []);
 
   // Check if form has unsaved modifications
   const isDirty =
@@ -298,11 +310,20 @@ export function StockMovementModal({
             </div>
           )}
 
-          {/* Material SKU Selector */}
+          {/* Material SKU Selector (filterable — 200+ SKUs defeat a bare native select) */}
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase text-gray-400 block">
               {isId ? "Pilih Bahan Baku" : "Select Material SKU"} <span className="text-red-500">*</span>
             </label>
+            <input
+              type="text"
+              value={skuFilter}
+              onChange={(e) => setSkuFilter(e.target.value)}
+              disabled={loading}
+              placeholder={isId ? "Ketik untuk memfilter SKU / nama bahan..." : "Type to filter SKU / material..."}
+              aria-label={isId ? "Filter daftar bahan baku" : "Filter material list"}
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60"
+            />
             <select
               value={materialId}
               onChange={(e) => setMaterialId(e.target.value)}
@@ -310,11 +331,16 @@ export function StockMovementModal({
               className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60"
               required
             >
-              {materials.map((m) => (
-                <option key={m.id} value={m.id}>
-                  [{m.sku}] {m.name} (Stok: {m.currentStock.toLocaleString("id-ID")} {m.unit})
-                </option>
-              ))}
+              {materials
+                .filter((m) => {
+                  const q = skuFilter.trim().toLowerCase();
+                  return !q || m.sku.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+                })
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    [{m.sku}] {m.name} (Stok: {m.currentStock.toLocaleString("id-ID")} {m.unit})
+                  </option>
+                ))}
             </select>
           </div>
 

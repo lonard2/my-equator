@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { MaterialItem, MaterialCategory } from "@/types";
-import { X, Save, Boxes, AlertTriangle, Sparkles, Layers } from "lucide-react";
+import { X, Save, Boxes, AlertTriangle, Layers } from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
 
 interface MaterialFormModalProps {
@@ -179,9 +179,42 @@ export function MaterialFormModal({
     }
   };
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+
+  // Focus the first field on open
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => firstFieldRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
+
+  const trapModalTab = (e: React.KeyboardEvent, firstRef: React.RefObject<HTMLElement | null>, lastRef: React.RefObject<HTMLElement | null>) => {
+    if (e.key !== "Tab") return;
+    if (e.shiftKey) {
+      if (document.activeElement === firstRef.current) {
+        e.preventDefault();
+        lastRef.current?.focus();
+      }
+    } else if (document.activeElement === lastRef.current) {
+      e.preventDefault();
+      firstRef.current?.focus();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
-      <div className="w-full max-w-xl rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
+      onKeyDown={(e) => trapModalTab(e, firstFieldRef, closeRef)}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="material-form-title"
+        className="w-full max-w-xl rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
@@ -189,7 +222,7 @@ export function MaterialFormModal({
               <Boxes className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+              <h3 id="material-form-title" className="font-extrabold text-base text-gray-900 dark:text-white">
                 {isEditing
                   ? isId ? "Edit Parameter Bahan Baku" : "Edit Material SKU"
                   : isId ? "Tambah SKU Bahan Baku Baru" : "Add New Material SKU"}
@@ -200,8 +233,10 @@ export function MaterialFormModal({
             </div>
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={handleAttemptClose}
+            aria-label="Close Material Form"
             className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
             <X className="h-5 w-5" />
@@ -222,7 +257,7 @@ export function MaterialFormModal({
             <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-800 space-y-2">
               <div className="flex items-center justify-between text-[11px] text-gray-500 font-bold">
                 <span className="flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-amber-500" />
+                  <Layers className="h-3 w-3 text-amber-500" />
                   <span>{isId ? "Template Cepat Bahan Insole:" : "Quick Material Presets:"}</span>
                 </span>
               </div>
@@ -258,6 +293,7 @@ export function MaterialFormModal({
               </label>
               <input
                 type="text"
+                ref={firstFieldRef}
                 value={sku}
                 onChange={(e) => setSku(e.target.value.toUpperCase())}
                 disabled={isEditing}
