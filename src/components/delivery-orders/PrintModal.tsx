@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DeliveryOrder, FootwearSize } from "@/types";
+import { DeliveryOrder, FootwearSize, STANDARD_SIZES } from "@/types";
 import { generateEscpMonospaceText } from "@/lib/printer/escp";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
@@ -23,7 +23,6 @@ interface PrintModalProps {
   onSpoolSuccess?: (order: DeliveryOrder) => void;
 }
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 export function PrintModal({ isOpen, order, onClose, language, onSpoolSuccess }: PrintModalProps) {
   const isId = language === "id";

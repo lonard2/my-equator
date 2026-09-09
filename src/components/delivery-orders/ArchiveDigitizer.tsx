@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { FootwearSize, SizeBreakdown } from "@/types";
+import { FootwearSize, SizeBreakdown, STANDARD_SIZES } from "@/types";
 import {
   Keyboard,
   Plus,
@@ -23,7 +23,6 @@ interface ArchiveDigitizerProps {
   language: "id" | "en";
 }
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 interface BatchRow {
   id: string;

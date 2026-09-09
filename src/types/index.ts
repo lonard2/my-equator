@@ -111,3 +111,6 @@ export type DensityMode = "xs" | "compact" | "normal" | "large" | "xl";
 export type LayoutWidth = "fluid" | "boxed";
 export type ThemeMode = "light" | "dark";
 export type Language = "id" | "en";
+
+/** Canonical EU 36-45 insole size ladder shared by every sizing surface. */
+export const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];

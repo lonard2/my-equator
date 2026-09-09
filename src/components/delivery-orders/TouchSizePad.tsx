@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { FootwearSize, SizeBreakdown } from "@/types";
+import { FootwearSize, SizeBreakdown, STANDARD_SIZES } from "@/types";
 import { Plus, Minus, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
 interface TouchSizePadProps {
@@ -10,7 +10,6 @@ interface TouchSizePadProps {
   language: "id" | "en";
 }
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 const OVERSIZED_SIZES: FootwearSize[] = [46, 47, 48];
 
 export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {

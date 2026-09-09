@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { DeliveryOrder, DeliveryOrderStatus, DensityMode, LayoutWidth, ThemeMode, Language, FootwearSize } from "@/types";
+import { DeliveryOrder, DeliveryOrderStatus, DensityMode, LayoutWidth, ThemeMode, Language, FootwearSize, STANDARD_SIZES } from "@/types";
 import { Header } from "@/components/common/Header";
 import { Sidebar, NavTab } from "@/components/common/Sidebar";
 import { OrderList } from "@/components/delivery-orders/OrderList";
@@ -48,7 +48,6 @@ import {
 } from "lucide-react";
 import { formatIndonesianDate } from "@/lib/utils/formatters";
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 export default function HomePage() {
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
@@ -549,7 +548,7 @@ export default function HomePage() {
                           >
                             <span>{opt.label}</span>
                             <span
-                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums ${
+                              className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono tabular-nums ${
                                 isSelected ? "bg-red-100 text-brand font-black" : "bg-black/25 text-white/90"
                               }`}
                             >
@@ -1199,7 +1198,7 @@ export default function HomePage() {
               type="button"
               onClick={() => setAppToast(null)}
               className="ml-2 text-gray-400 hover:text-white p-0.5 rounded focus:outline-none"
-              aria-label="Tutup notifikasi"
+              aria-label={isId ? "Tutup notifikasi" : "Dismiss notification"}
             >
               <X className="h-3.5 w-3.5" />
             </button>

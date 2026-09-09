@@ -1,7 +1,6 @@
-import { DeliveryOrder, DeliveryOrderItem, FootwearSize } from "@/types";
+import { DeliveryOrder, DeliveryOrderItem, FootwearSize, STANDARD_SIZES } from "@/types";
 import { formatIDR, terbilang, formatShortDate } from "@/lib/utils/formatters";
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 /**
  * Truncates or pads a string to fit exactly `width` monospace characters.

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { FootwearSize, SizeBreakdown } from "@/types";
+import { FootwearSize, SizeBreakdown, STANDARD_SIZES } from "@/types";
 import {
   X,
   Plus,
@@ -27,7 +27,6 @@ interface OrderFormModalProps {
   language: "id" | "en";
 }
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 const OVERSIZED_SIZES: FootwearSize[] = [46, 47, 48];
 
 interface FormItem {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown } from "@/types";
+import { DeliveryOrder, DeliveryOrderStatus, FootwearSize, SizeBreakdown, STANDARD_SIZES } from "@/types";
 import { formatIndonesianDate, formatIDR, terbilang } from "@/lib/utils/formatters";
 import { getAvailableStatusRollbacks } from "@/lib/orders/status";
 import { useModalSafety } from "@/lib/utils/useModalSafety";
@@ -51,7 +51,6 @@ interface OrderDetailProps {
   showBottomActionBar?: boolean;
 }
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 const OVERSIZED_SIZES: FootwearSize[] = [46, 47, 48];
 
 const ROLLBACK_SEMANTICS: Record<DeliveryOrderStatus, { id: string; en: string }> = {
@@ -616,7 +615,11 @@ export function OrderDetail({
       }
       setIsRollbackModalOpen(false);
       setRollbackReason("");
-      showToast(isId ? `Status berhasil diubah menjadi ${rollbackTarget}` : `Status changed to ${rollbackTarget}`);
+      showToast(
+        isId
+          ? `Status berhasil diubah menjadi ${STATUS_COLOR_MAP[rollbackTarget].labelId}`
+          : `Status changed to ${STATUS_COLOR_MAP[rollbackTarget].labelEn}`
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : (isId ? "Gagal mengubah status." : "Failed to change status.");
       setRollbackError(message);
@@ -806,7 +809,7 @@ export function OrderDetail({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
                             <p className="font-semibold">{isId ? "Unduh Stream .PRN" : "Download .PRN File"}</p>
-                            <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                               ESC/P
                             </span>
                           </div>
@@ -1722,7 +1725,9 @@ export function OrderDetail({
                 <div className="text-xs text-amber-900 dark:text-amber-300 space-y-0.5">
                   <p className="font-bold">
                     {isId ? "Status Saat Ini: " : "Current Status: "}
-                    <span className="underline font-mono">{order.status}</span>
+                    <span className="underline">
+                      {isId ? STATUS_COLOR_MAP[order.status].labelId : STATUS_COLOR_MAP[order.status].labelEn}
+                    </span>
                   </p>
                   <p className="text-[11px] text-amber-800 dark:text-amber-400">
                     {rollbackTarget === "CANCELLED" && order.status !== "DRAFT"
@@ -1757,7 +1762,9 @@ export function OrderDetail({
                         }`}
                       >
                         <div className="space-y-0.5 min-w-0 pr-1">
-                          <span className="block text-xs font-bold font-mono">{st}</span>
+                          <span className="block text-xs font-bold">
+                            {isId ? STATUS_COLOR_MAP[st].labelId : STATUS_COLOR_MAP[st].labelEn}
+                          </span>
                           {semanticHelp && (
                             <span className="block text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight">
                               {semanticHelp}

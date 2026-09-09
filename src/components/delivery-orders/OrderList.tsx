@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { DeliveryOrder, FootwearSize } from "@/types";
+import { DeliveryOrder, FootwearSize, STANDARD_SIZES } from "@/types";
 import { formatShortDate } from "@/lib/utils/formatters";
 import { getOrderFilterOptions } from "@/lib/utils/statusColors";
 import { matchesOrderSearch } from "@/lib/orders/search";
@@ -26,7 +26,6 @@ interface OrderListProps {
   loading?: boolean;
 }
 
-const STANDARD_SIZES: FootwearSize[] = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
 
 export function OrderList({
   orders,
