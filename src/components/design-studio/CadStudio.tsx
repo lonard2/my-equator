@@ -10,6 +10,8 @@ import {
   INSOLE_PRESETS,
   InsoleParameters,
   SizingSystem,
+  SIZING_BOUNDS,
+  migrateSizingValue,
   ArchProfile,
   HeelCupDepthProfile,
   FootType,
@@ -152,7 +154,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
   // Recalculate derived dimensions when sizing changes
   useEffect(() => {
-    const conversion = convertSizing(sizingSystem, rawSizeValue);
+    const conversion = convertSizing(sizingSystem, sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue);
     const targetLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
     const defaults = calculateDefaultWidths(targetLength);
     setBallWidth(defaults.ballWidth);
@@ -210,14 +212,14 @@ export function CadStudio({ language }: CadStudioProps) {
   }, [blueprintName, sizingSystem, rawSizeValue, customLengthMm, foot, archProfile, archFactor, toeShape, ballWidth, heelWidth, waistWidth, forefootThickness, heelThickness, materialType, archPlateLength, archPlateWidth, archPlateLateralWing, heelCupDepth, heelCupRadius, metatarsalSize, metatarsalYPos]);
 
   // Compute Active Sizing Conversion
-  const conversion = convertSizing(sizingSystem, rawSizeValue);
+  const conversion = convertSizing(sizingSystem, sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue);
   const effectiveLength = sizingSystem === "CUSTOM_MM" ? customLengthMm : conversion.insoleLengthMm;
 
   // Build Insole Geometry
   const geometryParams: InsoleParameters = {
     shoeSize: conversion.eu,
     sizingSystem,
-    rawSizeValue,
+    rawSizeValue: sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue,
     baseLengthMm: effectiveLength,
     archProfile,
     archOffsetFactor: archFactor,
@@ -711,7 +713,16 @@ export function CadStudio({ language }: CadStudioProps) {
                 <button
                   key={sys}
                   type="button"
-                  onClick={() => setSizingSystem(sys)}
+                  onClick={() => {
+                    const currentVal = sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue;
+                    const nextVal = migrateSizingValue(sizingSystem, sys, currentVal);
+                    if (sys === "CUSTOM_MM") {
+                      setCustomLengthMm(nextVal);
+                    } else {
+                      setRawSizeValue(nextVal);
+                    }
+                    setSizingSystem(sys);
+                  }}
                   className={`py-1.5 rounded-lg text-[10px] font-bold border transition ${
                     sizingSystem === sys
                       ? "bg-brand text-white border-brand"
@@ -731,9 +742,9 @@ export function CadStudio({ language }: CadStudioProps) {
                 </label>
                 <input
                   type="number"
-                  step="0.1"
-                  min={180}
-                  max={340}
+                  step={SIZING_BOUNDS.CUSTOM_MM.step}
+                  min={SIZING_BOUNDS.CUSTOM_MM.min}
+                  max={SIZING_BOUNDS.CUSTOM_MM.max}
                   value={customLengthMm}
                   onChange={(e) => setCustomLengthMm(parseFloat(e.target.value) || 260)}
                   className="w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-1.5 font-mono font-bold text-white text-xs focus:border-brand focus:outline-none"
@@ -749,9 +760,9 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
                 <input
                   type="range"
-                  min={sizingSystem === "EU" ? 35 : sizingSystem === "MONDOPOINT_CM" ? 22 : 4}
-                  max={sizingSystem === "EU" ? 48 : sizingSystem === "MONDOPOINT_CM" ? 31 : 14}
-                  step={sizingSystem === "MONDOPOINT_CM" ? 0.5 : 1}
+                  min={SIZING_BOUNDS[sizingSystem]?.min ?? 4}
+                  max={SIZING_BOUNDS[sizingSystem]?.max ?? 48}
+                  step={SIZING_BOUNDS[sizingSystem]?.step ?? 1}
                   value={rawSizeValue}
                   onChange={(e) => setRawSizeValue(parseFloat(e.target.value))}
                   className="w-full accent-brand"

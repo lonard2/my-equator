@@ -5,6 +5,8 @@ import {
   calculateDefaultWidths,
   buildInsoleGeometry,
   convertSizing,
+  SIZING_BOUNDS,
+  migrateSizingValue,
   INSOLE_PRESETS,
   InsoleParameters,
 } from "@/lib/cad/insoleEngine";
@@ -30,6 +32,55 @@ describe("Insole CAD Engine & Geometric Calculations", () => {
     assert.strictEqual(eu41.uk, 7.5);
     assert.strictEqual(eu41.usMen, 8);
     assert.strictEqual(eu41.usWomen, 9.5);
+  });
+
+  it("migrates raw size value accurately across systems preserving sane insole length", () => {
+    // EU 41 -> UK: 7.5
+    const ukVal = migrateSizingValue("EU", "UK", 41);
+    assert.strictEqual(ukVal, 7.5);
+
+    // Converted length check: UK 7.5 -> insole length should match EU 41 length (266.7 mm)
+    const ukConv = convertSizing("UK", ukVal);
+    assert.strictEqual(ukConv.eu, 41);
+    assert.strictEqual(ukConv.insoleLengthMm, 266.7);
+
+    // EU 41 -> US Men: 8
+    const usMenVal = migrateSizingValue("EU", "US_MEN", 41);
+    assert.strictEqual(usMenVal, 8);
+    assert.strictEqual(convertSizing("US_MEN", usMenVal).insoleLengthMm, 266.7);
+
+    // US Men 8 -> US Women: 9.5
+    const usWomenVal = migrateSizingValue("US_MEN", "US_WOMEN", 8);
+    assert.strictEqual(usWomenVal, 9.5);
+
+    // US Women 9.5 -> UK: 7.5
+    assert.strictEqual(migrateSizingValue("US_WOMEN", "UK", 9.5), 7.5);
+
+    // EU 41 -> Mondopoint cm
+    const mondoVal = migrateSizingValue("EU", "MONDOPOINT_CM", 41);
+    assert.strictEqual(mondoVal, 25.5);
+
+    // Custom MM 260 -> EU 40
+    assert.strictEqual(migrateSizingValue("CUSTOM_MM", "EU", 260), 40);
+
+    // Identity migration
+    assert.strictEqual(migrateSizingValue("EU", "EU", 41), 41);
+    assert.strictEqual(migrateSizingValue("UK", "UK", 8.5), 8.5);
+  });
+
+  it("clamps migrated size values within target slider bounds", () => {
+    // EU 35 (minimum EU) -> UK conversion is 1.5, which is below UK minimum of 4
+    const clampedUkMin = migrateSizingValue("EU", "UK", 35);
+    assert.strictEqual(clampedUkMin, SIZING_BOUNDS.UK.min);
+    assert.strictEqual(clampedUkMin, 4);
+
+    // EU 48 (maximum EU) -> UK conversion is 14.5, which is above UK maximum of 14
+    const clampedUkMax = migrateSizingValue("EU", "UK", 48);
+    assert.strictEqual(clampedUkMax, SIZING_BOUNDS.UK.max);
+    assert.strictEqual(clampedUkMax, 14);
+
+    // Custom MM 150mm (below minimum) -> CUSTOM_MM clamped to 180
+    assert.strictEqual(migrateSizingValue("EU", "CUSTOM_MM", 20), SIZING_BOUNDS.CUSTOM_MM.min);
   });
 
   it("computes anatomical width proportions for ball, heel, and waist", () => {

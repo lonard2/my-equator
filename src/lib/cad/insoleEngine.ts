@@ -134,6 +134,72 @@ export function convertSizing(system: SizingSystem, val: number): SizingConversi
   };
 }
 
+export interface SizingBound {
+  min: number;
+  max: number;
+  step: number;
+}
+
+export const SIZING_BOUNDS: Record<SizingSystem, SizingBound> = {
+  EU: { min: 35, max: 48, step: 1 },
+  US_MEN: { min: 4, max: 14, step: 0.5 },
+  US_WOMEN: { min: 4, max: 14, step: 0.5 },
+  UK: { min: 4, max: 14, step: 0.5 },
+  MONDOPOINT_CM: { min: 22, max: 31, step: 0.5 },
+  CUSTOM_MM: { min: 180, max: 340, step: 0.1 },
+};
+
+/**
+ * Migrates a raw size value between sizing systems, converting to equivalent length
+ * and clamping to the target slider's valid bounds.
+ */
+export function migrateSizingValue(
+  fromSystem: SizingSystem,
+  toSystem: SizingSystem,
+  currentVal: number
+): number {
+  if (fromSystem === toSystem) return currentVal;
+
+  const conv = convertSizing(fromSystem, currentVal);
+  let targetRaw: number;
+
+  switch (toSystem) {
+    case "EU":
+      targetRaw = conv.eu;
+      break;
+    case "US_MEN":
+      targetRaw = conv.usMen;
+      break;
+    case "US_WOMEN":
+      targetRaw = conv.usWomen;
+      break;
+    case "UK":
+      targetRaw = conv.uk;
+      break;
+    case "MONDOPOINT_CM":
+      targetRaw = conv.mondopointCm;
+      break;
+    case "CUSTOM_MM":
+      targetRaw = conv.insoleLengthMm;
+      break;
+    default:
+      targetRaw = conv.eu;
+      break;
+  }
+
+  const bounds = SIZING_BOUNDS[toSystem] || { min: 4, max: 48, step: 1 };
+  const clamped = Math.min(Math.max(targetRaw, bounds.min), bounds.max);
+
+  if (bounds.step === 1) {
+    return Math.round(clamped);
+  } else if (bounds.step === 0.5) {
+    return Math.round(clamped * 2) / 2;
+  } else if (bounds.step === 0.1) {
+    return Math.round(clamped * 10) / 10;
+  }
+  return clamped;
+}
+
 export function calculateInsoleLength(size: number): number {
   return Math.round((size * 6.6667 - 6.6667) * 10) / 10;
 }

@@ -81,4 +81,42 @@ describe("Insole CAD Studio P0 Hardenings (Impeccable Harden)", () => {
       );
     });
   });
+
+  describe("P1: Sizing-System Switch Migrates rawSizeValue & Clamps to Target Slider Bounds", () => {
+    it("verifies CadStudio imports SIZING_BOUNDS and migrateSizingValue", () => {
+      assert.ok(
+        cadStudioSource.includes("SIZING_BOUNDS") &&
+          cadStudioSource.includes("migrateSizingValue"),
+        "CadStudio must import SIZING_BOUNDS and migrateSizingValue from insoleEngine"
+      );
+    });
+
+    it("verifies clicking sizing buttons migrates rawSizeValue or customLengthMm", () => {
+      assert.ok(
+        cadStudioSource.includes("migrateSizingValue(sizingSystem, sys, currentVal)"),
+        "CadStudio must call migrateSizingValue with current sizing system, target system, and current value"
+      );
+      assert.ok(
+        cadStudioSource.includes("setCustomLengthMm(nextVal)") &&
+          cadStudioSource.includes("setRawSizeValue(nextVal)"),
+        "CadStudio must set customLengthMm when switching to CUSTOM_MM, or rawSizeValue otherwise"
+      );
+    });
+
+    it("verifies slider and custom input use SIZING_BOUNDS for min, max, and step", () => {
+      assert.ok(
+        cadStudioSource.includes("SIZING_BOUNDS[sizingSystem]?.min") &&
+          cadStudioSource.includes("SIZING_BOUNDS[sizingSystem]?.max") &&
+          cadStudioSource.includes("SIZING_BOUNDS[sizingSystem]?.step"),
+        "Slider range input must bind min, max, and step from SIZING_BOUNDS"
+      );
+      assert.ok(
+        cadStudioSource.includes("SIZING_BOUNDS.CUSTOM_MM.min") &&
+          cadStudioSource.includes("SIZING_BOUNDS.CUSTOM_MM.max") &&
+          cadStudioSource.includes("SIZING_BOUNDS.CUSTOM_MM.step"),
+        "Custom length input must bind min, max, and step from SIZING_BOUNDS.CUSTOM_MM"
+      );
+    });
+  });
 });
+
