@@ -163,6 +163,7 @@ export function CadStudio({ language }: CadStudioProps) {
     }
   };
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
+  const [isSavingBlueprint, setIsSavingBlueprint] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTone, setToastTone] = useState<"success" | "error">("success");
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -636,6 +637,8 @@ export function CadStudio({ language }: CadStudioProps) {
 
   // Save Blueprint to Database
   const handleSaveBlueprint = async () => {
+    if (isSavingBlueprint) return;
+    setIsSavingBlueprint(true);
     try {
       const res = await fetch("/api/cad/blueprints", {
         method: "POST",
@@ -677,6 +680,8 @@ export function CadStudio({ language }: CadStudioProps) {
     } catch (err) {
       console.error("Failed to save blueprint:", err);
       showToast(isId ? "Terjadi kesalahan saat menyimpan blueprint." : "Error saving blueprint.", "error");
+    } finally {
+      setIsSavingBlueprint(false);
     }
   };
 
@@ -816,11 +821,12 @@ export function CadStudio({ language }: CadStudioProps) {
           <button
             type="button"
             onClick={handleSaveBlueprint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
+            disabled={isSavingBlueprint}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition disabled:opacity-50"
             title="Ctrl+S / Cmd+S"
           >
-            <Save className="h-4 w-4" />
-            <span className="hidden sm:inline">{isId ? "Simpan" : "Save"}</span>
+            {isSavingBlueprint ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span className="hidden sm:inline">{isSavingBlueprint ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan" : "Save"}</span>
           </button>
         </div>
       </div>
