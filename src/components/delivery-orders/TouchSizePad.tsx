@@ -149,14 +149,6 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           />
           <button
             type="button"
-            onClick={() => handleAdjust(1)}
-            aria-label={isId ? "Tambah 1 pasang" : "Increase 1 pair"}
-            className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
             onPointerDown={() => startHold(10)}
             onPointerUp={endHold}
             onPointerLeave={endHold}

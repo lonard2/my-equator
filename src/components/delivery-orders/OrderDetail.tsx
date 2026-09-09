@@ -1307,7 +1307,7 @@ export function OrderDetail({
                             key={size}
                             className={`p-2 text-center font-mono ${
                               qty && qty > 0
-                                ? "bg-red-50/80 dark:bg-red-950/40 font-bold text-brand dark:text-red-300"
+                                ? "bg-amber-50/80 dark:bg-amber-950/40 font-bold text-amber-900 dark:text-amber-300"
                                 : "text-gray-300 dark:text-gray-600"
                             }`}
                           >
