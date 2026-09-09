@@ -61,6 +61,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const [globalDate, setGlobalDate] = useState(new Date().toISOString().split("T")[0]);
   const [savingProgress, setSavingProgress] = useState<{ current: number; total: number; orderNumber: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [failedOrderNumbers, setFailedOrderNumbers] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
@@ -249,6 +250,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
   const handleClearAllRows = () => {
     setRows([]);
+    setFailedOrderNumbers([]);
     setShowClearConfirm(false);
     clearButtonRef.current?.focus();
     handleAddRow();
@@ -321,6 +323,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setErrorMessage(null);
     setSuccessMessage(null);
     setInvalidRowIds([]);
+    setFailedOrderNumbers([]);
 
     if (rows.length === 0) {
       setErrorMessage(
@@ -382,6 +385,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setSavingProgress({ current: 1, total: rows.length, orderNumber: rows[0].orderNumber });
 
     const remainingRows: BatchRow[] = [];
+    const failedSjNumbers: string[] = [];
     let savedCount = 0;
     let failedCount = 0;
 
@@ -435,6 +439,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           );
         } else {
           failedCount++;
+          failedSjNumbers.push(row.orderNumber);
           remainingRows.push({
             ...row,
             status: "error",
@@ -443,6 +448,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         }
       } catch (err: any) {
         failedCount++;
+        failedSjNumbers.push(row.orderNumber);
         remainingRows.push({
           ...row,
           status: "error",
@@ -454,6 +460,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setSavingProgress(null);
 
     if (failedCount === 0) {
+      setFailedOrderNumbers([]);
       setSuccessMessage(
         isId
           ? `Berhasil menyimpan ${savedCount} Surat Jalan (Total ${totalBatchPairs.toLocaleString("id-ID")} pasang)! Mengalihkan ke daftar Surat Jalan...`
@@ -465,6 +472,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     } else {
       // Retain only failed rows so user can fix and retry without creating duplicates
       setRows(remainingRows);
+      setFailedOrderNumbers(failedSjNumbers);
       setErrorMessage(
         isId
           ? `${savedCount} Surat Jalan berhasil disimpan. ${failedCount} baris gagal dan tetap dipertahankan pada lembar kerja untuk Anda periksa kembali.`
@@ -759,14 +767,47 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Notifications & Progress Banners */}
       {errorMessage && (
-        <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center justify-between gap-2 text-red-700 dark:text-red-300 text-xs font-bold shadow-xs">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{errorMessage}</span>
+        <div
+          role="alert"
+          aria-live="polite"
+          className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 space-y-2 text-red-700 dark:text-red-300 text-xs shadow-xs"
+        >
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setErrorMessage(null);
+                setFailedOrderNumbers([]);
+              }}
+              aria-label={isId ? "Tutup notifikasi galat" : "Dismiss error notification"}
+              className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg shrink-0"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <button type="button" onClick={() => setErrorMessage(null)} className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg">
-            <X className="h-3.5 w-3.5" />
-          </button>
+
+          {failedOrderNumbers.length > 0 && (
+            <div className="pt-2 border-t border-red-200/70 dark:border-red-900/50 flex flex-col gap-1.5">
+              <span className="text-[11px] font-semibold text-red-600 dark:text-red-400">
+                {isId ? "Surat Jalan yang gagal disimpan:" : "Failed Delivery Orders:"}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {failedOrderNumbers.map((sj) => (
+                  <span
+                    key={sj}
+                    data-testid="failed-sj-pill"
+                    className="px-2 py-0.5 rounded-md font-mono font-bold text-[11px] bg-red-100 dark:bg-red-900/80 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800"
+                  >
+                    {sj}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -808,38 +849,87 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             const rowTotal = getRowTotalPairs(row.sizes);
             const isInvalid = invalidRowIds.includes(row.id);
 
+            const cardStatusClass =
+              row.status === "saving"
+                ? "border-amber-400 border-l-4 border-l-amber-500 bg-amber-50/15 dark:bg-amber-950/15"
+                : row.status === "saved"
+                ? "border-emerald-400 border-l-4 border-l-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/15"
+                : row.status === "error"
+                ? "border-red-500 border-l-4 border-l-red-600 bg-red-50/25 dark:bg-red-950/25"
+                : isInvalid
+                ? "border-red-500 border-l-4 border-l-red-400 ring-2 ring-red-200 dark:ring-red-950"
+                : "border-gray-200 dark:border-gray-800 border-l-4 border-l-transparent";
+
             return (
               <div
                 key={row.id}
                 data-row-id={row.id}
-                className={`p-3.5 rounded-xl border bg-white dark:bg-gray-900 shadow-xs space-y-3 transition ${
-                  isInvalid
-                    ? "border-red-500 ring-2 ring-red-200 dark:ring-red-950"
-                    : "border-gray-200 dark:border-gray-800"
-                }`}
+                data-row-status={row.status}
+                className={`p-3.5 rounded-xl border bg-white dark:bg-gray-900 shadow-xs space-y-3 transition ${cardStatusClass}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                       #{idx + 1}
                     </span>
                     <span className="font-mono font-bold text-xs text-brand dark:text-red-400">
                       {row.orderNumber}
                     </span>
+
+                    {/* Mobile per-row status chip */}
+                    {row.status === "saving" && (
+                      <span
+                        data-testid="mobile-row-status-saving"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
+                      >
+                        <Loader2 className="h-2.5 w-2.5 animate-spin text-amber-600 dark:text-amber-400" />
+                        {isId ? "Menyimpan" : "Saving"}
+                      </span>
+                    )}
+                    {row.status === "saved" && (
+                      <span
+                        data-testid="mobile-row-status-saved"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200"
+                      >
+                        <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                        {isId ? "Tersimpan" : "Saved"}
+                      </span>
+                    )}
+                    {row.status === "error" && (
+                      <span
+                        data-testid="mobile-row-status-error"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200"
+                      >
+                        <AlertCircle className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
+                        {isId ? "Gagal" : "Failed"}
+                      </span>
+                    )}
                   </div>
 
                   <button
                     type="button"
                     onClick={() => handleDeleteRow(row.id)}
                     aria-label={isId ? `Hapus baris ${row.orderNumber}` : `Delete row ${row.orderNumber}`}
-                    className="p-1.5 rounded-xl text-gray-500 hover:text-red-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-gray-500 hover:text-red-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block">
+                {/* Per-row error message on failure */}
+                {row.status === "error" && row.errorMessage && (
+                  <div
+                    data-testid="mobile-row-error-message"
+                    className="p-2 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 text-[11px] font-medium flex items-start gap-1.5"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                    <span>{row.errorMessage}</span>
+                  </div>
+                )}
+
+                {/* Field 1: Customer / Penerima */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
                     {isId ? "Customer / Penerima" : "Customer Name"}
                   </label>
                   <input
@@ -848,8 +938,78 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     value={row.recipientName}
                     onChange={(e) => handleRowChange(row.id, "recipientName", e.target.value)}
                     placeholder={isId ? "Ketik nama PT / Toko Sepatu..." : "Customer Company..."}
-                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
+                    aria-label={isId ? `Nama customer baris ${idx + 1}` : `Customer name row ${idx + 1}`}
+                    className={`w-full min-h-[40px] rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none ${
+                      isInvalid && !row.recipientName.trim()
+                        ? "border-red-500 ring-2 ring-red-200 dark:ring-red-950 bg-red-50/50"
+                        : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-brand"
+                    }`}
                   />
+                </div>
+
+                {/* Field 2: Alamat Tujuan (Explicit Mobile Surface) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
+                    {isId ? "Alamat Tujuan" : "Destination Address"}
+                  </label>
+                  <input
+                    type="text"
+                    value={row.destinationAddress}
+                    onChange={(e) => handleRowChange(row.id, "destinationAddress", e.target.value)}
+                    placeholder={isId ? "Alamat tujuan pengiriman..." : "Delivery destination..."}
+                    aria-label={isId ? `Alamat tujuan baris ${idx + 1}` : `Destination address row ${idx + 1}`}
+                    className="w-full min-h-[40px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
+                  />
+                </div>
+
+                {/* Fields 3, 4, 5: Model Artikel, Tanggal Kirim, Harga Satuan (Explicit Mobile Surface) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Model Artikel */}
+                  <div className="space-y-1 sm:col-span-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
+                      {isId ? "Model Artikel" : "Insole Article"}
+                    </label>
+                    <input
+                      type="text"
+                      list="article-catalog-suggestions"
+                      value={row.articleCode}
+                      onChange={(e) => handleRowChange(row.id, "articleCode", e.target.value)}
+                      placeholder="EQ-EVA-01"
+                      aria-label={isId ? `Model artikel baris ${idx + 1}` : `Article model row ${idx + 1}`}
+                      className="w-full min-h-[40px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
+                    />
+                  </div>
+
+                  {/* Tanggal Kirim */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
+                      {isId ? "Tanggal Kirim" : "Delivery Date"}
+                    </label>
+                    <input
+                      type="date"
+                      value={row.deliveryDate}
+                      onChange={(e) => handleRowChange(row.id, "deliveryDate", e.target.value)}
+                      aria-label={isId ? `Tanggal kirim baris ${idx + 1}` : `Delivery date row ${idx + 1}`}
+                      className="w-full min-h-[40px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-2 text-xs font-mono text-gray-900 dark:text-white focus:outline-none focus:border-brand"
+                    />
+                  </div>
+
+                  {/* Harga Satuan */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
+                      {isId ? "Harga Satuan (Rp)" : "Unit Price (Rp)"}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="500"
+                      value={row.unitPrice}
+                      onChange={(e) => handleRowChange(row.id, "unitPrice", Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      placeholder="18000"
+                      aria-label={isId ? `Harga satuan baris ${idx + 1}` : `Unit price row ${idx + 1}`}
+                      className="w-full min-h-[40px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
+                    />
+                  </div>
                 </div>
 
                 {/* Mobile 5x2 Touch Numeric Grid */}
@@ -929,25 +1089,82 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 const rowTotal = getRowTotalPairs(row.sizes);
                 const isInvalid = invalidRowIds.includes(row.id);
 
+                const firstCellBorderClass =
+                  row.status === "saving"
+                    ? "border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/30"
+                    : row.status === "saved"
+                    ? "border-l-4 border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30"
+                    : row.status === "error"
+                    ? "border-l-4 border-l-red-600 bg-red-50/50 dark:bg-red-950/40"
+                    : isInvalid
+                    ? "border-l-4 border-l-red-400 bg-red-50/30 dark:bg-red-950/20"
+                    : "border-l-4 border-l-transparent bg-white dark:bg-gray-900";
+
                 return (
                   <tr
                     key={row.id}
                     data-row-id={row.id}
+                    data-row-status={row.status}
                     className={`hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition ${
-                      isInvalid ? "bg-red-50/40 dark:bg-red-950/20" : ""
+                      row.status === "saving"
+                        ? "bg-amber-50/15 dark:bg-amber-950/10"
+                        : row.status === "saved"
+                        ? "bg-emerald-50/15 dark:bg-emerald-950/10"
+                        : row.status === "error"
+                        ? "bg-red-50/25 dark:bg-red-950/15"
+                        : isInvalid
+                        ? "bg-red-50/20 dark:bg-red-950/10"
+                        : ""
                     }`}
                   >
-                    <td className="p-2 text-center text-gray-400 font-mono sticky left-0 bg-white dark:bg-gray-900 z-10">
+                    <td className={`p-2 text-center text-gray-400 font-mono sticky left-0 z-10 ${firstCellBorderClass}`}>
                       {rIdx + 1}
                     </td>
 
                     <td className="p-2 sticky left-10 bg-white dark:bg-gray-900 z-10 shadow-xs border-r border-gray-200 dark:border-gray-800">
-                      <input
-                        type="text"
-                        value={row.orderNumber}
-                        onChange={(e) => handleRowChange(row.id, "orderNumber", e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-mono font-bold text-xs text-brand dark:text-red-400 focus:outline-none focus:border-brand"
-                      />
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={row.orderNumber}
+                          onChange={(e) => handleRowChange(row.id, "orderNumber", e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-mono font-bold text-xs text-brand dark:text-red-400 focus:outline-none focus:border-brand"
+                        />
+                        {row.status === "saving" && (
+                          <span
+                            data-testid="row-status-saving"
+                            title={isId ? "Menyimpan ke database..." : "Saving..."}
+                            className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
+                          >
+                            <Loader2 className="h-3 w-3 animate-spin text-amber-600 dark:text-amber-400" />
+                            <span className="sr-only sm:not-sr-only sm:inline">{isId ? "Menyimpan" : "Saving"}</span>
+                          </span>
+                        )}
+                        {row.status === "saved" && (
+                          <span
+                            data-testid="row-status-saved"
+                            title={isId ? "Tersimpan di database" : "Saved"}
+                            className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200"
+                          >
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                            <span className="sr-only sm:not-sr-only sm:inline">{isId ? "Tersimpan" : "Saved"}</span>
+                          </span>
+                        )}
+                        {row.status === "error" && (
+                          <span
+                            data-testid="row-status-error"
+                            title={row.errorMessage || (isId ? "Gagal menyimpan" : "Save failed")}
+                            className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200"
+                          >
+                            <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                            <span className="sr-only sm:not-sr-only sm:inline">{isId ? "Gagal" : "Failed"}</span>
+                          </span>
+                        )}
+                      </div>
+                      {row.status === "error" && row.errorMessage && (
+                        <p data-testid="row-error-message" className="text-[10px] text-red-600 dark:text-red-400 font-medium leading-tight mt-1">
+                          {row.errorMessage}
+                        </p>
+                      )}
                     </td>
 
                     <td className="p-2">
