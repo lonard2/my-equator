@@ -183,7 +183,8 @@ export function StockMovementModal({
   const isOutOfStockWarning = currentMovementConfig?.direction === "OUT" && (quantity || 0) > currentStock;
 
   const handleStepQuantity = (delta: number) => {
-    setQuantity((prev) => Math.min(1000000, Math.max(1, (prev || 0) + delta)));
+    const floor = movementType === "ADJUSTMENT" ? 0 : 1;
+    setQuantity((prev) => Math.min(1000000, Math.max(floor, (prev || 0) + delta)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,8 +197,18 @@ export function StockMovementModal({
       return;
     }
 
-    if (!quantity || quantity <= 0) {
-      setValidationError(isId ? "Jumlah mutasi harus lebih dari 0." : "Quantity must be greater than 0.");
+    // Stock opname records the physical count — 0 is a legitimate count (all material consumed/lost)
+    const minQty = movementType === "ADJUSTMENT" ? 0 : 1;
+    if (quantity === null || quantity < minQty) {
+      setValidationError(
+        isId
+          ? movementType === "ADJUSTMENT"
+            ? "Jumlah stok fisik tidak boleh negatif."
+            : "Jumlah mutasi harus lebih dari 0."
+          : movementType === "ADJUSTMENT"
+          ? "Adjusted stock count cannot be negative."
+          : "Quantity must be greater than 0."
+      );
       return;
     }
 
@@ -357,11 +368,15 @@ export function StockMovementModal({
               <input
                 type="number"
                 inputMode="numeric"
-                min={1}
                 max={1000000}
                 value={quantity}
                 disabled={loading}
-                onChange={(e) => setQuantity(Math.min(1000000, Math.max(1, parseInt(e.target.value, 10) || 0)))}
+                min={movementType === "ADJUSTMENT" ? 0 : 1}
+                onChange={(e) =>
+                  setQuantity(
+                    Math.min(1000000, Math.max(movementType === "ADJUSTMENT" ? 0 : 1, parseInt(e.target.value, 10) || 0))
+                  )
+                }
                 className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 font-mono font-extrabold text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand tabular-nums disabled:opacity-60"
                 required
               />

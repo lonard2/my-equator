@@ -54,6 +54,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   const [materials, setMaterials] = useState<MaterialItem[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // Active view tab: "MATERIALS" | "HISTORY"
   const [activeTab, setActiveTab] = useState<"MATERIALS" | "HISTORY">("MATERIALS");
@@ -107,8 +108,11 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
       if (matJson.success) setMaterials(matJson.data);
       if (movJson.success) setMovements(movJson.data);
+      if (matJson.success || movJson.success) setLoadError(false);
+      else setLoadError(true);
     } catch (err) {
       console.error("Failed to load inventory data:", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -321,6 +325,68 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
     setCategoryFilter("ALL");
     setOnlyLowStock(false);
   };
+
+  // First load: skeleton. Outage: honest error card with retry.
+  // Neither may masquerade as "no materials match filters".
+  if (loading && materials.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4" aria-busy="true">
+        <div className="h-20 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 flex items-center gap-3 animate-pulse">
+          <div className="h-11 w-11 rounded-xl bg-gray-200 dark:bg-gray-700 shrink-0" />
+          <div className="space-y-2 flex-1">
+            <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded-md" />
+            <div className="h-3 w-80 bg-gray-100 dark:bg-gray-800 rounded-md" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="h-24 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 animate-pulse">
+              <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
+              <div className="h-6 w-16 bg-gray-100 dark:bg-gray-800 rounded-md mt-2" />
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 space-y-3 animate-pulse">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <div key={n} className="h-10 bg-gray-100 dark:bg-gray-800/60 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && materials.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div
+          role="alert"
+          className="max-w-md w-full p-6 rounded-xl bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/60 shadow-xl text-center space-y-4"
+        >
+          <div className="w-12 h-12 mx-auto rounded-xl bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-400 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+              {isId ? "Gagal Memuat Inventori" : "Failed to Load Inventory"}
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              {isId
+                ? "Koneksi ke server gudang terputus. Data stok tidak hilang, silakan coba lagi."
+                : "Connection to the warehouse server failed. Stock data is safe, please retry."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchInventory()}
+            className="w-full py-2.5 rounded-xl bg-brand text-white font-bold text-xs hover:bg-brand-strong transition active:scale-95 shadow-xs flex items-center justify-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>{isId ? "Coba Lagi" : "Retry"}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
