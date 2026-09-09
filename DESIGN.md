@@ -265,5 +265,5 @@ One radius law across the system. **Controls and small elements: `rounded-lg` (8
 - **Don't** render raw English status enums (`DRAFT`, `DISPATCHED`) in Indonesian UI — speak `labelId`/`labelEn` tokens.
 - **Don't** use native `alert()`/`window.confirm()`; use the in-app modal and toast patterns.
 - **Don't** use pulse/ping animations on status badges; keep status indicators calm.
-- **Don't** use `rounded-3xl` or `border-left-4` on cards; honor the radius law and the inset indicator rule.
+- **Don't** use `rounded-3xl` or *decorative* `border-left-4` accents on cards; status indicator bars and the inset indicator rule are the sanctioned pattern.
 - **Don't** claim states the system hasn't verified (signatures "verified", spool "sent to queue" for a download) — copy states expectations, gates state truth.
