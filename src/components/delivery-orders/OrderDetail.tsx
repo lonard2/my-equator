@@ -39,7 +39,7 @@ import {
 
 interface OrderDetailProps {
   order: DeliveryOrder;
-  onStatusChange: (id: string, newStatus: DeliveryOrderStatus, reason?: string) => void;
+  onStatusChange: (id: string, newStatus: DeliveryOrderStatus, reason?: string) => boolean | Promise<boolean>;
   onOpenPrint: (order: DeliveryOrder) => void;
   onDeleteOrder: (id: string) => void;
   onOrderUpdated: () => void;
@@ -328,7 +328,29 @@ export function OrderDetail({
   }, [order]);
 
   const handleCopyOrderNumber = () => {
-    navigator.clipboard.writeText(order.orderNumber);
+    const fallbackCopy = () => {
+      const ta = document.createElement("textarea");
+      ta.value = order.orderNumber;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+      } catch {
+        // no clipboard API and no execCommand: leave the number visible for manual copy
+      }
+      document.body.removeChild(ta);
+    };
+    try {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(order.orderNumber).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    } catch {
+      fallbackCopy();
+    }
     setCopiedOrderNo(true);
     showToast(isId ? `Nomor ${order.orderNumber} berhasil disalin ke clipboard!` : `Order ${order.orderNumber} copied!`);
     setTimeout(() => setCopiedOrderNo(false), 2000);
@@ -565,7 +587,15 @@ export function OrderDetail({
     setRollbackError(null);
     setRollbackSubmitting(true);
     try {
-      await onStatusChange(order.id, rollbackTarget as DeliveryOrderStatus, rollbackReason);
+      const ok = await onStatusChange(order.id, rollbackTarget as DeliveryOrderStatus, rollbackReason);
+      if (!ok) {
+        setRollbackError(
+          isId
+            ? "Perubahan status gagal diproses server. Periksa notifikasi dan coba lagi."
+            : "The status change was rejected by the server. Check the notification and retry."
+        );
+        return;
+      }
       setIsRollbackModalOpen(false);
       setRollbackReason("");
       showToast(isId ? `Status berhasil diubah menjadi ${rollbackTarget}` : `Status changed to ${rollbackTarget}`);

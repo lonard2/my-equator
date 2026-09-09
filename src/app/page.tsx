@@ -95,6 +95,8 @@ export default function HomePage() {
 
   const showAppToast = (message: string, type: "success" | "error" = "success") => {
     setAppToast({ message, type });
+    // Errors persist until dismissed: false certainty corrodes audit trust.
+    if (type === "error") return;
     setTimeout(() => {
       setAppToast((curr) => (curr?.message === message ? null : curr));
     }, 4000);
@@ -214,7 +216,7 @@ export default function HomePage() {
     setLanguage(nextLang);
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: DeliveryOrderStatus, reason?: string) => {
+  const handleStatusChange = async (orderId: string, newStatus: DeliveryOrderStatus, reason?: string): Promise<boolean> => {
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -240,12 +242,15 @@ export default function HomePage() {
         // PRINTED no longer auto-fires the spool ceremony: the ceremony itself
         // is now the verification gate that triggers handleStatusChange(PRINTED).
         fetchOrders();
+        return true;
       } else {
         showAppToast(json.error || (language === "id" ? "Gagal memperbarui status surat jalan." : "Failed to update order status."), "error");
+        return false;
       }
     } catch (err: any) {
       console.error("Failed to update status:", err);
       showAppToast(err.message || (language === "id" ? "Terjadi kesalahan jaringan." : "Network error occurred."), "error");
+      return false;
     }
   };
 
@@ -721,14 +726,28 @@ export default function HomePage() {
                                   if (isPrintable) setPrintOrder(order);
                                 }}
                                 title={!isPrintable ? printDisabledTooltip : (isId ? "Cetak Slip" : "Print Slip")}
-                                className={`py-2.5 min-h-[44px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                                aria-label={
+                                  !isPrintable
+                                    ? `${order.orderNumber}: ${printDisabledTooltip}`
+                                    : isId ? `Cetak slip ${order.orderNumber}` : `Print slip ${order.orderNumber}`
+                                }
+                                className={`py-2.5 min-h-[44px] rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition ${
                                   !isPrintable
                                     ? "bg-gray-100 dark:bg-gray-800/60 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60"
                                     : "bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 active:scale-95"
                                 }`}
                               >
-                                <Printer className="h-4 w-4" />
-                                <span>{isId ? "Cetak Slip" : "Print Slip"}</span>
+                                <span className="flex items-center gap-1.5">
+                                  <Printer className="h-4 w-4" />
+                                  <span>{isId ? "Cetak Slip" : "Print Slip"}</span>
+                                </span>
+                                {!isPrintable && (
+                                  <span className="text-[10px] font-semibold leading-none">
+                                    {order.status === "DRAFT"
+                                      ? (isId ? "Konfirm dulu" : "Confirm first")
+                                      : (isId ? "Tidak dapat dicetak" : "Cannot print")}
+                                  </span>
+                                )}
                               </button>
 
                             {order.status === "PRINTED" ? (

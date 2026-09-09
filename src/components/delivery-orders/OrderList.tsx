@@ -179,6 +179,7 @@ export function OrderList({
             <button
               type="button"
               onClick={() => setShowAggregateSummary(!showAggregateSummary)}
+              aria-label={isId ? "Lihat rekap total pasang per ukuran sepatu" : "View aggregate size breakdown"}
               title={isId ? "Lihat rekap total pasang per ukuran sepatu" : "View aggregate size breakdown"}
               className={`p-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 ${
                 showAggregateSummary
