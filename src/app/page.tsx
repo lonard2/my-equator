@@ -1180,7 +1180,7 @@ export default function HomePage() {
         aria-atomic="true"
         className={
           appToast
-            ? `fixed top-4 right-4 z-50 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-150 ${
+            ? `fixed right-4 bottom-20 md:bottom-auto md:top-4 z-50 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 md:slide-in-from-top-2 slide-in-from-bottom duration-150 ${
                 appToast.type === "error"
                   ? "bg-red-950 text-red-100 border-red-800 shadow-red-950/50"
                   : "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-700 dark:border-gray-300 shadow-xl"
@@ -1199,10 +1199,10 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setAppToast(null)}
-              className="ml-2 text-gray-400 hover:text-white p-0.5 rounded focus:outline-none"
+              className="ml-1 -mr-1.5 my-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-white rounded-lg active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               aria-label={isId ? "Tutup notifikasi" : "Dismiss notification"}
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </>
         )}
