@@ -232,4 +232,109 @@ describe("Archive Digitizer Hardening & Data Integrity (Impeccable P0 & P1)", ()
       );
     });
   });
+
+  describe("6. Impeccable Clarify: Price Transparency, Staged Verbs, Aligned Naming & Bilingual ARIA", () => {
+    it("verifies price transparency with visible unit-price column on desktop grid and mobile cards", () => {
+      // Desktop header
+      assert.ok(
+        digitizerSource.includes('isId ? "Harga (Rp)" : "Unit Price"'),
+        "Desktop grid header must include unit price column"
+      );
+      // Desktop row input
+      assert.ok(
+        digitizerSource.includes('aria-label={isId ? `Harga satuan baris ${rIdx + 1}` : `Unit price row ${rIdx + 1}`}'),
+        "Desktop row must include unit price input with bilingual aria-label"
+      );
+      // Desktop table footer colSpan
+      assert.ok(
+        digitizerSource.includes("colSpan={6}"),
+        "Desktop tfoot colSpan must be 6 to accommodate the unit price column"
+      );
+      // Mobile card unit price
+      assert.ok(
+        digitizerSource.includes('isId ? "Harga Satuan (Rp)" : "Unit Price (Rp)"'),
+        "Mobile card must display unit price label"
+      );
+    });
+
+    it("verifies honest staged-vs-committed verbs across paste feedback and commit button", () => {
+      // Paste feedback mentions staged / draf belum disimpan
+      assert.ok(
+        digitizerSource.includes("draf belum disimpan ke database") &&
+          digitizerSource.includes("staged to worksheet (drafts not yet committed to database)"),
+        "Paste ingestion must explicitly state rows are staged and not yet committed"
+      );
+      // Action button uses 'Simpan ke Database' / 'Commit to Database'
+      assert.ok(
+        digitizerSource.includes("Simpan ke Database") &&
+          digitizerSource.includes("Commit to Database"),
+        "Commit button must clearly indicate saving to database"
+      );
+    });
+
+    it("verifies 'Kosongkan Lembar Kerja' / 'Clear Worksheet' naming is aligned between trigger and dialog", () => {
+      // Header trigger
+      assert.ok(
+        digitizerSource.includes('isId ? "Kosongkan Lembar Kerja" : "Clear Worksheet"'),
+        "Header trigger button must say 'Kosongkan Lembar Kerja' / 'Clear Worksheet'"
+      );
+      // Dialog title
+      assert.ok(
+        digitizerSource.includes('isId ? "Kosongkan Lembar Kerja?" : "Clear Worksheet?"'),
+        "Dialog title must say 'Kosongkan Lembar Kerja?' / 'Clear Worksheet?'"
+      );
+      // Dialog confirm button
+      assert.ok(
+        digitizerSource.includes('isId ? "Ya, Kosongkan Lembar Kerja" : "Clear Worksheet"'),
+        "Dialog confirm button must match 'Kosongkan Lembar Kerja' / 'Clear Worksheet'"
+      );
+      // Dialog accessibility
+      assert.ok(
+        digitizerSource.includes('id="clear-dialog-title"'),
+        "Clear dialog title must have id for aria-labelledby"
+      );
+      assert.ok(
+        digitizerSource.includes('aria-labelledby="clear-dialog-title"'),
+        "Clear dialog must reference clear-dialog-title"
+      );
+    });
+
+    it("verifies order number is styled as an unmistakable editable input on both desktop and mobile", () => {
+      // Desktop order number input
+      assert.ok(
+        digitizerSource.includes('placeholder="SJ/EQ/..."') &&
+          digitizerSource.includes('aria-label={isId ? `Nomor surat jalan baris ${rIdx + 1}` : `Order number row ${rIdx + 1}`}'),
+        "Desktop order number must be an input with placeholder and accessible label"
+      );
+      // Mobile order number input
+      assert.ok(
+        digitizerSource.includes('aria-label={isId ? `Nomor surat jalan baris ${idx + 1}` : `Order number row ${idx + 1}`}'),
+        "Mobile order number must be an input with accessible label"
+      );
+    });
+
+    it("verifies all sizing cells, dates, and delete buttons use bilingual aria-labels", () => {
+      // Mobile sizing aria-label
+      assert.ok(
+        digitizerSource.includes('aria-label={isId ? `Ukuran ${size}, Baris ${idx + 1}` : `Size ${size}, Row ${idx + 1}`}'),
+        "Mobile sizing cells must have bilingual aria-label"
+      );
+      // Desktop sizing aria-label
+      assert.ok(
+        digitizerSource.includes('aria-label={isId ? `Ukuran ${size}, Baris ${rIdx + 1}` : `Size ${size}, Row ${rIdx + 1}`}'),
+        "Desktop sizing cells must have bilingual aria-label"
+      );
+      // Desktop delivery date aria-label
+      assert.ok(
+        digitizerSource.includes('aria-label={isId ? `Tanggal surat jalan baris ${rIdx + 1}` : `Delivery date row ${rIdx + 1}`}'),
+        "Desktop delivery date must have bilingual aria-label"
+      );
+      // Desktop delete button aria-label
+      assert.ok(
+        digitizerSource.includes('aria-label={isId ? `Hapus baris ${rIdx + 1}` : `Delete row ${rIdx + 1}`}'),
+        "Desktop delete button must have bilingual aria-label"
+      );
+    });
+  });
 });
+
