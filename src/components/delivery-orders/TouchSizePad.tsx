@@ -37,8 +37,10 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
   // Press-and-hold on +/- applies a x10 step (glove-proof; the +/-10 buttons are gone)
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdFiredRef = useRef(false);
+  const [holdArmed, setHoldArmed] = useState<-1 | 0 | 1>(0);
   const startHold = (delta10: number) => {
     holdFiredRef.current = false;
+    setHoldArmed(delta10 === 10 ? 1 : -1);
     holdTimerRef.current = setTimeout(() => {
       handleAdjust(delta10);
       holdFiredRef.current = true;
@@ -49,6 +51,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
     }
+    setHoldArmed(0);
   };
   const clickStep = (delta1: number) => {
     if (holdFiredRef.current) {
@@ -130,7 +133,11 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
             onPointerLeave={endHold}
             onClick={() => clickStep(-1)}
             aria-label={isId ? "Kurangi 1 pasang (tahan untuk kurangi 10)" : "Decrease 1 pair (hold to decrease 10)"}
-            className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
+            className={`min-h-[44px] min-w-[44px] p-2 rounded-xl border text-xs font-bold active:scale-95 transition flex items-center justify-center ${
+              holdArmed === -1
+                ? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-800 dark:text-amber-300 ring-2 ring-amber-300"
+                : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100"
+            }`}
           >
             <Minus className="h-4 w-4" />
           </button>
@@ -154,7 +161,11 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
             onPointerLeave={endHold}
             onClick={() => clickStep(1)}
             aria-label={isId ? "Tambah 1 pasang (tahan untuk tambah 10)" : "Increase 1 pair (hold to increase 10)"}
-            className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
+            className={`min-h-[44px] min-w-[44px] p-2 rounded-xl border text-xs font-bold active:scale-95 transition flex items-center justify-center ${
+              holdArmed === 1
+                ? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-800 dark:text-amber-300 ring-2 ring-amber-300"
+                : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100"
+            }`}
           >
             <Plus className="h-4 w-4" />
           </button>
