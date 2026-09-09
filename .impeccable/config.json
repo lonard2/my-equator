@@ -1,3 +1,18 @@
 {
-  "buildPath": "code"
+  "buildPath": "code",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/delivery-orders/ArchiveDigitizer.tsx"
+        ],
+        "createdAt": "2026-09-09T09:18:38.972Z",
+        "reason": "Explicit user specification: per-row left border status indicator"
+      }
+    ]
+  }
 }

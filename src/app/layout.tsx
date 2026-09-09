@@ -35,7 +35,7 @@ export default function RootLayout({
       data-width="fluid"
       className={`${sansFont.variable} ${monoFont.variable}`}
     >
-      <body className="antialiased font-sans bg-gray-50 text-gray-900 selection:bg-red-100 selection:text-red-900">
+      <body className="antialiased font-sans bg-gray-50 text-gray-900">
         {children}
       </body>
     </html>
