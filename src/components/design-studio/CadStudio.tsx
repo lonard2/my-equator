@@ -113,9 +113,14 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isCncPreFlightOpen, setIsCncPreFlightOpen] = useState(false);
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastTone, setToastTone] = useState<"success" | "error">("success");
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [baselineRef, setBaselineRef] = useState<string>("");
+  const [pendingOverwriteAction, setPendingOverwriteAction] = useState<(() => void) | null>(null);
+  const cancelOverwriteRef = useRef<HTMLButtonElement | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, tone: "success" | "error" = "success") => {
+    setToastTone(tone);
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
@@ -143,6 +148,8 @@ export function CadStudio({ language }: CadStudioProps) {
 
   useEffect(() => {
     fetchBlueprints();
+    markClean();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Global Keyboard Shortcuts
@@ -201,8 +208,37 @@ export function CadStudio({ language }: CadStudioProps) {
 
   const geometry: InsoleGeometry = buildInsoleGeometry(geometryParams);
 
+  // Dirty tracking: any param drift from the last saved/loaded/applied baseline
+  const paramsKey = JSON.stringify(geometryParams) + blueprintName;
+  const isDirty = baselineRef !== "" && paramsKey !== baselineRef;
+
+  // Any overwrite action (preset / blueprint load / AI apply) goes through the
+  // truth gate when the workspace has unsaved changes.
+  const confirmOverwrite = (applyFn: () => void) => {
+    if (isDirty) {
+      setPendingOverwriteAction(() => applyFn);
+    } else {
+      applyFn();
+    }
+  };
+
+  const markClean = () => setBaselineRef(JSON.stringify(geometryParams) + blueprintName);
+
+  // Real closed-loop manifold check from the generated outline points
+  const isClosedLoop = (pts: { x: number; y: number }[] | undefined) => {
+    if (!pts || pts.length < 3) return false;
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    if (!Number.isFinite(first?.x) || !Number.isFinite(first?.y) || !Number.isFinite(last?.x) || !Number.isFinite(last?.y)) return false;
+    return Math.hypot(first.x - last.x, first.y - last.y) < 0.5;
+  };
+  const manifoldRight = isClosedLoop(geometry.outlinePointsRight);
+  const manifoldLeft = isClosedLoop(geometry.outlinePointsLeft);
+  const manifoldVerified = manifoldRight && (foot === "RIGHT" ? true : manifoldLeft);
+
   // Apply Preset
   const handleApplyPreset = (preset: typeof INSOLE_PRESETS[0]) => {
+    confirmOverwrite(() => {
     setArchProfile(preset.archProfile);
     setArchFactor(preset.archOffsetFactor);
     setToeShape(preset.toeShape);
@@ -218,10 +254,13 @@ export function CadStudio({ language }: CadStudioProps) {
     if (preset.metatarsalPadSizeFactor) setMetatarsalSize(preset.metatarsalPadSizeFactor);
     if (preset.metatarsalPadYPosition) setMetatarsalYPos(preset.metatarsalPadYPosition);
     showToast(isId ? `Preset "${preset.name}" diterapkan` : `Preset "${preset.name}" applied`);
+    markClean();
+    });
   };
 
   // Load Saved Blueprint
   const handleLoadSavedBlueprint = (bp: any) => {
+    confirmOverwrite(() => {
     if (bp.name) setBlueprintName(bp.name);
     if (bp.sizingSystem) setSizingSystem(bp.sizingSystem);
     if (bp.rawSizeValue) setRawSizeValue(bp.rawSizeValue);
@@ -245,10 +284,13 @@ export function CadStudio({ language }: CadStudioProps) {
     if (bp.metatarsalPadYPosition) setMetatarsalYPos(bp.metatarsalPadYPosition);
     setIsLibraryOpen(false);
     showToast(isId ? `Blueprint "${bp.name}" berhasil dimuat` : `Blueprint "${bp.name}" loaded`);
+    markClean();
+    });
   };
 
   // Apply Generative AI Insole Parameters
   const handleApplyAiGeneration = (aiData: any) => {
+    confirmOverwrite(() => {
     if (aiData.sizingSystem) setSizingSystem(aiData.sizingSystem);
     if (aiData.rawSizeValue) setRawSizeValue(aiData.rawSizeValue);
     if (aiData.customLengthMm) setCustomLengthMm(aiData.customLengthMm);
@@ -273,6 +315,8 @@ export function CadStudio({ language }: CadStudioProps) {
     if (aiData.metatarsalPadYPosition) setMetatarsalYPos(aiData.metatarsalPadYPosition);
     setMobileCadView("CANVAS");
     showToast(isId ? "Desain AI berhasil diintegrasikan ke canvas CAD" : "AI Insole design loaded into CAD canvas");
+    markClean();
+    });
   };
 
   // Export DXF (AutoCAD R12 / CorelDRAW)
@@ -406,6 +450,7 @@ export function CadStudio({ language }: CadStudioProps) {
       const json = await res.json();
       if (json.success) {
         showToast(isId ? "Blueprint CAD berhasil disimpan ke database!" : "CAD Blueprint saved to database!");
+        markClean();
         fetchBlueprints();
       } else {
         showToast(json.error || (isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint."));
@@ -481,8 +526,16 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-white leading-tight">
-                {isId ? "Insole CAD & Generative Design Studio" : "Insole CAD & Design Studio"}
+              <h2 className="text-base sm:text-lg font-black text-white leading-tight flex items-center gap-2">
+                <span>{isId ? "Insole CAD & Generative Design Studio" : "Insole CAD & Design Studio"}</span>
+                {isDirty && (
+                  <span
+                    data-testid="cad-unsaved-dot"
+                    title={isId ? "Ada perubahan belum disimpan" : "Unsaved changes"}
+                    aria-label={isId ? "Ada perubahan belum disimpan" : "Unsaved changes"}
+                    className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"
+                  />
+                )}
               </h2>
               <span className="px-2 py-0.5 rounded-md bg-red-950/80 text-red-400 border border-red-900/60 font-mono text-[10px] font-bold">
                 R12 DXF
@@ -1571,10 +1624,25 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 flex items-center gap-2.5 text-emerald-300">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                <span>{isId ? "Polyline 100% Manifold Tertutup (Tanpa self-intersection)" : "100% Manifold Closed Loop Verified"}</span>
-              </div>
+              {manifoldVerified ? (
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 flex items-center gap-2.5 text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                  <span>
+                    {isId
+                      ? `Polyline tertutup terverifikasi (Right ${manifoldRight ? "OK" : "OPEN"}${foot !== "RIGHT" ? `, Left ${manifoldLeft ? "OK" : "OPEN"}` : ""})`
+                      : `Closed-loop polyline verified (Right ${manifoldRight ? "OK" : "OPEN"}${foot !== "RIGHT" ? `, Left ${manifoldLeft ? "OK" : "OPEN"}` : ""})`}
+                  </span>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-red-950/50 border border-red-800/60 flex items-center gap-2.5 text-red-300">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                  <span className="font-bold">
+                    {isId
+                      ? "Open loop terdeteksi pada polyline — JANGAN ekspor ke CNC sebelum geometri diperbaiki."
+                      : "Open loop detected in the polyline — do NOT export to CNC until geometry is fixed."}
+                  </span>
+                </div>
+              )}
 
               <div className="p-3 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">{isId ? "Audit Lapisan Layer DXF (Corel / CNC)" : "DXF Layer Color Audit"}</span>
@@ -1604,7 +1672,7 @@ export function CadStudio({ language }: CadStudioProps) {
               <button
                 type="button"
                 onClick={handleExportSvg}
-                disabled={exporting !== null}
+                disabled={exporting !== null || !manifoldVerified}
                 className="px-4 py-2 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 transition"
               >
                 {exporting === "SVG" ? "Exporting..." : isId ? "Unduh Vector SVG" : "Download SVG"}
@@ -1612,11 +1680,57 @@ export function CadStudio({ language }: CadStudioProps) {
               <button
                 type="button"
                 onClick={handleExportDxf}
-                disabled={exporting !== null}
+                disabled={exporting !== null || !manifoldVerified}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-700 bg-gray-800 hover:bg-gray-700 text-xs font-bold text-gray-200 active:scale-95 transition"
               >
                 <Download className="h-4 w-4" />
                 <span>{exporting === "DXF" ? "Exporting..." : isId ? "Unduh AutoCAD R12 DXF" : "Download R12 DXF"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unsaved-Work Overwrite Confirmation (truth gate for preset / library / AI) */}
+      {pendingOverwriteAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cad-overwrite-title"
+            className="w-full max-w-sm rounded-xl bg-gray-900 border border-amber-700/60 shadow-2xl p-6 space-y-4"
+          >
+            <div className="flex items-center gap-2.5 text-amber-400">
+              <AlertTriangle className="h-5 w-5" />
+              <h3 id="cad-overwrite-title" className="font-extrabold text-sm text-white">
+                {isId ? "Timpa Perubahan Belum Disimpan?" : "Overwrite Unsaved Changes?"}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              {isId
+                ? "Lembar kerja memiliki parameter yang belum disimpan (titik amber di header). Melanjutkan akan menimpa seluruh parameter dengan desain baru."
+                : "The workspace has unsaved parameters (amber dot in the header). Continuing will overwrite all parameters with the new design."}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                ref={cancelOverwriteRef}
+                type="button"
+                autoFocus
+                onClick={() => setPendingOverwriteAction(null)}
+                className="px-3.5 py-2 min-h-[44px] rounded-xl border border-gray-700 text-xs font-semibold text-gray-300 hover:bg-gray-800 transition"
+              >
+                {isId ? "Batal, Simpan Dulu" : "Cancel, Save First"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = pendingOverwriteAction;
+                  setPendingOverwriteAction(null);
+                  action?.();
+                }}
+                className="px-4 py-2 min-h-[44px] rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+              >
+                {isId ? "Ya, Timpa" : "Yes, Overwrite"}
               </button>
             </div>
           </div>
