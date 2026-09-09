@@ -11,6 +11,7 @@ import { PrintModal } from "@/components/delivery-orders/PrintModal";
 import { ArchiveDigitizer } from "@/components/delivery-orders/ArchiveDigitizer";
 import { StatusBadge } from "@/components/delivery-orders/StatusBadge";
 import { getOrderFilterOptions, STATUS_COLOR_MAP } from "@/lib/utils/statusColors";
+import { matchesOrderSearch } from "@/lib/orders/search";
 import { DispatchConfirmModal } from "@/components/delivery-orders/DispatchConfirmModal";
 import { DeliveredCeremonyModal } from "@/components/delivery-orders/DeliveredCeremonyModal";
 import { SlipSpooledCeremonyModal } from "@/components/delivery-orders/SlipSpooledCeremonyModal";
@@ -290,15 +291,7 @@ export default function HomePage() {
   };
 
   const filteredMobileOrders = orders.filter((order) => {
-    const q = mobileSearchTerm.trim().toLowerCase();
-    const matchesSearch =
-      !q ||
-      order.orderNumber.toLowerCase().includes(q) ||
-      order.recipientName.toLowerCase().includes(q) ||
-      (order.destinationAddress && order.destinationAddress.toLowerCase().includes(q)) ||
-      (order.poNumber && order.poNumber.toLowerCase().includes(q)) ||
-      (order.driverName && order.driverName.toLowerCase().includes(q));
-
+    const matchesSearch = matchesOrderSearch(order, mobileSearchTerm);
     const matchesStatus =
       mobileStatusFilter === "ALL" ||
       (mobileStatusFilter === "ARCHIVED"
@@ -348,9 +341,16 @@ export default function HomePage() {
   // Mobile Header & Feed Filter Options (Canonical shared token config)
   const mobileFilterOptions = getOrderFilterOptions(language);
 
+  const searchMatchingMobileOrders = useMemo(
+    () => orders.filter((o) => matchesOrderSearch(o, mobileSearchTerm)),
+    [orders, mobileSearchTerm]
+  );
+
   const countMobileByStatus = (st: string) => {
-    if (st === "ALL") return orders.length;
-    return orders.filter((o) => o.status === st).length;
+    if (st === "ALL") return searchMatchingMobileOrders.length;
+    if (st === "ARCHIVED")
+      return searchMatchingMobileOrders.filter((o) => o.status === "DELIVERED" || o.status === "CANCELLED").length;
+    return searchMatchingMobileOrders.filter((o) => o.status === st).length;
   };
 
 

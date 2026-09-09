@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { DeliveryOrder, FootwearSize } from "@/types";
 import { formatShortDate } from "@/lib/utils/formatters";
 import { getOrderFilterOptions } from "@/lib/utils/statusColors";
+import { matchesOrderSearch } from "@/lib/orders/search";
 import { StatusBadge } from "./StatusBadge";
 import {
   Search,
@@ -47,16 +48,7 @@ export function OrderList({
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const q = searchTerm.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        order.orderNumber.toLowerCase().includes(q) ||
-        order.recipientName.toLowerCase().includes(q) ||
-        order.destinationAddress.toLowerCase().includes(q) ||
-        (order.poNumber && order.poNumber.toLowerCase().includes(q)) ||
-        (order.driverName && order.driverName.toLowerCase().includes(q)) ||
-        (order.vehicleNumber && order.vehicleNumber.toLowerCase().includes(q));
-
+      const matchesSearch = matchesOrderSearch(order, searchTerm);
       const matchesStatus =
         statusFilter === "ALL" ||
         (statusFilter === "ARCHIVED"
@@ -165,11 +157,18 @@ export function OrderList({
     return () => window.removeEventListener("keydown", handleSlash);
   }, []);
 
-  // Calculate live counts for filter chips
+  // Live counts for filter chips: computed over the search-matching set so
+  // the chips never contradict the visible list while typing.
+  const searchMatchingOrders = useMemo(
+    () => orders.filter((o) => matchesOrderSearch(o, searchTerm)),
+    [orders, searchTerm]
+  );
+
   const countByStatus = (st: string) => {
-    if (st === "ALL") return orders.length;
-    if (st === "ARCHIVED") return orders.filter((o) => o.status === "DELIVERED" || o.status === "CANCELLED").length;
-    return orders.filter((o) => o.status === st).length;
+    if (st === "ALL") return searchMatchingOrders.length;
+    if (st === "ARCHIVED")
+      return searchMatchingOrders.filter((o) => o.status === "DELIVERED" || o.status === "CANCELLED").length;
+    return searchMatchingOrders.filter((o) => o.status === st).length;
   };
 
   const handleResetFilters = () => {

@@ -171,11 +171,11 @@ export function DeliveredCeremonyModal({
               </div>
             </div>
 
-            {/* Factory Triad Signature Verified Pill */}
+            {/* Factory Triad Signature Pill (expectation stated honestly) */}
             <div className="pt-2 border-t border-gray-800/80 flex items-center justify-between text-[10px] font-semibold text-gray-400">
               <span className="flex items-center gap-1 text-emerald-400">
                 <PackageCheck className="h-3.5 w-3.5" />
-                <span>{isId ? "Triad Tanda Tangan Lengkap" : "Triad Signatures Verified"}</span>
+                <span>{isId ? "Tanda tangan triad diharapkan pada fisik slip" : "Triad signatures expected on the physical slip"}</span>
               </span>
               <span className="font-mono text-[10px] text-gray-500">
                 {isId ? "Penerima • Sopir • Gudang" : "Recipient • Driver • Warehouse"}
