@@ -1517,48 +1517,52 @@ export function CadStudio({ language }: CadStudioProps) {
               {foot !== "PAIR" ? (
                 <g id="single-insole-viewport" className="drop-shadow-2xl">
                   {/* Outer Cut Outline & Substrate Body (Red CNC Toolpath) */}
-                  <path
-                    key="single-cut-outline"
-                    d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                    display={showOutline ? "inline" : "none"}
-                    className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
-                  />
+                  {showOutline && (
+                    <path
+                      key="single-cut-outline"
+                      d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
+                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
+                    />
+                  )}
 
                   {/* Arch Support Plate (Red) */}
-                  <path
-                    key="single-arch-plate"
-                    d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
-                    display={showArchPlate ? "inline" : "none"}
-                    fill="rgba(239, 68, 68, 0.28)"
-                    stroke="#ef4444"
-                    strokeWidth={1.5}
-                    strokeDasharray="4,3"
-                    className="pointer-events-none"
-                  />
+                  {showArchPlate && (
+                    <path
+                      key="single-arch-plate"
+                      d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
+                      fill="rgba(239, 68, 68, 0.28)"
+                      stroke="#ef4444"
+                      strokeWidth={1.5}
+                      strokeDasharray="4,3"
+                      className="pointer-events-none"
+                    />
+                  )}
 
                   {/* Heel Cup Pad (Green) */}
-                  <path
-                    key="single-heel-cup"
-                    d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
-                    display={showHeelCup ? "inline" : "none"}
-                    fill="rgba(16, 185, 129, 0.28)"
-                    stroke="#10b981"
-                    strokeWidth={1.5}
-                    strokeDasharray="4,3"
-                    className="pointer-events-none"
-                  />
+                  {showHeelCup && (
+                    <path
+                      key="single-heel-cup"
+                      d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
+                      fill="rgba(16, 185, 129, 0.28)"
+                      stroke="#10b981"
+                      strokeWidth={1.5}
+                      strokeDasharray="4,3"
+                      className="pointer-events-none"
+                    />
+                  )}
 
                   {/* Metatarsal Cushion Dome (Cyan) */}
-                  <path
-                    key="single-metatarsal"
-                    d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
-                    display={showMetatarsal ? "inline" : "none"}
-                    fill="rgba(6, 182, 212, 0.28)"
-                    stroke="#06b6d4"
-                    strokeWidth={1.5}
-                    strokeDasharray="4,3"
-                    className="pointer-events-none"
-                  />
+                  {showMetatarsal && (
+                    <path
+                      key="single-metatarsal"
+                      d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
+                      fill="rgba(6, 182, 212, 0.28)"
+                      stroke="#06b6d4"
+                      strokeWidth={1.5}
+                      strokeDasharray="4,3"
+                      className="pointer-events-none"
+                    />
+                  )}
 
                   {/* Dimension Reference Lines & Labels */}
                   {showDimensions && (
@@ -1607,42 +1611,46 @@ export function CadStudio({ language }: CadStudioProps) {
                 <g id="pair-insole-viewport" className="drop-shadow-2xl">
                   {/* Left Foot Insole */}
                   <g id="insole-left-side">
-                    <path
-                      key="left-cut-outline"
-                      d={geometry.svgPathLeft}
-                      display={showOutline ? "inline" : "none"}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
-                    />
-                    <path
-                      key="left-arch-plate"
-                      d={geometry.archPlateSvgLeft}
-                      display={showArchPlate ? "inline" : "none"}
-                      fill="rgba(239, 68, 68, 0.28)"
-                      stroke="#ef4444"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
-                    <path
-                      key="left-heel-cup"
-                      d={geometry.heelCupSvgLeft}
-                      display={showHeelCup ? "inline" : "none"}
-                      fill="rgba(16, 185, 129, 0.28)"
-                      stroke="#10b981"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
-                    <path
-                      key="left-metatarsal"
-                      d={geometry.metatarsalSvgLeft}
-                      display={showMetatarsal ? "inline" : "none"}
-                      fill="rgba(6, 182, 212, 0.28)"
-                      stroke="#06b6d4"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
+                    {showOutline && (
+                      <path
+                        key="left-cut-outline"
+                        d={geometry.svgPathLeft}
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
+                      />
+                    )}
+                    {showArchPlate && (
+                      <path
+                        key="left-arch-plate"
+                        d={geometry.archPlateSvgLeft}
+                        fill="rgba(239, 68, 68, 0.28)"
+                        stroke="#ef4444"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    )}
+                    {showHeelCup && (
+                      <path
+                        key="left-heel-cup"
+                        d={geometry.heelCupSvgLeft}
+                        fill="rgba(16, 185, 129, 0.28)"
+                        stroke="#10b981"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    )}
+                    {showMetatarsal && (
+                      <path
+                        key="left-metatarsal"
+                        d={geometry.metatarsalSvgLeft}
+                        fill="rgba(6, 182, 212, 0.28)"
+                        stroke="#06b6d4"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
                       LEFT ({geometry.sizingLabel})
                     </text>
@@ -1650,42 +1658,46 @@ export function CadStudio({ language }: CadStudioProps) {
 
                   {/* Right Foot Insole */}
                   <g id="insole-right-side" transform={`translate(${singleW + pairGap}, 0)`}>
-                    <path
-                      key="right-cut-outline"
-                      d={geometry.svgPathRight}
-                      display={showOutline ? "inline" : "none"}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
-                    />
-                    <path
-                      key="right-arch-plate"
-                      d={geometry.archPlateSvgRight}
-                      display={showArchPlate ? "inline" : "none"}
-                      fill="rgba(239, 68, 68, 0.28)"
-                      stroke="#ef4444"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
-                    <path
-                      key="right-heel-cup"
-                      d={geometry.heelCupSvgRight}
-                      display={showHeelCup ? "inline" : "none"}
-                      fill="rgba(16, 185, 129, 0.28)"
-                      stroke="#10b981"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
-                    <path
-                      key="right-metatarsal"
-                      d={geometry.metatarsalSvgRight}
-                      display={showMetatarsal ? "inline" : "none"}
-                      fill="rgba(6, 182, 212, 0.28)"
-                      stroke="#06b6d4"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
+                    {showOutline && (
+                      <path
+                        key="right-cut-outline"
+                        d={geometry.svgPathRight}
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
+                      />
+                    )}
+                    {showArchPlate && (
+                      <path
+                        key="right-arch-plate"
+                        d={geometry.archPlateSvgRight}
+                        fill="rgba(239, 68, 68, 0.28)"
+                        stroke="#ef4444"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    )}
+                    {showHeelCup && (
+                      <path
+                        key="right-heel-cup"
+                        d={geometry.heelCupSvgRight}
+                        fill="rgba(16, 185, 129, 0.28)"
+                        stroke="#10b981"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    )}
+                    {showMetatarsal && (
+                      <path
+                        key="right-metatarsal"
+                        d={geometry.metatarsalSvgRight}
+                        fill="rgba(6, 182, 212, 0.28)"
+                        stroke="#06b6d4"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
                       RIGHT ({geometry.sizingLabel})
                     </text>
@@ -1881,7 +1893,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setShowArchPlate(!showArchPlate)}
+                      onClick={() => setShowArchPlate((prev) => !prev)}
                       className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1 transition ${
                         showArchPlate ? "bg-red-900/60 text-red-200 hover:bg-red-800/60" : "bg-gray-800 text-gray-500 line-through hover:bg-gray-700"
                       }`}
@@ -2007,7 +2019,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setShowHeelCup(!showHeelCup)}
+                      onClick={() => setShowHeelCup((prev) => !prev)}
                       className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1 transition ${
                         showHeelCup ? "bg-emerald-900/60 text-emerald-200 hover:bg-emerald-800/60" : "bg-gray-800 text-gray-500 line-through hover:bg-gray-700"
                       }`}
@@ -2090,7 +2102,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setShowMetatarsal(!showMetatarsal)}
+                      onClick={() => setShowMetatarsal((prev) => !prev)}
                       className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1 transition ${
                         showMetatarsal ? "bg-cyan-900/60 text-cyan-200 hover:bg-cyan-800/60" : "bg-gray-800 text-gray-500 line-through hover:bg-gray-700"
                       }`}
@@ -2207,9 +2219,13 @@ export function CadStudio({ language }: CadStudioProps) {
 
                 <div className="p-2.5 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-1">
                   {/* Garis Potong (Cut Outline) */}
-                  <div
-                    onClick={() => setShowOutline(!showOutline)}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showOutline}
+                    onClick={() => setShowOutline((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px] text-left"
+                    aria-label={showOutline ? (isId ? "Sembunyikan Garis Potong" : "Hide Cut Outline") : (isId ? "Tampilkan Garis Potong" : "Show Cut Outline")}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full transition ${showOutline ? "bg-red-500 ring-2 ring-red-500/30" : "bg-gray-600"}`} />
@@ -2217,25 +2233,21 @@ export function CadStudio({ language }: CadStudioProps) {
                         {isId ? "Garis Potong (Cut Outline)" : "Cut Outline"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowOutline(!showOutline);
-                      }}
-                      className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                        showOutline ? "text-red-400 bg-red-950/60 hover:bg-red-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
-                      }`}
-                      aria-label={showOutline ? (isId ? "Sembunyikan Garis Potong" : "Hide Cut Outline") : (isId ? "Tampilkan Garis Potong" : "Show Cut Outline")}
-                    >
+                    <span className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
+                      showOutline ? "text-red-400 bg-red-950/60 hover:bg-red-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
+                    }`}>
                       {showOutline ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
 
                   {/* Plat Arch TPU (Red) */}
-                  <div
-                    onClick={() => setShowArchPlate(!showArchPlate)}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showArchPlate}
+                    onClick={() => setShowArchPlate((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px] text-left"
+                    aria-label={showArchPlate ? (isId ? "Sembunyikan Plat Arch TPU" : "Hide TPU Arch Plate") : (isId ? "Tampilkan Plat Arch TPU" : "Show TPU Arch Plate")}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full transition ${showArchPlate ? "bg-red-500 ring-2 ring-red-500/30" : "bg-gray-600"}`} />
@@ -2243,25 +2255,21 @@ export function CadStudio({ language }: CadStudioProps) {
                         {isId ? "Plat Arch TPU (Red)" : "TPU Arch Plate (Red)"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowArchPlate(!showArchPlate);
-                      }}
-                      className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                        showArchPlate ? "text-red-400 bg-red-950/60 hover:bg-red-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
-                      }`}
-                      aria-label={showArchPlate ? (isId ? "Sembunyikan Plat Arch TPU" : "Hide TPU Arch Plate") : (isId ? "Tampilkan Plat Arch TPU" : "Show TPU Arch Plate")}
-                    >
+                    <span className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
+                      showArchPlate ? "text-red-400 bg-red-950/60 hover:bg-red-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
+                    }`}>
                       {showArchPlate ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
 
                   {/* Mangkuk Tumit (Green) */}
-                  <div
-                    onClick={() => setShowHeelCup(!showHeelCup)}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showHeelCup}
+                    onClick={() => setShowHeelCup((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px] text-left"
+                    aria-label={showHeelCup ? (isId ? "Sembunyikan Mangkuk Tumit" : "Hide Heel Cup") : (isId ? "Tampilkan Mangkuk Tumit" : "Show Heel Cup")}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full transition ${showHeelCup ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-gray-600"}`} />
@@ -2269,25 +2277,21 @@ export function CadStudio({ language }: CadStudioProps) {
                         {isId ? "Mangkuk Tumit (Green)" : "Heel Cup (Green)"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowHeelCup(!showHeelCup);
-                      }}
-                      className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                        showHeelCup ? "text-emerald-400 bg-emerald-950/60 hover:bg-emerald-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
-                      }`}
-                      aria-label={showHeelCup ? (isId ? "Sembunyikan Mangkuk Tumit" : "Hide Heel Cup") : (isId ? "Tampilkan Mangkuk Tumit" : "Show Heel Cup")}
-                    >
+                    <span className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
+                      showHeelCup ? "text-emerald-400 bg-emerald-950/60 hover:bg-emerald-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
+                    }`}>
                       {showHeelCup ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
 
                   {/* Bantalan Metatarsal (Cyan) */}
-                  <div
-                    onClick={() => setShowMetatarsal(!showMetatarsal)}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showMetatarsal}
+                    onClick={() => setShowMetatarsal((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px] text-left"
+                    aria-label={showMetatarsal ? (isId ? "Sembunyikan Bantalan Metatarsal" : "Hide Metatarsal Pad") : (isId ? "Tampilkan Bantalan Metatarsal" : "Show Metatarsal Pad")}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full transition ${showMetatarsal ? "bg-cyan-500 ring-2 ring-cyan-500/30" : "bg-gray-600"}`} />
@@ -2295,25 +2299,21 @@ export function CadStudio({ language }: CadStudioProps) {
                         {isId ? "Bantalan Metatarsal (Cyan)" : "Metatarsal Pad (Cyan)"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMetatarsal(!showMetatarsal);
-                      }}
-                      className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                        showMetatarsal ? "text-cyan-400 bg-cyan-950/60 hover:bg-cyan-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
-                      }`}
-                      aria-label={showMetatarsal ? (isId ? "Sembunyikan Bantalan Metatarsal" : "Hide Metatarsal Pad") : (isId ? "Tampilkan Bantalan Metatarsal" : "Show Metatarsal Pad")}
-                    >
+                    <span className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
+                      showMetatarsal ? "text-cyan-400 bg-cyan-950/60 hover:bg-cyan-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
+                    }`}>
                       {showMetatarsal ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
 
                   {/* Dimensi & Ukuran (HUD) */}
-                  <div
-                    onClick={() => setShowDimensions(!showDimensions)}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showDimensions}
+                    onClick={() => setShowDimensions((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px] text-left"
+                    aria-label={showDimensions ? (isId ? "Sembunyikan Dimensi" : "Hide Dimensions") : (isId ? "Tampilkan Dimensi" : "Show Dimensions")}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full transition ${showDimensions ? "bg-blue-500 ring-2 ring-blue-500/30" : "bg-gray-600"}`} />
@@ -2321,25 +2321,21 @@ export function CadStudio({ language }: CadStudioProps) {
                         {isId ? "Dimensi & Ukuran (HUD)" : "Dimensions HUD"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDimensions(!showDimensions);
-                      }}
-                      className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                        showDimensions ? "text-blue-400 bg-blue-950/60 hover:bg-blue-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
-                      }`}
-                      aria-label={showDimensions ? (isId ? "Sembunyikan Dimensi" : "Hide Dimensions") : (isId ? "Tampilkan Dimensi" : "Show Dimensions")}
-                    >
+                    <span className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
+                      showDimensions ? "text-blue-400 bg-blue-950/60 hover:bg-blue-900/60" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
+                    }`}>
                       {showDimensions ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
 
                   {/* Garis Kisi / Grid (mm) */}
-                  <div
-                    onClick={() => setShowGrid(!showGrid)}
-                    className="flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showGrid}
+                    onClick={() => setShowGrid((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-gray-700/40 cursor-pointer transition min-h-[44px] text-left"
+                    aria-label={showGrid ? (isId ? "Sembunyikan Kisi Grid" : "Hide Engineering Grid") : (isId ? "Tampilkan Kisi Grid" : "Show Engineering Grid")}
                   >
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full transition ${showGrid ? "bg-gray-400 ring-2 ring-gray-400/30" : "bg-gray-600"}`} />
@@ -2347,20 +2343,12 @@ export function CadStudio({ language }: CadStudioProps) {
                         {isId ? "Garis Kisi / Grid (mm)" : "Engineering Grid (mm)"}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowGrid(!showGrid);
-                      }}
-                      className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
-                        showGrid ? "text-gray-300 bg-gray-700 hover:bg-gray-600" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
-                      }`}
-                      aria-label={showGrid ? (isId ? "Sembunyikan Kisi Grid" : "Hide Engineering Grid") : (isId ? "Tampilkan Kisi Grid" : "Show Engineering Grid")}
-                    >
+                    <span className={`p-1.5 rounded-lg transition min-w-[36px] min-h-[36px] flex items-center justify-center ${
+                      showGrid ? "text-gray-300 bg-gray-700 hover:bg-gray-600" : "text-gray-500 bg-gray-900 hover:bg-gray-800"
+                    }`}>
                       {showGrid ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </button>
-                  </div>
+                    </span>
+                  </button>
                 </div>
               </div>
             )}
