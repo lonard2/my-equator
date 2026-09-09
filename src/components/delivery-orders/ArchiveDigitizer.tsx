@@ -1489,7 +1489,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           </button>
                         )}
                         {row.photoPreviewUrl && (
-                          <span className="text-[9px] font-bold uppercase text-gray-400">
+                          <span className="text-[10px] font-bold uppercase text-gray-400">
                             {isId ? "Transkrip Manual" : "Manual"}
                           </span>
                         )}
@@ -1821,7 +1821,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                             <span
                               data-testid="manual-transcript-label"
                               title={isId ? "Transkrip manual dari foto referensi" : "Manual transcript from reference photo"}
-                              className="hidden lg:inline text-[9px] font-bold uppercase text-gray-400"
+                              className="hidden lg:inline text-[10px] font-bold uppercase text-gray-400"
                             >
                               {isId ? "Manual" : "Manual"}
                             </span>
