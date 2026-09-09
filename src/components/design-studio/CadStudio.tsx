@@ -571,7 +571,7 @@ export function CadStudio({ language }: CadStudioProps) {
             <FolderOpen className="h-4 w-4 text-amber-400" />
             <span>{isId ? "Arsip CAD" : "Library"}</span>
             {savedBlueprints.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-red-900 text-red-200 text-[10px] font-mono">
+              <span className="px-1.5 py-0.5 rounded-full bg-gray-700 text-gray-200 text-[10px] font-mono">
                 {savedBlueprints.length}
               </span>
             )}
@@ -638,7 +638,10 @@ export function CadStudio({ language }: CadStudioProps) {
         </button>
         <button
           type="button"
-          onClick={() => setMobileCadView("EXPORT")}
+          onClick={() => {
+            setMobileCadView("EXPORT");
+            setInspectorTab("SPECS");
+          }}
           className={`flex-1 py-2 rounded-xl text-center transition ${
             mobileCadView === "EXPORT" ? "bg-brand text-white" : "text-gray-400 hover:text-white"
           }`}
@@ -1161,16 +1164,16 @@ export function CadStudio({ language }: CadStudioProps) {
                 <strong className="text-red-400">{geometry.sizingLabel}</strong> ({foot})
               </span>
               <span>
-                Pjg: <strong className="text-blue-400">{geometry.length} mm</strong>
+                {isId ? "Pjg" : "Len"}: <strong className="text-blue-400">{geometry.length} mm</strong>
               </span>
               <span>
-                Bola: <strong className="text-amber-400">{ballWidth} mm</strong>
+                {isId ? "Bola" : "Ball"}: <strong className="text-amber-400">{ballWidth} mm</strong>
               </span>
               <span>
-                Tumit: <strong className="text-emerald-400">{heelWidth} mm</strong>
+                {isId ? "Tumit" : "Heel"}: <strong className="text-emerald-400">{heelWidth} mm</strong>
               </span>
               <span>
-                Keliling: <strong className="text-cyan-400">{totalPerimeter} mm</strong>
+                {isId ? "Keliling" : "Perimeter"}: <strong className="text-cyan-400">{totalPerimeter} mm</strong>
               </span>
             </div>
           </div>
@@ -1492,19 +1495,19 @@ export function CadStudio({ language }: CadStudioProps) {
                   </span>
                   <div className="space-y-1 font-mono text-[11px]">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Material:</span>
+                      <span className="text-gray-400">{isId ? "Material" : "Material"}:</span>
                       <span className="font-bold text-white">{materialType}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Tebal Depan:</span>
+                      <span className="text-gray-400">{isId ? "Tebal Depan" : "Forefoot Thickness"}:</span>
                       <span className="text-white">{forefootThickness} mm</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Tebal Tumit:</span>
+                      <span className="text-gray-400">{isId ? "Tebal Tumit" : "Heel Thickness"}:</span>
                       <span className="text-white">{heelThickness} mm</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Keliling Potong:</span>
+                      <span className="text-gray-400">{isId ? "Keliling Potong" : "Cut Perimeter"}:</span>
                       <span className="text-cyan-400 font-bold">{totalPerimeter} mm</span>
                     </div>
                   </div>
@@ -1515,7 +1518,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     {isId ? "Estimasi Yield per Lembar EVA" : "EVA Sheet Yield Estimate"}
                   </span>
                   <p className="text-xs text-gray-300">
-                    Lembar Standar: <strong>1200 x 2400 mm</strong>
+                    {isId ? "Lembar Standar" : "Standard Sheet"}: <strong>1200 x 2400 mm</strong>
                   </p>
                   <p className="font-mono text-base font-black text-emerald-400">
                     ~{Math.floor((1200 * 2400) / ((geometry.bounds.width + 10) * (geometry.bounds.height + 10) * 2))}{" "}
