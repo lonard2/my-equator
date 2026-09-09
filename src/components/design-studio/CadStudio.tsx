@@ -36,6 +36,7 @@ import {
   X,
   HelpCircle,
   Keyboard,
+  Loader2,
 } from "lucide-react";
 import { CadAiModal } from "./CadAiModal";
 
