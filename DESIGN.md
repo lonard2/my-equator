@@ -237,7 +237,7 @@ The interface is intentionally flat at rest. Depth and hierarchy are established
 - Reusable `StatusBadge` component using matched-hue pill styling, semantic status dot, and bilingual translation.
 
 ### Sizing Matrix Cells
-- Monospace tabular numeric inputs with `inputmode="numeric"`. Active non-zero cells highlight in soft crimson (`bg-red-50/90 border-[#8B0000] text-[#8B0000] font-bold`).
+- Monospace tabular numeric inputs with `inputmode="numeric"`. Non-zero cells highlight in amber (data-present); crimson is reserved for danger/destructive only.
 
 ### Caliper Numeric Inputs
 - Compact, high-contrast numeric input boxes (`<input type="number" step="0.1" />`) synchronized with CAD range sliders, displaying explicit millimeter (`mm`) units and color-matched values.

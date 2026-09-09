@@ -1261,7 +1261,7 @@ export function OrderDetail({
                         className={`p-2 text-center w-10 font-mono ${
                           size >= 46
                             ? "bg-amber-50/60 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200"
-                            : "bg-red-50/40 dark:bg-red-950/20 text-red-900 dark:text-red-200"
+                            : "bg-gray-100/70 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300"
                         }`}
                       >
                         {size}
@@ -1442,7 +1442,7 @@ export function OrderDetail({
                                 onChange={(e) => handleSizeChange(item.id, size, e.target.value)}
                                 className={`w-full min-h-[44px] text-center rounded-lg border px-1 py-1 text-xs font-mono font-bold transition ${
                                   val && Number(val) > 0
-                                    ? "bg-red-50 dark:bg-red-950/60 border-brand text-brand dark:text-red-300"
+                                    ? "bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300"
                                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800"
                                 }`}
                               />

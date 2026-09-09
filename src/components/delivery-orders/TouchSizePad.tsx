@@ -54,7 +54,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
             <span>{showOversized ? (isId ? "Sembunyikan 46-48" : "Hide 46-48") : (isId ? "+ Jumbo EU 46-48" : "+ Oversize 46-48")}</span>
             {showOversized ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900/60 text-xs font-semibold text-brand dark:text-red-300">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 text-xs font-semibold text-amber-900 dark:text-amber-300">
             <span>EU {activeSize}:</span>
             <span className="font-mono font-extrabold text-sm">{currentQty}</span>
             <span className="text-[10px] text-gray-500">psg</span>
@@ -79,14 +79,14 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
                 isCurrent
                   ? "bg-brand text-white border-brand shadow-md ring-2 ring-red-300 dark:ring-red-900"
                   : qty > 0
-                  ? "bg-red-50/90 dark:bg-red-950/60 border-red-300 dark:border-red-900 text-brand dark:text-red-300 font-bold"
+                  ? "bg-amber-50/90 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 font-bold"
                   : isOversize
                   ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 hover:bg-amber-100"
                   : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               <span className="font-mono font-extrabold text-xs">{size}</span>
-              <span className={`text-[10px] font-semibold ${isCurrent ? "text-red-100" : qty > 0 ? "text-brand dark:text-red-300 font-mono font-bold" : "text-gray-400"}`}>
+              <span className={`text-[10px] font-semibold ${isCurrent ? "text-red-100" : qty > 0 ? "text-amber-800 dark:text-amber-300 font-mono font-bold" : "text-gray-400"}`}>
                 {qty > 0 ? `${qty}` : "-"}
               </span>
             </button>
@@ -165,21 +165,21 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           <button
             type="button"
             onClick={() => handleAdjust(50)}
-            className="min-h-[44px] px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 active:scale-95 transition flex items-center justify-center"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 transition flex items-center justify-center font-mono tabular-nums"
           >
             +50 psg
           </button>
           <button
             type="button"
             onClick={() => handleAdjust(100)}
-            className="min-h-[44px] px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-100 active:scale-95 transition flex items-center justify-center"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 transition flex items-center justify-center font-mono tabular-nums"
           >
             +100 psg
           </button>
           <button
             type="button"
             onClick={() => handleAdjust(200)}
-            className="min-h-[44px] px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900 text-xs font-bold text-brand dark:text-red-300 hover:bg-red-100 active:scale-95 transition flex items-center justify-center"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 transition flex items-center justify-center font-mono tabular-nums"
           >
             +200 psg
           </button>

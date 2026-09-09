@@ -386,7 +386,7 @@ export function OrderList({
                   }}
                   className={`p-3.5 pb-2.5 cursor-pointer transition-all duration-150 relative focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset ${
                     isSelected
-                      ? "bg-red-50/80 dark:bg-red-950/40"
+                      ? "bg-gray-100 dark:bg-gray-800/70"
                       : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
