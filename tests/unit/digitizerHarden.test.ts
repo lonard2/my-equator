@@ -410,6 +410,115 @@ describe("Archive Digitizer Hardening & Data Integrity (Impeccable P0 & P1)", ()
       );
     });
   });
+
+  describe("8. Impeccable Audit: Sam/Casey Accessibility & Keyboard Navigation", () => {
+    it("verifies clear-confirm dialog role, aria-modal, title label, and keyboard focus trap", () => {
+      // role="dialog", aria-modal="true", and aria-labelledby
+      assert.ok(
+        digitizerSource.includes('role="dialog"') &&
+          digitizerSource.includes('aria-modal="true"') &&
+          digitizerSource.includes('aria-labelledby="clear-dialog-title"'),
+        "Clear confirmation modal must be an accessible dialog with aria-modal and labelledby"
+      );
+
+      // Focus trap handling: Escape and Tab / Shift+Tab cycling
+      assert.ok(
+        digitizerSource.includes('if (e.key === "Escape")') &&
+          digitizerSource.includes("clearButtonRef.current?.focus()"),
+        "Escape must close modal and return focus to clear trigger button"
+      );
+      assert.ok(
+        digitizerSource.includes('e.key === "Tab"') &&
+          digitizerSource.includes("confirmClearButtonRef.current?.focus()") &&
+          digitizerSource.includes("cancelClearButtonRef.current?.focus()"),
+        "Tab and Shift+Tab must trap focus between cancel and confirm buttons"
+      );
+
+      // Cancel-first safety autofocus
+      assert.ok(
+        digitizerSource.includes("cancelClearButtonRef.current?.focus()"),
+        "Clear modal must auto-focus cancel button on open for safety"
+      );
+
+      // 44px touch targets on modal buttons
+      assert.ok(
+        digitizerSource.includes("min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-300") &&
+          digitizerSource.includes("min-h-[44px] px-3.5 py-2 rounded-xl bg-red-600"),
+        "Clear modal buttons must meet min-h-[44px] touch target requirements"
+      );
+    });
+
+    it("verifies error banner is a persistent live region with assertive priority and 44px dismiss target", () => {
+      assert.ok(
+        digitizerSource.includes('role="alert"') &&
+          digitizerSource.includes('aria-live="assertive"') &&
+          digitizerSource.includes('aria-atomic="true"'),
+        "Error banner must be an assertive atomic live region"
+      );
+      assert.ok(
+        digitizerSource.includes('className={\n          errorMessage\n            ? "p-3.5 rounded-xl') &&
+          digitizerSource.includes(': "sr-only"'),
+        "Error banner container must stay mounted in DOM as sr-only when empty so screen readers detect alerts"
+      );
+      assert.ok(
+        digitizerSource.includes('className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-red-100'),
+        "Dismiss button must meet 44x44px minimum touch target"
+      );
+    });
+
+    it("verifies desktop table delete button meets 44px touch target guidelines", () => {
+      assert.ok(
+        digitizerSource.includes('min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-gray-500 hover:text-red-700'),
+        "Desktop row delete button must be at least 44x44px"
+      );
+    });
+
+    it("verifies vertical arrow key navigation on non-size fields outside size matrix", () => {
+      // NonSizeField union type defined
+      assert.ok(
+        digitizerSource.includes('type NonSizeField = "orderNumber" | "recipientName" | "deliveryDate" | "articleCode" | "unitPrice"'),
+        "Component must define NonSizeField type for non-size column inputs"
+      );
+
+      // Data attributes and onKeyDown handlers wired to desktop fields
+      assert.ok(
+        digitizerSource.includes('data-field="orderNumber"') &&
+          digitizerSource.includes('onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "orderNumber")}'),
+        "orderNumber must support handleFieldKeyDown"
+      );
+      assert.ok(
+        digitizerSource.includes('data-field="recipientName"') &&
+          digitizerSource.includes('onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "recipientName")}'),
+        "recipientName must support handleFieldKeyDown"
+      );
+      assert.ok(
+        digitizerSource.includes('data-field="deliveryDate"') &&
+          digitizerSource.includes('onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "deliveryDate")}'),
+        "deliveryDate must support handleFieldKeyDown"
+      );
+      assert.ok(
+        digitizerSource.includes('data-field="articleCode"') &&
+          digitizerSource.includes('onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "articleCode")}'),
+        "articleCode must support handleFieldKeyDown"
+      );
+      assert.ok(
+        digitizerSource.includes('data-field="unitPrice"') &&
+          digitizerSource.includes('onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "unitPrice")}'),
+        "unitPrice must support handleFieldKeyDown"
+      );
+
+      // handleFieldKeyDown logic checks
+      assert.ok(
+        digitizerSource.includes('const handleFieldKeyDown = ('),
+        "handleFieldKeyDown handler must be implemented"
+      );
+      assert.ok(
+        digitizerSource.includes('pendingFocusRef.current = { type: "field", rowIndex: nextRowIndex, field };') &&
+          digitizerSource.includes('handleAddRow();'),
+        "ArrowDown at last row must spawn row and maintain column focus via pendingFocusRef"
+      );
+    });
+  });
 });
 
 

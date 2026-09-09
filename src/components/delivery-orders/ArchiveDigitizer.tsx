@@ -67,11 +67,19 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
   const [invalidRowIds, setInvalidRowIds] = useState<string[]>([]);
 
-  // Refs for accessible focus return
+  type NonSizeField = "orderNumber" | "recipientName" | "deliveryDate" | "articleCode" | "unitPrice";
+
+  type PendingFocus =
+    | { type: "size"; rowIndex: number; size: FootwearSize }
+    | { type: "field"; rowIndex: number; field: NonSizeField };
+
+  // Refs for accessible focus return & modal focus trap
   const helpButtonRef = useRef<HTMLButtonElement | null>(null);
   const clearButtonRef = useRef<HTMLButtonElement | null>(null);
+  const cancelClearButtonRef = useRef<HTMLButtonElement | null>(null);
+  const confirmClearButtonRef = useRef<HTMLButtonElement | null>(null);
   const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
-  const pendingFocusRef = useRef<{ rowIndex: number; size: FootwearSize } | null>(null);
+  const pendingFocusRef = useRef<PendingFocus | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
@@ -170,17 +178,35 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setRows((prev) => [...prev, newRow]);
   }, [rows, globalDate, generateOrderNumber]);
 
+  // Focus cancel button on clear confirmation dialog open (Cancel-first WCAG safety)
+  useEffect(() => {
+    if (showClearConfirm) {
+      cancelClearButtonRef.current?.focus();
+    }
+  }, [showClearConfirm]);
+
   // Deterministic row auto-spawn focus resolution (eliminates querySelector / setTimeout race condition)
   useEffect(() => {
     if (pendingFocusRef.current) {
-      const { rowIndex, size } = pendingFocusRef.current;
-      const targetInput = document.querySelector<HTMLInputElement>(
-        `input[data-row-index="${rowIndex}"][data-size="${size}"]`
-      );
-      if (targetInput) {
-        pendingFocusRef.current = null;
-        targetInput.focus();
-        targetInput.select();
+      const pending = pendingFocusRef.current;
+      pendingFocusRef.current = null;
+
+      if (pending.type === "size") {
+        const targetInput = document.querySelector<HTMLInputElement>(
+          `input[data-row-index="${pending.rowIndex}"][data-size="${pending.size}"]`
+        );
+        if (targetInput) {
+          targetInput.focus();
+          targetInput.select();
+        }
+      } else if (pending.type === "field") {
+        const targetInput = document.querySelector<HTMLInputElement>(
+          `input[data-row-index="${pending.rowIndex}"][data-field="${pending.field}"]`
+        );
+        if (targetInput) {
+          targetInput.focus();
+          targetInput.select?.();
+        }
       }
     }
   }, [rows.length]);
@@ -332,7 +358,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           }
         } else {
           // Last row in batch: spawn new row and focus first size deterministically via ref
-          pendingFocusRef.current = { rowIndex: nextRowIndex, size: FIRST_SIZE };
+          pendingFocusRef.current = { type: "size", rowIndex: nextRowIndex, size: FIRST_SIZE };
           handleAddRow();
         }
       } else {
@@ -347,7 +373,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           }
         } else {
           // Last row in batch: spawn new row and focus same size deterministically via ref
-          pendingFocusRef.current = { rowIndex: nextRowIndex, size };
+          pendingFocusRef.current = { type: "size", rowIndex: nextRowIndex, size };
           handleAddRow();
         }
       }
@@ -365,7 +391,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         }
       } else {
         // Last row: automatically spawn new row and focus same size deterministically via ref
-        pendingFocusRef.current = { rowIndex: nextRowIndex, size };
+        pendingFocusRef.current = { type: "size", rowIndex: nextRowIndex, size };
         handleAddRow();
       }
     } else if (e.key === "ArrowUp") {
@@ -377,6 +403,46 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         if (prevInput) {
           prevInput.focus();
           prevInput.select();
+        }
+      }
+    }
+  };
+
+  /**
+   * Vertical grid navigation for fields outside size cells (orderNumber, recipient, date, article, price).
+   * Up/Down arrows traverse rows in the same column; Down on the last row spawns a new row with focus retained.
+   */
+  const handleFieldKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    field: NonSizeField
+  ) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextRowIndex = rowIndex + 1;
+
+      if (nextRowIndex < rows.length) {
+        const nextInput = document.querySelector<HTMLInputElement>(
+          `input[data-row-index="${nextRowIndex}"][data-field="${field}"]`
+        );
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select?.();
+        }
+      } else {
+        // Last row: automatically spawn a new row and keep focus in same column
+        pendingFocusRef.current = { type: "field", rowIndex: nextRowIndex, field };
+        handleAddRow();
+      }
+    } else if (e.key === "ArrowUp") {
+      if (rowIndex > 0) {
+        e.preventDefault();
+        const prevInput = document.querySelector<HTMLInputElement>(
+          `input[data-row-index="${rowIndex - 1}"][data-field="${field}"]`
+        );
+        if (prevInput) {
+          prevInput.focus();
+          prevInput.select?.();
         }
       }
     }
@@ -1046,51 +1112,58 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         </div>
       )}
 
-      {/* Notifications & Progress Banners */}
-      {errorMessage && (
-        <div
-          role="alert"
-          aria-live="polite"
-          className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 space-y-2 text-red-700 dark:text-red-300 text-xs shadow-xs"
-        >
-          <div className="flex items-start justify-between gap-2 font-bold">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setErrorMessage(null);
-                setFailedOrderNumbers([]);
-              }}
-              aria-label={isId ? "Tutup notifikasi galat" : "Dismiss error notification"}
-              className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg shrink-0"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {failedOrderNumbers.length > 0 && (
-            <div className="pt-2 border-t border-red-200/70 dark:border-red-900/50 flex flex-col gap-1.5">
-              <span className="text-[11px] font-semibold text-red-600 dark:text-red-400">
-                {isId ? "Surat Jalan yang gagal disimpan:" : "Failed Delivery Orders:"}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {failedOrderNumbers.map((sj) => (
-                  <span
-                    key={sj}
-                    data-testid="failed-sj-pill"
-                    className="px-2 py-0.5 rounded-md font-mono font-bold text-[11px] bg-red-100 dark:bg-red-900/80 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800"
-                  >
-                    {sj}
-                  </span>
-                ))}
+      {/* Notifications & Progress Banners: Accessible Live Region for Error Alerts */}
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        className={
+          errorMessage
+            ? "p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 space-y-2 text-red-700 dark:text-red-300 text-xs shadow-xs animate-in fade-in"
+            : "sr-only"
+        }
+      >
+        {errorMessage && (
+          <>
+            <div className="flex items-start justify-between gap-2 font-bold">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMessage(null);
+                  setFailedOrderNumbers([]);
+                }}
+                aria-label={isId ? "Tutup notifikasi galat" : "Dismiss error notification"}
+                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg shrink-0 transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          )}
-        </div>
-      )}
+
+            {failedOrderNumbers.length > 0 && (
+              <div className="pt-2 border-t border-red-200/70 dark:border-red-900/50 flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold text-red-600 dark:text-red-400">
+                  {isId ? "Surat Jalan yang gagal disimpan:" : "Failed Delivery Orders:"}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {failedOrderNumbers.map((sj) => (
+                    <span
+                      key={sj}
+                      data-testid="failed-sj-pill"
+                      className="px-2 py-0.5 rounded-md font-mono font-bold text-[11px] bg-red-100 dark:bg-red-900/80 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800"
+                    >
+                      {sj}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {successMessage && (
         <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-xs animate-in fade-in">
@@ -1384,7 +1457,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 ))}
 
                 <th className="p-2.5 text-right w-24 bg-gray-50 dark:bg-gray-800/80 border-l border-gray-200 dark:border-gray-700">{isId ? "Total (psg)" : "Total"}</th>
-                <th className="p-2.5 text-center w-12">{isId ? "Aksi" : "Action"}</th>
+                <th className="p-2.5 text-center w-14 min-w-[56px]">{isId ? "Aksi" : "Action"}</th>
               </tr>
             </thead>
 
@@ -1430,8 +1503,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       <div className="flex items-center gap-1.5">
                         <input
                           type="text"
+                          data-row-index={rIdx}
+                          data-field="orderNumber"
                           value={row.orderNumber}
                           onChange={(e) => handleRowChange(row.id, "orderNumber", e.target.value)}
+                          onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "orderNumber")}
                           placeholder="SJ/EQ/..."
                           aria-label={isId ? `Nomor surat jalan baris ${rIdx + 1}` : `Order number row ${rIdx + 1}`}
                           className={`w-full rounded-lg border px-2 py-1 font-mono font-semibold text-xs transition focus:outline-none ${
@@ -1491,8 +1567,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       <input
                         type="text"
                         list="customer-directory-suggestions"
+                        data-row-index={rIdx}
+                        data-field="recipientName"
                         value={row.recipientName}
                         onChange={(e) => handleRowChange(row.id, "recipientName", e.target.value)}
+                        onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "recipientName")}
                         placeholder={isId ? "Ketik PT / CV Customer..." : "Customer name..."}
                         aria-label={isId ? `Nama customer baris ${rIdx + 1}` : `Customer name row ${rIdx + 1}`}
                         className={`w-full rounded-lg border px-2.5 py-1 text-xs font-semibold focus:outline-none ${
@@ -1506,9 +1585,12 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     <td className="p-2">
                       <input
                         type="date"
+                        data-row-index={rIdx}
+                        data-field="deliveryDate"
                         aria-label={isId ? `Tanggal surat jalan baris ${rIdx + 1}` : `Delivery date row ${rIdx + 1}`}
                         value={row.deliveryDate}
                         onChange={(e) => handleRowChange(row.id, "deliveryDate", e.target.value)}
+                        onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "deliveryDate")}
                         className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-1.5 py-1 font-mono text-[11px] text-gray-800 dark:text-gray-200 focus:outline-none focus:border-brand"
                       />
                     </td>
@@ -1517,8 +1599,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       <input
                         type="text"
                         list="article-catalog-suggestions"
+                        data-row-index={rIdx}
+                        data-field="articleCode"
                         value={row.articleCode}
                         onChange={(e) => handleRowChange(row.id, "articleCode", e.target.value)}
+                        onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "articleCode")}
                         placeholder="EQ-EVA-01"
                         aria-label={isId ? `Model artikel baris ${rIdx + 1}` : `Article model row ${rIdx + 1}`}
                         className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-bold text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand"
@@ -1530,8 +1615,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         type="number"
                         min="0"
                         step="500"
+                        data-row-index={rIdx}
+                        data-field="unitPrice"
                         value={row.unitPrice}
                         onChange={(e) => handleRowChange(row.id, "unitPrice", Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        onKeyDown={(e) => handleFieldKeyDown(e, rIdx, "unitPrice")}
                         aria-label={isId ? `Harga satuan baris ${rIdx + 1}` : `Unit price row ${rIdx + 1}`}
                         className="w-full text-right rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-mono font-bold text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:border-brand tabular-nums"
                       />
@@ -1575,10 +1663,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         type="button"
                         onClick={() => handleDeleteRow(row.id)}
                         aria-label={isId ? `Hapus baris ${rIdx + 1}` : `Delete row ${rIdx + 1}`}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                        className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-gray-500 hover:text-red-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand"
                         title={isId ? "Hapus Baris Ini (Undo Tersedia)" : "Delete Row (Undo Available)"}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
@@ -1655,7 +1743,28 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
       {/* Clear Table Confirmation Dialog */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setShowClearConfirm(false);
+              clearButtonRef.current?.focus();
+            } else if (e.key === "Tab") {
+              if (e.shiftKey) {
+                if (document.activeElement === cancelClearButtonRef.current) {
+                  e.preventDefault();
+                  confirmClearButtonRef.current?.focus();
+                }
+              } else {
+                if (document.activeElement === confirmClearButtonRef.current) {
+                  e.preventDefault();
+                  cancelClearButtonRef.current?.focus();
+                }
+              }
+            }
+          }}
+        >
           <div
             role="dialog"
             aria-modal="true"
@@ -1672,19 +1781,21 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
+                ref={cancelClearButtonRef}
                 type="button"
                 onClick={() => {
                   setShowClearConfirm(false);
                   clearButtonRef.current?.focus();
                 }}
-                className="px-3.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                className="min-h-[44px] px-3.5 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {isId ? "Batal, Lanjut Mengisi" : "Cancel"}
               </button>
               <button
+                ref={confirmClearButtonRef}
                 type="button"
                 onClick={handleClearAllRows}
-                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
+                className="min-h-[44px] px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {isId ? "Ya, Kosongkan Lembar Kerja" : "Clear Worksheet"}
               </button>
