@@ -29,7 +29,7 @@ export function DeliveredCeremonyModal({
   order,
   onClose,
   language,
-  autoDismissMs = 4000,
+  autoDismissMs = 6000,
 }: DeliveredCeremonyModalProps) {
   const isId = language === "id";
   const [remainingMs, setRemainingMs] = useState(autoDismissMs);
@@ -177,7 +177,7 @@ export function DeliveredCeremonyModal({
                 <PackageCheck className="h-3.5 w-3.5" />
                 <span>{isId ? "Triad Tanda Tangan Lengkap" : "Triad Signatures Verified"}</span>
               </span>
-              <span className="font-mono text-[9px] text-gray-500">
+              <span className="font-mono text-[10px] text-gray-500">
                 {isId ? "Penerima • Sopir • Gudang" : "Recipient • Driver • Warehouse"}
               </span>
             </div>

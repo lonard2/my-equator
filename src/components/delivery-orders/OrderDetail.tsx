@@ -1207,7 +1207,7 @@ export function OrderDetail({
                     }`}
                   >
                     <Grid className="h-3.5 w-3.5" />
-                    <span>Grid</span>
+                    <span>{isId ? "Tabel" : "Grid"}</span>
                   </button>
                   <button
                     type="button"
@@ -1219,7 +1219,7 @@ export function OrderDetail({
                     }`}
                   >
                     <Touchpad className="h-3.5 w-3.5" />
-                    <span>Touch Pad</span>
+                    <span>{isId ? "Pad Sentuh" : "Touch Pad"}</span>
                   </button>
                 </div>
               )}

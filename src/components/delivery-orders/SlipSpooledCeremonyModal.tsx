@@ -208,7 +208,7 @@ export function SlipSpooledCeremonyModal({
                 <Layers className="h-3.5 w-3.5" />
                 <span>{isId ? "Kertas Continuous Rangkap 3:" : "3-Ply Continuous Paper:"}</span>
               </span>
-              <div className="flex items-center gap-2 font-mono text-[9px]">
+              <div className="flex items-center gap-2 font-mono text-[10px]">
                 <span className="flex items-center gap-1 text-gray-200">
                   <span className="w-2 h-2 rounded-full bg-white border border-gray-400" />
                   <span>1. {isId ? "Putih (Penerima)" : "White (Customer)"}</span>

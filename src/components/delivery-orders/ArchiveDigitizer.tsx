@@ -877,7 +877,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                               : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40"
                           }`}
                         >
-                          <span className="text-[9px] font-mono font-bold text-gray-500 block">
+                          <span className="text-[10px] font-mono font-bold text-gray-500 block">
                             {size}
                           </span>
                           <input
