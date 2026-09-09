@@ -79,6 +79,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [photoPreviewRowId, setPhotoPreviewRowId] = useState<string | null>(null);
+  const [editingAddressRowId, setEditingAddressRowId] = useState<string | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
@@ -588,6 +589,15 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         }
       });
 
+      // Detect a trailing numeric column as the unit price (>= 1000 avoids size quantities)
+      const trailingPrice = cells
+        .slice(2 + STANDARD_SIZES.length)
+        .map((c) => parseInt(c.replace(/[^0-9]/g, ""), 10))
+        .find((n) => !isNaN(n) && n >= 1000);
+      // No detected price stages at 0: commit validation blocks until the clerk fills it.
+      // Fabricating a default (Rp 18.000) was shipping invisible economics.
+      const unitPrice = trailingPrice ?? 0;
+
       // Sequential collision-free order number generation
       let orderNumber = generateOrderNumber(nextSeq, globalDate);
       while (existingNumbers.has(orderNumber.toUpperCase())) {
@@ -606,24 +616,31 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         articleCode,
         articleName,
         sizes: sizeQtyMap,
-        unitPrice: 18000,
+        unitPrice,
         status: "idle",
       };
     });
 
     setRows((prev) => [...prev, ...newParsedRows]);
 
+    const missingPriceCount = newParsedRows.filter((r) => r.unitPrice === 0).length;
     const catalogNotice =
       offCatalogCount > 0
         ? isId
           ? ` (${offCatalogCount} artikel di luar katalog disesuaikan ke standar)`
           : ` (${offCatalogCount} off-catalog items mapped to standard)`
         : "";
+    const priceNotice =
+      missingPriceCount > 0
+        ? isId
+          ? ` ${missingPriceCount} baris belum memiliki harga satuan — kolom Harga wajib diisi sebelum menyimpan.`
+          : ` ${missingPriceCount} rows have no unit price — fill the Price column before committing.`
+        : "";
 
     setSuccessMessage(
       isId
-        ? `${newParsedRows.length} baris Surat Jalan berhasil dimasukkan ke lembar kerja (draf belum disimpan ke database)${catalogNotice}. Tekan 'Simpan ke Database' untuk menyimpan resmi.`
-        : `${newParsedRows.length} delivery orders staged to worksheet (drafts not yet committed to database)${catalogNotice}. Click 'Commit to Database' to persist.`
+        ? `${newParsedRows.length} baris Surat Jalan dimasukkan ke lembar kerja (draf belum disimpan ke database)${catalogNotice}.${priceNotice} Tekan 'Simpan ke Database' untuk menyimpan resmi.`
+        : `${newParsedRows.length} delivery orders staged to worksheet (drafts not yet committed to database)${catalogNotice}.${priceNotice} Click 'Commit to Database' to persist.`
     );
   };
 
@@ -631,6 +648,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
    * Atomic batch commitment with per-row status tracking and partial failure resilience
    */
   const handleSaveBatch = async () => {
+    // Re-entrancy guard: Ctrl+S during an active sequential commit must be a no-op
+    if (savingProgress) return;
+
     setErrorMessage(null);
     setSuccessMessage(null);
     setInvalidRowIds([]);
@@ -648,6 +668,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     const invalids: string[] = [];
     const missingNameRows: number[] = [];
     const zeroPairRows: number[] = [];
+    const missingPriceRows: number[] = [];
 
     rows.forEach((r, idx) => {
       const totalPairs = getRowTotalPairs(r.sizes);
@@ -660,6 +681,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       if (totalPairs === 0) {
         rowHasError = true;
         zeroPairRows.push(idx + 1);
+      }
+      if (!r.unitPrice || r.unitPrice <= 0) {
+        rowHasError = true;
+        missingPriceRows.push(idx + 1);
       }
 
       if (rowHasError) {
@@ -682,6 +707,13 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           isId
             ? `Jumlah ukuran masih 0 pasang pada baris: #${zeroPairRows.join(", #")}`
             : `Zero pairs entered in rows: #${zeroPairRows.join(", #")}`
+        );
+      }
+      if (missingPriceRows.length > 0) {
+        errorDetails.push(
+          isId
+            ? `Harga satuan belum diisi pada baris: #${missingPriceRows.join(", #")}`
+            : `Unit price missing in rows: #${missingPriceRows.join(", #")}`
         );
       }
 
@@ -1814,6 +1846,33 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                             : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-brand"
                         }`}
                       />
+                      {/* Destination address: visible and editable — never commit what the grid cannot show */}
+                      {editingAddressRowId === row.id ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          value={row.destinationAddress}
+                          onChange={(e) => handleRowChange(row.id, "destinationAddress", e.target.value)}
+                          onBlur={() => setEditingAddressRowId(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === "Escape") {
+                              e.preventDefault();
+                              setEditingAddressRowId(null);
+                            }
+                          }}
+                          aria-label={isId ? `Alamat tujuan baris ${rIdx + 1}` : `Destination address row ${rIdx + 1}`}
+                          className="w-full mt-1 rounded-lg border border-brand bg-white dark:bg-gray-800 px-2 py-0.5 text-[10px] text-gray-700 dark:text-gray-300 focus:outline-none"
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditingAddressRowId(row.id)}
+                          title={isId ? "Klik untuk mengubah alamat tujuan" : "Click to edit destination address"}
+                          className="block w-full text-left mt-0.5 text-[10px] text-gray-500 dark:text-gray-400 hover:text-brand dark:hover:text-red-400 truncate"
+                        >
+                          {row.destinationAddress || (isId ? "+ Tambah alamat" : "+ Add address")}
+                        </button>
+                      )}
                     </td>
 
                     <td className="p-2">
