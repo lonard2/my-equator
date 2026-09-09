@@ -23,7 +23,6 @@ import {
   Calculator,
   RefreshCw,
   X,
-  Sparkles,
   AlertCircle,
   SlidersHorizontal,
   ArrowUpDown,
@@ -520,7 +519,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           >
             <Calculator className="h-4 w-4" />
             <span className="hidden sm:inline">{isId ? "Estimasi BOM Insole" : "BOM Calculator"}</span>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-[9px] font-mono">Alt+B</kbd>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-[10px] font-mono">Alt+B</kbd>
           </button>
 
           <button
@@ -531,7 +530,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           >
             <ArrowDownRight className="h-4 w-4" />
             <span>{isId ? "Catat Mutasi" : "Stock IN/OUT"}</span>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/20 text-[9px] font-mono">Alt+M</kbd>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/20 text-[10px] font-mono">Alt+M</kbd>
           </button>
 
           <button
@@ -540,12 +539,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
               setMaterialToEdit(null);
               setIsMaterialModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold shadow-xs active:scale-95 transition"
             title={isId ? "Tambah SKU Bahan Baru (Alt+N)" : "Add New SKU (Alt+N)"}
           >
             <Plus className="h-4 w-4" />
             <span>{isId ? "Tambah SKU" : "Add SKU"}</span>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/20 text-[9px] font-mono">Alt+N</kbd>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-black/20 text-[10px] font-mono">Alt+N</kbd>
           </button>
         </div>
       </div>
@@ -764,7 +763,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Mutasi Log" : "Total Movements"}
           </span>
-          <p className="text-lg sm:text-2xl font-black text-blue-600 dark:text-blue-400 font-mono tabular-nums leading-none">
+          <p className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white font-mono tabular-nums leading-none">
             {movements.length} <span className="text-xs font-normal text-gray-500">log</span>
           </p>
         </div>
@@ -901,7 +900,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 type="button"
                 onClick={() => setCategoryFilter("ALL")}
                 aria-pressed={categoryFilter === "ALL"}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition active:scale-95 shrink-0 ${
                   categoryFilter === "ALL"
                     ? "bg-brand text-white shadow-xs"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -915,7 +914,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 type="button"
                 onClick={() => setOnlyLowStock(!onlyLowStock)}
                 aria-pressed={onlyLowStock}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1 shrink-0 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition active:scale-95 flex items-center gap-1 shrink-0 ${
                   onlyLowStock
                     ? "bg-amber-500 text-white shadow-xs"
                     : "bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60"
