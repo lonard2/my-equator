@@ -289,26 +289,6 @@ export default function HomePage() {
   }
 
   // If user is not logged in, render the factory login portal
-  if (!currentUser) {
-    return <LoginView onLoginSuccess={handleLoginSuccess} language={language} />;
-  }
-
-  const isId = language === "id";
-
-  // Summary Metrics
-  const totalVolumePairs = orders.reduce((sum, o) => sum + (o.totalQuantity || 0), 0);
-  const readyToLoadCount = orders.filter((o) => o.status === "PRINTED").length;
-  const dispatchedCount = orders.filter((o) => o.status === "DISPATCHED").length;
-  const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
-
-  // Mobile Header & Feed Filter Options (Canonical shared token config)
-  const mobileFilterOptions = getOrderFilterOptions(language);
-
-  const countMobileByStatus = (st: string) => {
-    if (st === "ALL") return orders.length;
-    return orders.filter((o) => o.status === st).length;
-  };
-
   const filteredMobileOrders = orders.filter((order) => {
     const q = mobileSearchTerm.trim().toLowerCase();
     const matchesSearch =
@@ -342,6 +322,27 @@ export default function HomePage() {
     });
     return { bySize: agg, total: totalAll };
   }, [filteredMobileOrders]);
+
+  if (!currentUser) {
+    return <LoginView onLoginSuccess={handleLoginSuccess} language={language} />;
+  }
+
+  const isId = language === "id";
+
+  // Summary Metrics
+  const totalVolumePairs = orders.reduce((sum, o) => sum + (o.totalQuantity || 0), 0);
+  const readyToLoadCount = orders.filter((o) => o.status === "PRINTED").length;
+  const dispatchedCount = orders.filter((o) => o.status === "DISPATCHED").length;
+  const completedCount = orders.filter((o) => o.status === "DELIVERED").length;
+
+  // Mobile Header & Feed Filter Options (Canonical shared token config)
+  const mobileFilterOptions = getOrderFilterOptions(language);
+
+  const countMobileByStatus = (st: string) => {
+    if (st === "ALL") return orders.length;
+    return orders.filter((o) => o.status === st).length;
+  };
+
 
   return (
     <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-950 font-sans antialiased text-gray-900 dark:text-gray-100 overflow-hidden">
