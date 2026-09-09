@@ -26,6 +26,8 @@ import {
   Sparkles,
   FolderOpen,
   Wrench,
+  PanelRightClose,
+  PanelRightOpen,
   Scissors,
   CheckCircle2,
   AlertTriangle,
