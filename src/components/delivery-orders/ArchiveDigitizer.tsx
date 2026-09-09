@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { FootwearSize, SizeBreakdown, STANDARD_SIZES } from "@/types";
+import { formatIDR } from "@/lib/utils/formatters";
 import {
   Keyboard,
   Plus,
@@ -584,6 +585,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
   const totalBatchPairs = useMemo(() => {
     return rows.reduce((sum, r) => sum + getRowTotalPairs(r.sizes), 0);
+  }, [rows]);
+
+  // Batch monetary value: the last human checkpoint shows the money, not just pairs
+  const totalBatchValueIDR = useMemo(() => {
+    return rows.reduce((sum, r) => sum + getRowTotalPairs(r.sizes) * (r.unitPrice || 0), 0);
   }, [rows]);
 
   /**
@@ -2045,6 +2051,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               <tr>
                 <td colSpan={6} className="p-3 text-gray-700 dark:text-gray-300 sticky left-0 bg-gray-100/95 dark:bg-gray-800/95 z-30">
                   {isId ? `Total Batch Rekap (${rows.length} Surat Jalan)` : `Batch Manifest Total (${rows.length} Orders)`}
+                  {totalBatchValueIDR > 0 && (
+                    <span className="ml-2 font-mono font-black text-brand dark:text-red-400 tabular-nums">
+                      {formatIDR(totalBatchValueIDR)}
+                    </span>
+                  )}
                 </td>
 
                 {STANDARD_SIZES.map((size) => {
@@ -2090,6 +2101,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
             <span className="text-[11px] text-gray-500 font-mono hidden sm:inline tabular-nums">
               {rows.length} {isId ? "baris disiapkan" : "staged rows"} • {totalBatchPairs.toLocaleString("id-ID")} psg
+              {totalBatchValueIDR > 0 && ` • ${formatIDR(totalBatchValueIDR)}`}
             </span>
           </div>
 
