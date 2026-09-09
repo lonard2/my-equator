@@ -132,32 +132,9 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   // Clear table confirm dialog
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  const [rows, setRows] = useState<BatchRow[]>([
-    {
-      id: "row-1",
-      orderNumber: "SJ/EQ/2026/08/0010",
-      recipientName: "PT BINTANG SEPATU CEMERLANG",
-      destinationAddress: "Jl. Industri Cimahi No. 45, Bandung",
-      deliveryDate: globalDate,
-      articleCode: "EQ-ARCH-01",
-      articleName: "Insole Ortho High Density EVA",
-      sizes: { 38: 50, 39: 100, 40: 150, 41: 150, 42: 100 },
-      unitPrice: 19500,
-      status: "idle",
-    },
-    {
-      id: "row-2",
-      orderNumber: "SJ/EQ/2026/08/0011",
-      recipientName: "CV BANDUNG SNEAKER WORKSHOP",
-      destinationAddress: "Jl. Soekarno Hatta No. 200, Bandung",
-      deliveryDate: globalDate,
-      articleCode: "EQ-RUN-02",
-      articleName: "Insole Dynamic Cushion Latex",
-      sizes: { 39: 30, 40: 60, 41: 60, 42: 40 },
-      unitPrice: 24000,
-      status: "idle",
-    },
-  ]);
+  // Worksheet starts empty: staged rows are real commitments against the factory DB,
+  // and demo seed rows looked pre-approved (one Ctrl+S shipped 500 fake pairs).
+  const [rows, setRows] = useState<BatchRow[]>([]);
 
   // Real-time tracking of duplicate order numbers within current batch worksheet
   const duplicateOrderNumbersInBatch = useMemo(() => {
@@ -362,11 +339,14 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setRows((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
+        // A corrected row drops its stale failure state immediately —
+        // red tint + "Gagal" must never outlive the fix that caused them.
+        const cleared = r.status === "error" ? { status: "idle" as const, errorMessage: undefined } : {};
         if (field === "articleCode") {
           const matched = ARTICLE_CATALOG.find((a) => a.code === value);
-          return { ...r, articleCode: value as string, articleName: matched ? matched.name : r.articleName };
+          return { ...r, ...cleared, articleCode: value as string, articleName: matched ? matched.name : r.articleName };
         }
-        return { ...r, [field]: value };
+        return { ...r, ...cleared, [field]: value };
       })
     );
   };
