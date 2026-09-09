@@ -598,6 +598,10 @@ export function CadStudio({ language }: CadStudioProps) {
           heelCupRadiusFactor: heelCupRadius,
           metatarsalPadSizeFactor: metatarsalSize,
           metatarsalPadYPosition: metatarsalYPos,
+          showOutline,
+          showArchPlate,
+          showHeelCup,
+          showMetatarsal,
         }),
       });
 
@@ -650,6 +654,10 @@ export function CadStudio({ language }: CadStudioProps) {
           heelCupRadiusFactor: heelCupRadius,
           metatarsalPadSizeFactor: metatarsalSize,
           metatarsalPadYPosition: metatarsalYPos,
+          showOutline,
+          showArchPlate,
+          showHeelCup,
+          showMetatarsal,
         }),
       });
 
@@ -1506,17 +1514,11 @@ export function CadStudio({ language }: CadStudioProps) {
               {/* SINGLE FOOT VIEW */}
               {foot !== "PAIR" ? (
                 <g id="single-insole-viewport" className="drop-shadow-2xl">
-                  {/* Insole Base Bed (Substrate Body) */}
-                  <path
-                    d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                    className="fill-gray-100/95 dark:fill-gray-800/95 transition-all duration-300 ease-out"
-                  />
-
-                  {/* Outer Cut Outline (Red CNC Toolpath) */}
+                  {/* Outer Cut Outline & Substrate Body (Red CNC Toolpath) */}
                   {showOutline && (
                     <path
                       d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                      className="fill-none stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -1524,7 +1526,11 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showArchPlate && (
                     <path
                       d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
-                      className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                      fill="rgba(239, 68, 68, 0.28)"
+                      stroke="#ef4444"
+                      strokeWidth={1.5}
+                      strokeDasharray="4,3"
+                      className="transition-all duration-300 ease-out pointer-events-none"
                     />
                   )}
 
@@ -1532,7 +1538,11 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showHeelCup && (
                     <path
                       d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
-                      className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                      fill="rgba(16, 185, 129, 0.28)"
+                      stroke="#10b981"
+                      strokeWidth={1.5}
+                      strokeDasharray="4,3"
+                      className="transition-all duration-300 ease-out pointer-events-none"
                     />
                   )}
 
@@ -1540,7 +1550,11 @@ export function CadStudio({ language }: CadStudioProps) {
                   {showMetatarsal && (
                     <path
                       d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
-                      className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                      fill="rgba(6, 182, 212, 0.28)"
+                      stroke="#06b6d4"
+                      strokeWidth={1.5}
+                      strokeDasharray="4,3"
+                      className="transition-all duration-300 ease-out pointer-events-none"
                     />
                   )}
 
@@ -1591,33 +1605,40 @@ export function CadStudio({ language }: CadStudioProps) {
                 <g id="pair-insole-viewport" className="drop-shadow-2xl">
                   {/* Left Foot Insole */}
                   <g id="insole-left-side">
-                    {/* Insole Base Bed (Substrate Body) */}
-                    <path
-                      d={geometry.svgPathLeft}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 transition-all duration-300 ease-out"
-                    />
                     {showOutline && (
                       <path
                         d={geometry.svgPathLeft}
-                        className="fill-none stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
                       <path
                         d={geometry.archPlateSvgLeft}
-                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                        fill="rgba(239, 68, 68, 0.28)"
+                        stroke="#ef4444"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="transition-all duration-300 ease-out pointer-events-none"
                       />
                     )}
                     {showHeelCup && (
                       <path
                         d={geometry.heelCupSvgLeft}
-                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                        fill="rgba(16, 185, 129, 0.28)"
+                        stroke="#10b981"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="transition-all duration-300 ease-out pointer-events-none"
                       />
                     )}
                     {showMetatarsal && (
                       <path
                         d={geometry.metatarsalSvgLeft}
-                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                        fill="rgba(6, 182, 212, 0.28)"
+                        stroke="#06b6d4"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="transition-all duration-300 ease-out pointer-events-none"
                       />
                     )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
@@ -1627,33 +1648,40 @@ export function CadStudio({ language }: CadStudioProps) {
 
                   {/* Right Foot Insole */}
                   <g id="insole-right-side" transform={`translate(${singleW + pairGap}, 0)`}>
-                    {/* Insole Base Bed (Substrate Body) */}
-                    <path
-                      d={geometry.svgPathRight}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 transition-all duration-300 ease-out"
-                    />
                     {showOutline && (
                       <path
                         d={geometry.svgPathRight}
-                        className="fill-none stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
                       <path
                         d={geometry.archPlateSvgRight}
-                        className="fill-red-500/20 stroke-red-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                        fill="rgba(239, 68, 68, 0.28)"
+                        stroke="#ef4444"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="transition-all duration-300 ease-out pointer-events-none"
                       />
                     )}
                     {showHeelCup && (
                       <path
                         d={geometry.heelCupSvgRight}
-                        className="fill-emerald-500/20 stroke-emerald-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                        fill="rgba(16, 185, 129, 0.28)"
+                        stroke="#10b981"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="transition-all duration-300 ease-out pointer-events-none"
                       />
                     )}
                     {showMetatarsal && (
                       <path
                         d={geometry.metatarsalSvgRight}
-                        className="fill-cyan-500/20 stroke-cyan-500 stroke-[1.2] stroke-dasharray-[3,3] transition-all duration-300 ease-out"
+                        fill="rgba(6, 182, 212, 0.28)"
+                        stroke="#06b6d4"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="transition-all duration-300 ease-out pointer-events-none"
                       />
                     )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
@@ -2441,21 +2469,21 @@ export function CadStudio({ language }: CadStudioProps) {
               <div className="p-3 rounded-xl bg-gray-800/60 border border-gray-700/60 space-y-1.5">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block">{isId ? "Audit Lapisan Layer DXF (Corel / CNC)" : "DXF Layer Color Audit"}</span>
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                  <div className="flex items-center gap-1.5 text-gray-200">
-                    <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-400" />
-                    <span>CUT_OUTLINE (Color 7)</span>
+                  <div className={`flex items-center gap-1.5 ${showOutline ? "text-gray-200" : "text-gray-500 line-through opacity-50"}`}>
+                    <span className={`w-2.5 h-2.5 rounded-full ${showOutline ? "bg-white border border-gray-400" : "bg-gray-600 border border-gray-700"}`} />
+                    <span>CUT_OUTLINE {showOutline ? "" : `(${isId ? "Nonaktif" : "Excluded"})`}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-red-300">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                    <span>ARCH_SUPPORT (Color 1)</span>
+                  <div className={`flex items-center gap-1.5 ${showArchPlate ? "text-red-300" : "text-gray-500 line-through opacity-50"}`}>
+                    <span className={`w-2.5 h-2.5 rounded-full ${showArchPlate ? "bg-red-500" : "bg-gray-600"}`} />
+                    <span>ARCH_SUPPORT {showArchPlate ? "" : `(${isId ? "Nonaktif" : "Excluded"})`}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-emerald-300">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span>HEEL_CUP (Color 3)</span>
+                  <div className={`flex items-center gap-1.5 ${showHeelCup ? "text-emerald-300" : "text-gray-500 line-through opacity-50"}`}>
+                    <span className={`w-2.5 h-2.5 rounded-full ${showHeelCup ? "bg-emerald-500" : "bg-gray-600"}`} />
+                    <span>HEEL_CUP {showHeelCup ? "" : `(${isId ? "Nonaktif" : "Excluded"})`}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-cyan-300">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
-                    <span>METATARSAL (Color 4)</span>
+                  <div className={`flex items-center gap-1.5 ${showMetatarsal ? "text-cyan-300" : "text-gray-500 line-through opacity-50"}`}>
+                    <span className={`w-2.5 h-2.5 rounded-full ${showMetatarsal ? "bg-cyan-500" : "bg-gray-600"}`} />
+                    <span>METATARSAL {showMetatarsal ? "" : `(${isId ? "Nonaktif" : "Excluded"})`}</span>
                   </div>
                 </div>
               </div>

@@ -629,13 +629,29 @@ export function calculatePerimeterLength(pts: Point2D[]): number {
   return Math.round(total * 10) / 10;
 }
 
+export interface LayerVisibilityOptions {
+  showOutline?: boolean;
+  showArchPlate?: boolean;
+  showHeelCup?: boolean;
+  showMetatarsal?: boolean;
+}
+
 /**
  * Generate AutoCAD R12 DXF Stream (CorelDRAW, AutoCAD, and CNC Cutters compatible)
  */
-export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "RIGHT"): string {
+export function generateDxfContent(
+  geometry: InsoleGeometry,
+  foot: FootType = "RIGHT",
+  layers?: LayerVisibilityOptions
+): string {
   if (foot === "PAIR") {
-    return generatePairDxfContent(geometry);
+    return generatePairDxfContent(geometry, 25, layers);
   }
+
+  const showOutline = layers?.showOutline !== false;
+  const showArchPlate = layers?.showArchPlate !== false;
+  const showHeelCup = layers?.showHeelCup !== false;
+  const showMetatarsal = layers?.showMetatarsal !== false;
 
   const points = foot === "LEFT" ? geometry.outlinePointsLeft : geometry.outlinePointsRight;
   const archPoints = foot === "LEFT" ? geometry.archPlatePointsLeft : geometry.archPlatePointsRight;
@@ -649,13 +665,19 @@ export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "R
   dxf += "9\n$INSUNITS\n70\n4\n";
   dxf += "0\nENDSEC\n";
 
+  const layersToInclude: { name: string; color: number }[] = [
+    { name: "0", color: 7 }
+  ];
+  if (showOutline) layersToInclude.push({ name: "CUT_OUTLINE", color: 7 });
+  if (showArchPlate) layersToInclude.push({ name: "ARCH_SUPPORT", color: 1 });
+  if (showHeelCup) layersToInclude.push({ name: "HEEL_CUP", color: 3 });
+  if (showMetatarsal) layersToInclude.push({ name: "METATARSAL", color: 4 });
+
   dxf += "0\nSECTION\n2\nTABLES\n";
-  dxf += "0\nTABLE\n2\nLAYER\n70\n5\n";
-  dxf += "0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nCUT_OUTLINE\n70\n0\n62\n7\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nARCH_SUPPORT\n70\n0\n62\n1\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nHEEL_CUP\n70\n0\n62\n3\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nMETATARSAL\n70\n0\n62\n4\n6\nCONTINUOUS\n";
+  dxf += `0\nTABLE\n2\nLAYER\n70\n${layersToInclude.length}\n`;
+  layersToInclude.forEach((l) => {
+    dxf += `0\nLAYER\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\nCONTINUOUS\n`;
+  });
   dxf += "0\nENDTAB\n0\nENDSEC\n";
 
   dxf += "0\nSECTION\n2\nENTITIES\n";
@@ -678,10 +700,10 @@ export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "R
     dxf += "0\nSEQEND\n";
   };
 
-  appendPolyline(points, "CUT_OUTLINE");
-  appendPolyline(archPoints, "ARCH_SUPPORT");
-  appendPolyline(heelCupPoints, "HEEL_CUP");
-  appendPolyline(metaPoints, "METATARSAL");
+  if (showOutline) appendPolyline(points, "CUT_OUTLINE");
+  if (showArchPlate) appendPolyline(archPoints, "ARCH_SUPPORT");
+  if (showHeelCup) appendPolyline(heelCupPoints, "HEEL_CUP");
+  if (showMetatarsal) appendPolyline(metaPoints, "METATARSAL");
 
   dxf += "0\nENDSEC\n0\nEOF\n";
 
@@ -691,7 +713,19 @@ export function generateDxfContent(geometry: InsoleGeometry, foot: FootType = "R
 /**
  * Generate Paired Left + Right AutoCAD R12 DXF Stream
  */
-export function generatePairDxfContent(geometry: InsoleGeometry, gapMm: number = 25): string {
+export function generatePairDxfContent(
+  geometry: InsoleGeometry,
+  gapMmOrLayers: number | LayerVisibilityOptions = 25,
+  layersOpt?: LayerVisibilityOptions
+): string {
+  const gapMm = typeof gapMmOrLayers === "number" ? gapMmOrLayers : 25;
+  const layers = typeof gapMmOrLayers === "object" ? gapMmOrLayers : layersOpt;
+
+  const showOutline = layers?.showOutline !== false;
+  const showArchPlate = layers?.showArchPlate !== false;
+  const showHeelCup = layers?.showHeelCup !== false;
+  const showMetatarsal = layers?.showMetatarsal !== false;
+
   const offsetX = geometry.bounds.width + gapMm;
 
   let dxf = "";
@@ -701,13 +735,19 @@ export function generatePairDxfContent(geometry: InsoleGeometry, gapMm: number =
   dxf += "9\n$INSUNITS\n70\n4\n";
   dxf += "0\nENDSEC\n";
 
+  const layersToInclude: { name: string; color: number }[] = [
+    { name: "0", color: 7 }
+  ];
+  if (showOutline) layersToInclude.push({ name: "CUT_OUTLINE", color: 7 });
+  if (showArchPlate) layersToInclude.push({ name: "ARCH_SUPPORT", color: 1 });
+  if (showHeelCup) layersToInclude.push({ name: "HEEL_CUP", color: 3 });
+  if (showMetatarsal) layersToInclude.push({ name: "METATARSAL", color: 4 });
+
   dxf += "0\nSECTION\n2\nTABLES\n";
-  dxf += "0\nTABLE\n2\nLAYER\n70\n5\n";
-  dxf += "0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nCUT_OUTLINE\n70\n0\n62\n7\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nARCH_SUPPORT\n70\n0\n62\n1\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nHEEL_CUP\n70\n0\n62\n3\n6\nCONTINUOUS\n";
-  dxf += "0\nLAYER\n2\nMETATARSAL\n70\n0\n62\n4\n6\nCONTINUOUS\n";
+  dxf += `0\nTABLE\n2\nLAYER\n70\n${layersToInclude.length}\n`;
+  layersToInclude.forEach((l) => {
+    dxf += `0\nLAYER\n2\n${l.name}\n70\n0\n62\n${l.color}\n6\nCONTINUOUS\n`;
+  });
   dxf += "0\nENDTAB\n0\nENDSEC\n";
 
   dxf += "0\nSECTION\n2\nENTITIES\n";
@@ -731,16 +771,16 @@ export function generatePairDxfContent(geometry: InsoleGeometry, gapMm: number =
   };
 
   // Left Insole (at X=0)
-  appendPolyline(geometry.outlinePointsLeft, "CUT_OUTLINE", 0);
-  appendPolyline(geometry.archPlatePointsLeft, "ARCH_SUPPORT", 0);
-  appendPolyline(geometry.heelCupPointsLeft, "HEEL_CUP", 0);
-  appendPolyline(geometry.metatarsalPadPointsLeft, "METATARSAL", 0);
+  if (showOutline) appendPolyline(geometry.outlinePointsLeft, "CUT_OUTLINE", 0);
+  if (showArchPlate) appendPolyline(geometry.archPlatePointsLeft, "ARCH_SUPPORT", 0);
+  if (showHeelCup) appendPolyline(geometry.heelCupPointsLeft, "HEEL_CUP", 0);
+  if (showMetatarsal) appendPolyline(geometry.metatarsalPadPointsLeft, "METATARSAL", 0);
 
   // Right Insole (at X=offsetX)
-  appendPolyline(geometry.outlinePointsRight, "CUT_OUTLINE", offsetX);
-  appendPolyline(geometry.archPlatePointsRight, "ARCH_SUPPORT", offsetX);
-  appendPolyline(geometry.heelCupPointsRight, "HEEL_CUP", offsetX);
-  appendPolyline(geometry.metatarsalPadPointsRight, "METATARSAL", offsetX);
+  if (showOutline) appendPolyline(geometry.outlinePointsRight, "CUT_OUTLINE", offsetX);
+  if (showArchPlate) appendPolyline(geometry.archPlatePointsRight, "ARCH_SUPPORT", offsetX);
+  if (showHeelCup) appendPolyline(geometry.heelCupPointsRight, "HEEL_CUP", offsetX);
+  if (showMetatarsal) appendPolyline(geometry.metatarsalPadPointsRight, "METATARSAL", offsetX);
 
   dxf += "0\nENDSEC\n0\nEOF\n";
 
@@ -750,10 +790,19 @@ export function generatePairDxfContent(geometry: InsoleGeometry, gapMm: number =
 /**
  * Generate Standalone SVG File Content
  */
-export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "RIGHT"): string {
+export function generateSvgDocument(
+  geometry: InsoleGeometry,
+  foot: FootType = "RIGHT",
+  layers?: LayerVisibilityOptions
+): string {
   if (foot === "PAIR") {
-    return generatePairSvgDocument(geometry);
+    return generatePairSvgDocument(geometry, 25, layers);
   }
+
+  const showOutline = layers?.showOutline !== false;
+  const showArchPlate = layers?.showArchPlate !== false;
+  const showHeelCup = layers?.showHeelCup !== false;
+  const showMetatarsal = layers?.showMetatarsal !== false;
 
   const path = foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight;
   const arch = foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight;
@@ -773,10 +822,10 @@ export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "
     .text-label { font-family: monospace; font-size: 8px; fill: #64748b; font-weight: bold; }
   </style>
   <g id="insole-design">
-    <path class="cut-outline" d="${path}" />
-    <path class="arch-support" d="${arch}" />
-    <path class="heel-cup" d="${heel}" />
-    <path class="metatarsal" d="${meta}" />
+    ${showOutline ? `<path class="cut-outline" d="${path}" />` : ""}
+    ${showArchPlate ? `<path class="arch-support" d="${arch}" />` : ""}
+    ${showHeelCup ? `<path class="heel-cup" d="${heel}" />` : ""}
+    ${showMetatarsal ? `<path class="metatarsal" d="${meta}" />` : ""}
     <text x="15" y="${h - 15}" class="text-label">EQUATOR INSOLE ${geometry.sizingLabel} (${foot}) - L:${geometry.length}mm W:${geometry.ballWidth}mm</text>
   </g>
 </svg>`;
@@ -785,7 +834,19 @@ export function generateSvgDocument(geometry: InsoleGeometry, foot: FootType = "
 /**
  * Generate Combined Paired SVG File Content
  */
-export function generatePairSvgDocument(geometry: InsoleGeometry, gapMm: number = 25): string {
+export function generatePairSvgDocument(
+  geometry: InsoleGeometry,
+  gapMmOrLayers: number | LayerVisibilityOptions = 25,
+  layersOpt?: LayerVisibilityOptions
+): string {
+  const gapMm = typeof gapMmOrLayers === "number" ? gapMmOrLayers : 25;
+  const layers = typeof gapMmOrLayers === "object" ? gapMmOrLayers : layersOpt;
+
+  const showOutline = layers?.showOutline !== false;
+  const showArchPlate = layers?.showArchPlate !== false;
+  const showHeelCup = layers?.showHeelCup !== false;
+  const showMetatarsal = layers?.showMetatarsal !== false;
+
   const singleW = geometry.bounds.width;
   const totalW = singleW * 2 + gapMm;
   const h = geometry.bounds.height;
@@ -800,17 +861,17 @@ export function generatePairSvgDocument(geometry: InsoleGeometry, gapMm: number 
     .text-label { font-family: monospace; font-size: 8px; fill: #64748b; font-weight: bold; }
   </style>
   <g id="insole-pair-left" transform="translate(0, 0)">
-    <path class="cut-outline" d="${geometry.svgPathLeft}" />
-    <path class="arch-support" d="${geometry.archPlateSvgLeft}" />
-    <path class="heel-cup" d="${geometry.heelCupSvgLeft}" />
-    <path class="metatarsal" d="${geometry.metatarsalSvgLeft}" />
+    ${showOutline ? `<path class="cut-outline" d="${geometry.svgPathLeft}" />` : ""}
+    ${showArchPlate ? `<path class="arch-support" d="${geometry.archPlateSvgLeft}" />` : ""}
+    ${showHeelCup ? `<path class="heel-cup" d="${geometry.heelCupSvgLeft}" />` : ""}
+    ${showMetatarsal ? `<path class="metatarsal" d="${geometry.metatarsalSvgLeft}" />` : ""}
     <text x="15" y="${h - 15}" class="text-label">EQUATOR INSOLE ${geometry.sizingLabel} (LEFT)</text>
   </g>
   <g id="insole-pair-right" transform="translate(${singleW + gapMm}, 0)">
-    <path class="cut-outline" d="${geometry.svgPathRight}" />
-    <path class="arch-support" d="${geometry.archPlateSvgRight}" />
-    <path class="heel-cup" d="${geometry.heelCupSvgRight}" />
-    <path class="metatarsal" d="${geometry.metatarsalSvgRight}" />
+    ${showOutline ? `<path class="cut-outline" d="${geometry.svgPathRight}" />` : ""}
+    ${showArchPlate ? `<path class="arch-support" d="${geometry.archPlateSvgRight}" />` : ""}
+    ${showHeelCup ? `<path class="heel-cup" d="${geometry.heelCupSvgRight}" />` : ""}
+    ${showMetatarsal ? `<path class="metatarsal" d="${geometry.metatarsalSvgRight}" />` : ""}
     <text x="15" y="${h - 15}" class="text-label">EQUATOR INSOLE ${geometry.sizingLabel} (RIGHT) - L:${geometry.length}mm</text>
   </g>
 </svg>`;

@@ -6,7 +6,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const foot: FootType = body.foot || "RIGHT";
     const geometry = buildInsoleGeometry(body);
-    const svgContent = generateSvgDocument(geometry, foot);
+    const svgContent = generateSvgDocument(geometry, foot, {
+      showOutline: body.showOutline,
+      showArchPlate: body.showArchPlate,
+      showHeelCup: body.showHeelCup,
+      showMetatarsal: body.showMetatarsal,
+    });
 
     const filename = `Equator_Insole_EU${geometry.size}_${foot}_${Date.now()}.svg`;
 
