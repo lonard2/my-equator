@@ -1515,53 +1515,57 @@ export function CadStudio({ language }: CadStudioProps) {
               )}
               {/* SINGLE FOOT VIEW */}
               {foot !== "PAIR" ? (
-                <g id="single-insole-viewport" className="drop-shadow-2xl">
+                <g id="single-insole-viewport">
                   {/* Outer Cut Outline & Substrate Body (Red CNC Toolpath) */}
                   {showOutline && (
-                    <path
-                      key="single-cut-outline"
-                      d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
-                    />
+                    <g key="single-layer-outline" id="single-layer-outline">
+                      <path
+                        d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
+                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] pointer-events-none"
+                      />
+                    </g>
                   )}
 
                   {/* Arch Support Plate (Red) */}
                   {showArchPlate && (
-                    <path
-                      key="single-arch-plate"
-                      d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
-                      fill="rgba(239, 68, 68, 0.28)"
-                      stroke="#ef4444"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
+                    <g key="single-layer-arch-plate" id="single-layer-arch-plate">
+                      <path
+                        d={foot === "LEFT" ? geometry.archPlateSvgLeft : geometry.archPlateSvgRight}
+                        fill="rgba(239, 68, 68, 0.28)"
+                        stroke="#ef4444"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    </g>
                   )}
 
                   {/* Heel Cup Pad (Green) */}
                   {showHeelCup && (
-                    <path
-                      key="single-heel-cup"
-                      d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
-                      fill="rgba(16, 185, 129, 0.28)"
-                      stroke="#10b981"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
+                    <g key="single-layer-heel-cup" id="single-layer-heel-cup">
+                      <path
+                        d={foot === "LEFT" ? geometry.heelCupSvgLeft : geometry.heelCupSvgRight}
+                        fill="rgba(16, 185, 129, 0.28)"
+                        stroke="#10b981"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    </g>
                   )}
 
                   {/* Metatarsal Cushion Dome (Cyan) */}
                   {showMetatarsal && (
-                    <path
-                      key="single-metatarsal"
-                      d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
-                      fill="rgba(6, 182, 212, 0.28)"
-                      stroke="#06b6d4"
-                      strokeWidth={1.5}
-                      strokeDasharray="4,3"
-                      className="pointer-events-none"
-                    />
+                    <g key="single-layer-metatarsal" id="single-layer-metatarsal">
+                      <path
+                        d={foot === "LEFT" ? geometry.metatarsalSvgLeft : geometry.metatarsalSvgRight}
+                        fill="rgba(6, 182, 212, 0.28)"
+                        stroke="#06b6d4"
+                        strokeWidth={1.5}
+                        strokeDasharray="4,3"
+                        className="pointer-events-none"
+                      />
+                    </g>
                   )}
 
                   {/* Dimension Reference Lines & Labels */}
@@ -1608,48 +1612,52 @@ export function CadStudio({ language }: CadStudioProps) {
                 </g>
               ) : (
                 /* Symmetrical Pair View Mode */
-                <g id="pair-insole-viewport" className="drop-shadow-2xl">
+                <g id="pair-insole-viewport">
                   {/* Left Foot Insole */}
                   <g id="insole-left-side">
                     {showOutline && (
-                      <path
-                        key="left-cut-outline"
-                        d={geometry.svgPathLeft}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
-                      />
+                      <g key="left-layer-outline" id="left-layer-outline">
+                        <path
+                          d={geometry.svgPathLeft}
+                          className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] pointer-events-none"
+                        />
+                      </g>
                     )}
                     {showArchPlate && (
-                      <path
-                        key="left-arch-plate"
-                        d={geometry.archPlateSvgLeft}
-                        fill="rgba(239, 68, 68, 0.28)"
-                        stroke="#ef4444"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,3"
-                        className="pointer-events-none"
-                      />
+                      <g key="left-layer-arch-plate" id="left-layer-arch-plate">
+                        <path
+                          d={geometry.archPlateSvgLeft}
+                          fill="rgba(239, 68, 68, 0.28)"
+                          stroke="#ef4444"
+                          strokeWidth={1.5}
+                          strokeDasharray="4,3"
+                          className="pointer-events-none"
+                        />
+                      </g>
                     )}
                     {showHeelCup && (
-                      <path
-                        key="left-heel-cup"
-                        d={geometry.heelCupSvgLeft}
-                        fill="rgba(16, 185, 129, 0.28)"
-                        stroke="#10b981"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,3"
-                        className="pointer-events-none"
-                      />
+                      <g key="left-layer-heel-cup" id="left-layer-heel-cup">
+                        <path
+                          d={geometry.heelCupSvgLeft}
+                          fill="rgba(16, 185, 129, 0.28)"
+                          stroke="#10b981"
+                          strokeWidth={1.5}
+                          strokeDasharray="4,3"
+                          className="pointer-events-none"
+                        />
+                      </g>
                     )}
                     {showMetatarsal && (
-                      <path
-                        key="left-metatarsal"
-                        d={geometry.metatarsalSvgLeft}
-                        fill="rgba(6, 182, 212, 0.28)"
-                        stroke="#06b6d4"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,3"
-                        className="pointer-events-none"
-                      />
+                      <g key="left-layer-metatarsal" id="left-layer-metatarsal">
+                        <path
+                          d={geometry.metatarsalSvgLeft}
+                          fill="rgba(6, 182, 212, 0.28)"
+                          stroke="#06b6d4"
+                          strokeWidth={1.5}
+                          strokeDasharray="4,3"
+                          className="pointer-events-none"
+                        />
+                      </g>
                     )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
                       LEFT ({geometry.sizingLabel})
@@ -1659,44 +1667,48 @@ export function CadStudio({ language }: CadStudioProps) {
                   {/* Right Foot Insole */}
                   <g id="insole-right-side" transform={`translate(${singleW + pairGap}, 0)`}>
                     {showOutline && (
-                      <path
-                        key="right-cut-outline"
-                        d={geometry.svgPathRight}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md pointer-events-none"
-                      />
+                      <g key="right-layer-outline" id="right-layer-outline">
+                        <path
+                          d={geometry.svgPathRight}
+                          className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] pointer-events-none"
+                        />
+                      </g>
                     )}
                     {showArchPlate && (
-                      <path
-                        key="right-arch-plate"
-                        d={geometry.archPlateSvgRight}
-                        fill="rgba(239, 68, 68, 0.28)"
-                        stroke="#ef4444"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,3"
-                        className="pointer-events-none"
-                      />
+                      <g key="right-layer-arch-plate" id="right-layer-arch-plate">
+                        <path
+                          d={geometry.archPlateSvgRight}
+                          fill="rgba(239, 68, 68, 0.28)"
+                          stroke="#ef4444"
+                          strokeWidth={1.5}
+                          strokeDasharray="4,3"
+                          className="pointer-events-none"
+                        />
+                      </g>
                     )}
                     {showHeelCup && (
-                      <path
-                        key="right-heel-cup"
-                        d={geometry.heelCupSvgRight}
-                        fill="rgba(16, 185, 129, 0.28)"
-                        stroke="#10b981"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,3"
-                        className="pointer-events-none"
-                      />
+                      <g key="right-layer-heel-cup" id="right-layer-heel-cup">
+                        <path
+                          d={geometry.heelCupSvgRight}
+                          fill="rgba(16, 185, 129, 0.28)"
+                          stroke="#10b981"
+                          strokeWidth={1.5}
+                          strokeDasharray="4,3"
+                          className="pointer-events-none"
+                        />
+                      </g>
                     )}
                     {showMetatarsal && (
-                      <path
-                        key="right-metatarsal"
-                        d={geometry.metatarsalSvgRight}
-                        fill="rgba(6, 182, 212, 0.28)"
-                        stroke="#06b6d4"
-                        strokeWidth={1.5}
-                        strokeDasharray="4,3"
-                        className="pointer-events-none"
-                      />
+                      <g key="right-layer-metatarsal" id="right-layer-metatarsal">
+                        <path
+                          d={geometry.metatarsalSvgRight}
+                          fill="rgba(6, 182, 212, 0.28)"
+                          stroke="#06b6d4"
+                          strokeWidth={1.5}
+                          strokeDasharray="4,3"
+                          className="pointer-events-none"
+                        />
+                      </g>
                     )}
                     <text x={singleW / 2} y={vbH - 10} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
                       RIGHT ({geometry.sizingLabel})
