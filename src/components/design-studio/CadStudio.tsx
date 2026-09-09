@@ -1370,28 +1370,6 @@ export function CadStudio({ language }: CadStudioProps) {
           }}
           style={{ touchAction: "none" }}
         >
-          {/* Full-canvas grid backdrop (CSS pattern, pans + zooms with the viewport) */}
-          {showGrid && (
-            <div
-              className="absolute inset-0 pointer-events-none opacity-15"
-              style={{
-                backgroundImage: `
-                  linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(255,255,255,0.12) 1px, transparent 1px),
-                  linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)
-                `,
-                backgroundSize: `
-                  ${20 * zoomScale}px ${20 * zoomScale}px,
-                  ${20 * zoomScale}px ${20 * zoomScale}px,
-                  ${4 * zoomScale}px ${4 * zoomScale}px,
-                  ${4 * zoomScale}px ${4 * zoomScale}px
-                `,
-                backgroundPosition: `${panOffset.x}px ${panOffset.y}px`,
-              }}
-            />
-          )}
-
           {/* Floating Viewport Overlay Toolbar */}
           <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between pointer-events-none">
             <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-700 shadow-xl text-white pointer-events-auto">
@@ -1479,10 +1457,11 @@ export function CadStudio({ language }: CadStudioProps) {
               role="img"
               aria-label={isId ? `Pratinjau vektor CAD insole ${geometry.sizingLabel} ${foot}` : `CAD insole vector preview ${geometry.sizingLabel} ${foot}`}
               viewBox={`0 0 ${vbW} ${vbH}`}
-              className="drop-shadow-2xl"
+              className="overflow-visible"
               style={{
                 width: `${vbW * (foot === "PAIR" ? 1.15 : 1.45)}px`,
                 height: `${vbH * (foot === "PAIR" ? 1.15 : 1.45)}px`,
+                overflow: "visible",
               }}
               onPointerMove={(e) => {
                 const svg = e.currentTarget;
@@ -1510,20 +1489,20 @@ export function CadStudio({ language }: CadStudioProps) {
                 </pattern>
               </defs>
 
-              {/* mm-true grid (extends 3x beyond viewBox edges so it fills the canvas at any pan) */}
+              {/* True Millimeter CAD Engineering Grid (seamless canvas, no bounding box cutoff) */}
               {showGrid && (
                 <rect
-                  x={-vbW}
-                  y={-vbH}
-                  width={vbW * 3}
-                  height={vbH * 3}
+                  x={-5000}
+                  y={-5000}
+                  width={10000 + vbW}
+                  height={10000 + vbH}
                   fill="url(#cad-grid-50mm)"
-                  className="pointer-events-none opacity-30"
+                  className="pointer-events-none opacity-25"
                 />
               )}
               {/* SINGLE FOOT VIEW */}
               {foot !== "PAIR" ? (
-                <g id="single-insole-viewport">
+                <g id="single-insole-viewport" className="drop-shadow-2xl">
                   {/* Outer Cut Outline */}
                   {showOutline && (
                     <path
@@ -1600,7 +1579,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 </g>
               ) : (
                 /* Symmetrical Pair View Mode */
-                <g id="pair-insole-viewport">
+                <g id="pair-insole-viewport" className="drop-shadow-2xl">
                   {/* Left Foot Insole */}
                   <g id="insole-left-side">
                     {showOutline && (
