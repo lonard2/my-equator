@@ -70,10 +70,26 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   // Refs for accessible focus return
   const helpButtonRef = useRef<HTMLButtonElement | null>(null);
   const clearButtonRef = useRef<HTMLButtonElement | null>(null);
+  const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
   const undoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Date overwrite confirmation & undo state
+  const [pendingDateChange, setPendingDateChange] = useState<{
+    targetDate: string;
+    label: string;
+    offsetDays?: number;
+  } | null>(null);
+
+  const [dateUndoBuffer, setDateUndoBuffer] = useState<{
+    previousGlobalDate: string;
+    previousDates: { id: string; deliveryDate: string }[];
+    newDate: string;
+  } | null>(null);
+
+  const dateUndoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clear table confirm dialog
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -105,6 +121,22 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     },
   ]);
 
+  // Real-time tracking of duplicate order numbers within current batch worksheet
+  const duplicateOrderNumbersInBatch = useMemo(() => {
+    const counts = new Map<string, number>();
+    rows.forEach((r) => {
+      const clean = r.orderNumber.trim().toUpperCase();
+      if (clean) {
+        counts.set(clean, (counts.get(clean) || 0) + 1);
+      }
+    });
+    const duplicates = new Set<string>();
+    counts.forEach((count, key) => {
+      if (count > 1) duplicates.add(key);
+    });
+    return duplicates;
+  }, [rows]);
+
   const generateOrderNumber = useCallback((indexOffset: number, dateStr: string) => {
     const parts = dateStr.split("-");
     const y = parts[0] || "2026";
@@ -114,10 +146,17 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   }, []);
 
   const handleAddRow = useCallback(() => {
-    const nextSeq = rows.length + 10;
+    let nextSeq = rows.length + 1;
+    let newOrderNumber = generateOrderNumber(nextSeq, globalDate);
+    const existingNumbers = new Set(rows.map((r) => r.orderNumber.trim().toUpperCase()));
+    while (existingNumbers.has(newOrderNumber.toUpperCase())) {
+      nextSeq++;
+      newOrderNumber = generateOrderNumber(nextSeq, globalDate);
+    }
+
     const newRow: BatchRow = {
       id: `row-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      orderNumber: generateOrderNumber(nextSeq, globalDate),
+      orderNumber: newOrderNumber,
       recipientName: "",
       destinationAddress: "Bandung, Jawa Barat",
       deliveryDate: globalDate,
@@ -128,19 +167,89 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       status: "idle",
     };
     setRows((prev) => [...prev, newRow]);
-  }, [rows.length, globalDate, generateOrderNumber]);
+  }, [rows, globalDate, generateOrderNumber]);
 
-  const handleApplyGlobalDate = () => {
-    setRows((prev) => prev.map((r) => ({ ...r, deliveryDate: globalDate })));
-  };
-
-  const setDateOffset = (offsetDays: number) => {
+  const getOffsetDateStr = useCallback((offsetDays: number) => {
     const d = new Date();
     d.setDate(d.getDate() - offsetDays);
-    const dateStr = d.toISOString().split("T")[0];
-    setGlobalDate(dateStr);
-    setRows((prev) => prev.map((r) => ({ ...r, deliveryDate: dateStr })));
-  };
+    return d.toISOString().split("T")[0];
+  }, []);
+
+  const isTodayActive = globalDate === getOffsetDateStr(0);
+  const isYesterdayActive = globalDate === getOffsetDateStr(1);
+  const isWeekAgoActive = globalDate === getOffsetDateStr(7);
+
+  const applyDateChangeWithUndo = useCallback(
+    (targetDate: string) => {
+      if (dateUndoTimeoutRef.current) clearTimeout(dateUndoTimeoutRef.current);
+
+      // Snapshot current dates for 1-click Undo
+      setDateUndoBuffer({
+        previousGlobalDate: globalDate,
+        previousDates: rows.map((r) => ({ id: r.id, deliveryDate: r.deliveryDate })),
+        newDate: targetDate,
+      });
+
+      setGlobalDate(targetDate);
+      setRows((prev) => prev.map((r) => ({ ...r, deliveryDate: targetDate })));
+      setPendingDateChange(null);
+
+      // Auto-dismiss undo notification after 6 seconds
+      dateUndoTimeoutRef.current = setTimeout(() => {
+        setDateUndoBuffer(null);
+      }, 6000);
+    },
+    [globalDate, rows]
+  );
+
+  const executeOrConfirmDateChange = useCallback(
+    (targetDate: string, label: string, offsetDays?: number) => {
+      // Check if any row has a date differing from current globalDate
+      const divergentRows = rows.filter((r) => r.deliveryDate !== globalDate);
+
+      if (divergentRows.length > 0) {
+        setPendingDateChange({ targetDate, label, offsetDays });
+      } else {
+        applyDateChangeWithUndo(targetDate);
+      }
+    },
+    [rows, globalDate, applyDateChangeWithUndo]
+  );
+
+  const requestDateOffset = useCallback(
+    (offsetDays: number) => {
+      const targetDate = getOffsetDateStr(offsetDays);
+      const label =
+        offsetDays === 0
+          ? isId ? "Hari Ini" : "Today"
+          : offsetDays === 1
+          ? isId ? "Kemarin" : "Yesterday"
+          : isId ? "Minggu Lalu" : "7 Days Ago";
+
+      executeOrConfirmDateChange(targetDate, label, offsetDays);
+    },
+    [getOffsetDateStr, isId, executeOrConfirmDateChange]
+  );
+
+  const requestApplyGlobalDate = useCallback(() => {
+    executeOrConfirmDateChange(
+      globalDate,
+      isId ? "Tanggal Massal" : "Global Date"
+    );
+  }, [globalDate, isId, executeOrConfirmDateChange]);
+
+  const handleUndoDateChange = useCallback(() => {
+    if (!dateUndoBuffer) return;
+    setRows((prev) =>
+      prev.map((r) => {
+        const found = dateUndoBuffer.previousDates.find((p) => p.id === r.id);
+        return found ? { ...r, deliveryDate: found.deliveryDate } : r;
+      })
+    );
+    setGlobalDate(dateUndoBuffer.previousGlobalDate);
+    setDateUndoBuffer(null);
+    if (dateUndoTimeoutRef.current) clearTimeout(dateUndoTimeoutRef.current);
+  }, [dateUndoBuffer]);
 
   const handleRowChange = (id: string, field: keyof BatchRow, value: any) => {
     setInvalidRowIds((prev) => prev.filter((rowId) => rowId !== id));
@@ -382,6 +491,94 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       return;
     }
 
+    // 1. In-Batch Duplicate SJ Collision Guard
+    if (duplicateOrderNumbersInBatch.size > 0) {
+      const duplicateList = Array.from(duplicateOrderNumbersInBatch);
+      const collidingRowIds = rows
+        .filter((r) => duplicateOrderNumbersInBatch.has(r.orderNumber.trim().toUpperCase()))
+        .map((r) => r.id);
+
+      setRows((prev) =>
+        prev.map((r) => {
+          if (duplicateOrderNumbersInBatch.has(r.orderNumber.trim().toUpperCase())) {
+            return {
+              ...r,
+              status: "error",
+              errorMessage: isId
+                ? "Duplikasi nomor Surat Jalan dalam lembar kerja ini"
+                : "Duplicate order number within this worksheet",
+            };
+          }
+          return r;
+        })
+      );
+
+      setInvalidRowIds(collidingRowIds);
+      setFailedOrderNumbers(duplicateList);
+      setErrorMessage(
+        isId
+          ? `Terdapat ${duplicateList.length} nomor Surat Jalan duplikat di lembar kerja: ${duplicateList.join(", ")}. Setiap Surat Jalan wajib memiliki nomor unik sebelum disimpan.`
+          : `Found ${duplicateList.length} duplicate Order Numbers in worksheet: ${duplicateList.join(", ")}. Each order must have a unique number before saving.`
+      );
+
+      const firstInvalidEl = document.querySelector(`[data-row-id="${collidingRowIds[0]}"]`);
+      firstInvalidEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // 2. Database Existing SJ Collision Guard
+    try {
+      const checkRes = await fetch("/api/orders");
+      const checkJson = await checkRes.json();
+      if (checkJson.success && Array.isArray(checkJson.data)) {
+        const existingDbSet = new Set(
+          checkJson.data
+            .map((o: any) => o.orderNumber?.trim().toUpperCase())
+            .filter(Boolean)
+        );
+
+        const dbCollisions = rows
+          .map((r) => r.orderNumber.trim())
+          .filter((num) => existingDbSet.has(num.toUpperCase()));
+
+        if (dbCollisions.length > 0) {
+          const uniqueCollisions = Array.from(new Set(dbCollisions));
+          const collidingRowIds = rows
+            .filter((r) => uniqueCollisions.some((c) => c.toUpperCase() === r.orderNumber.trim().toUpperCase()))
+            .map((r) => r.id);
+
+          setRows((prev) =>
+            prev.map((r) => {
+              if (uniqueCollisions.some((c) => c.toUpperCase() === r.orderNumber.trim().toUpperCase())) {
+                return {
+                  ...r,
+                  status: "error",
+                  errorMessage: isId
+                    ? "Nomor Surat Jalan sudah terdaftar di database pabrik"
+                    : "Order number already registered in factory database",
+                };
+              }
+              return r;
+            })
+          );
+
+          setInvalidRowIds(collidingRowIds);
+          setFailedOrderNumbers(uniqueCollisions);
+          setErrorMessage(
+            isId
+              ? `Nomor Surat Jalan sudah terdaftar di database: ${uniqueCollisions.join(", ")}. Ubah nomor pada baris yang ditandai agar tidak menimpa data yang sudah ada.`
+              : `Order numbers already registered in database: ${uniqueCollisions.join(", ")}. Please update marked rows to avoid collisions.`
+          );
+
+          const firstInvalidEl = document.querySelector(`[data-row-id="${collidingRowIds[0]}"]`);
+          firstInvalidEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Pre-commit DB collision check error:", err);
+    }
+
     setSavingProgress({ current: 1, total: rows.length, orderNumber: rows[0].orderNumber });
 
     const remainingRows: BatchRow[] = [];
@@ -493,6 +690,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           setShowClearConfirm(false);
           clearButtonRef.current?.focus();
         }
+        if (pendingDateChange) {
+          setPendingDateChange(null);
+          cancelDateButtonRef.current?.focus();
+        }
       }
       if (e.altKey && (e.key === "n" || e.key === "N")) {
         e.preventDefault();
@@ -505,7 +706,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleAddRow, handleSaveBatch, showShortcuts, showClearConfirm]);
+  }, [handleAddRow, handleSaveBatch, showShortcuts, showClearConfirm, pendingDateChange]);
 
   return (
     <div
@@ -565,8 +766,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-white leading-tight">
-                {isId ? "Archive & Paper Quick Digitizer" : "Archive & Paper Quick Digitizer"}
+              <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+                {isId ? "Digitalisasi Massal Arsip Surat Jalan" : "Batch Delivery Order Digitizer"}
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 border border-red-200 dark:border-red-900/60">
                 BATCH
@@ -582,28 +783,40 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
 
         {/* Global Date & Action Tools */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Quick Date Offset Chips */}
+          {/* Quick Date Offset Chips with active state and confirm/undo guard */}
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
             <button
               type="button"
-              onClick={() => setDateOffset(0)}
-              className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs hover:bg-gray-50 transition"
+              onClick={() => requestDateOffset(0)}
+              className={`px-2.5 py-1 rounded-xl text-[10px] transition ${
+                isTodayActive
+                  ? "font-extrabold bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs"
+                  : "font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
+              }`}
               title={isId ? "Atur tanggal ke hari ini" : "Set date to today"}
             >
               {isId ? "Hari Ini" : "Today"}
             </button>
             <button
               type="button"
-              onClick={() => setDateOffset(1)}
-              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              onClick={() => requestDateOffset(1)}
+              className={`px-2.5 py-1 rounded-xl text-[10px] transition ${
+                isYesterdayActive
+                  ? "font-extrabold bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs"
+                  : "font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
+              }`}
               title={isId ? "Atur tanggal ke kemarin (-1 hari)" : "Set date to yesterday"}
             >
               {isId ? "Kemarin" : "-1 Day"}
             </button>
             <button
               type="button"
-              onClick={() => setDateOffset(7)}
-              className="px-2.5 py-1 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              onClick={() => requestDateOffset(7)}
+              className={`px-2.5 py-1 rounded-xl text-[10px] transition ${
+                isWeekAgoActive
+                  ? "font-extrabold bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs"
+                  : "font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/60"
+              }`}
               title={isId ? "Atur tanggal ke 7 hari lalu" : "Set date to 7 days ago"}
             >
               {isId ? "Minggu Lalu" : "-7 Days"}
@@ -621,8 +834,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             />
             <button
               type="button"
-              onClick={handleApplyGlobalDate}
-              className="text-[10px] font-bold text-brand dark:text-red-400 hover:underline ml-1"
+              onClick={requestApplyGlobalDate}
+              className="text-[10px] font-bold text-brand dark:text-red-400 hover:underline ml-1 cursor-pointer"
               title={isId ? "Terapkan tanggal ini ke seluruh baris tabel di bawah" : "Apply this date to all rows"}
             >
               {isId ? "Terapkan Semua" : "Apply All"}
@@ -848,6 +1061,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           {rows.map((row, idx) => {
             const rowTotal = getRowTotalPairs(row.sizes);
             const isInvalid = invalidRowIds.includes(row.id);
+            const isBatchDuplicate = duplicateOrderNumbersInBatch.has(row.orderNumber.trim().toUpperCase());
 
             const cardStatusClass =
               row.status === "saving"
@@ -856,7 +1070,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 ? "border-emerald-400 border-l-4 border-l-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/15"
                 : row.status === "error"
                 ? "border-red-500 border-l-4 border-l-red-600 bg-red-50/25 dark:bg-red-950/25"
-                : isInvalid
+                : isInvalid || isBatchDuplicate
                 ? "border-red-500 border-l-4 border-l-red-400 ring-2 ring-red-200 dark:ring-red-950"
                 : "border-gray-200 dark:border-gray-800 border-l-4 border-l-transparent";
 
@@ -875,6 +1089,16 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     <span className="font-mono font-bold text-xs text-brand dark:text-red-400">
                       {row.orderNumber}
                     </span>
+
+                    {/* Mobile in-batch duplicate warning */}
+                    {isBatchDuplicate && (
+                      <span
+                        data-testid="mobile-duplicate-sj-warning"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-900/80 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
+                      >
+                        {isId ? "Duplikat" : "Duplicate"}
+                      </span>
+                    )}
 
                     {/* Mobile per-row status chip */}
                     {row.status === "saving" && (
@@ -1088,6 +1312,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               {rows.map((row, rIdx) => {
                 const rowTotal = getRowTotalPairs(row.sizes);
                 const isInvalid = invalidRowIds.includes(row.id);
+                const isBatchDuplicate = duplicateOrderNumbersInBatch.has(row.orderNumber.trim().toUpperCase());
 
                 const firstCellBorderClass =
                   row.status === "saving"
@@ -1096,7 +1321,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     ? "border-l-4 border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30"
                     : row.status === "error"
                     ? "border-l-4 border-l-red-600 bg-red-50/50 dark:bg-red-950/40"
-                    : isInvalid
+                    : isInvalid || isBatchDuplicate
                     ? "border-l-4 border-l-red-400 bg-red-50/30 dark:bg-red-950/20"
                     : "border-l-4 border-l-transparent bg-white dark:bg-gray-900";
 
@@ -1112,7 +1337,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         ? "bg-emerald-50/15 dark:bg-emerald-950/10"
                         : row.status === "error"
                         ? "bg-red-50/25 dark:bg-red-950/15"
-                        : isInvalid
+                        : isInvalid || isBatchDuplicate
                         ? "bg-red-50/20 dark:bg-red-950/10"
                         : ""
                     }`}
@@ -1127,8 +1352,21 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           type="text"
                           value={row.orderNumber}
                           onChange={(e) => handleRowChange(row.id, "orderNumber", e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 font-mono font-bold text-xs text-brand dark:text-red-400 focus:outline-none focus:border-brand"
+                          className={`w-full rounded-lg border px-2 py-1 font-mono font-bold text-xs focus:outline-none ${
+                            isBatchDuplicate
+                              ? "border-amber-500 bg-amber-50/50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 focus:border-amber-600"
+                              : "border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-brand dark:text-red-400 focus:border-brand"
+                          }`}
                         />
+                        {isBatchDuplicate && (
+                          <span
+                            data-testid="duplicate-sj-warning"
+                            title={isId ? "Nomor Surat Jalan ini duplikat dalam lembar kerja" : "Duplicate order number in worksheet"}
+                            className="shrink-0 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] bg-amber-100 text-amber-900 dark:bg-amber-900/80 dark:text-amber-200 border border-amber-300 dark:border-amber-700"
+                          >
+                            {isId ? "Duplikat" : "Duplicate"}
+                          </span>
+                        )}
                         {row.status === "saving" && (
                           <span
                             data-testid="row-status-saving"
@@ -1352,6 +1590,77 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           </div>
         </div>
       )}
+
+      {/* Date Change Overwrite Confirmation Dialog */}
+      {pendingDateChange && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="date-confirm-dialog-title"
+            className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <h4 id="date-confirm-dialog-title" className="font-extrabold text-sm text-gray-900 dark:text-white">
+                {isId ? "Konfirmasi Perubahan Tanggal Massal" : "Confirm Batch Date Overwrite"}
+              </h4>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+              {isId
+                ? `Terdapat ${rows.filter((r) => r.deliveryDate !== globalDate).length} baris dengan tanggal pengiriman khusus yang berbeda dari tanggal massal (${globalDate}). Menetapkan ${pendingDateChange.label} (${pendingDateChange.targetDate}) akan menimpa seluruh baris.`
+                : `${rows.filter((r) => r.deliveryDate !== globalDate).length} rows have custom delivery dates differing from the global date (${globalDate}). Setting ${pendingDateChange.label} (${pendingDateChange.targetDate}) will overwrite all rows.`}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                ref={cancelDateButtonRef}
+                type="button"
+                onClick={() => setPendingDateChange(null)}
+                className="px-3.5 py-2 min-h-[44px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                {isId ? "Batal (Pertahankan)" : "Cancel (Keep Dates)"}
+              </button>
+              <button
+                type="button"
+                onClick={() => applyDateChangeWithUndo(pendingDateChange.targetDate)}
+                className="px-3.5 py-2 min-h-[44px] rounded-xl bg-brand hover:bg-brand-dark text-xs font-bold text-white shadow-xs active:scale-95 transition"
+              >
+                {isId ? "Ya, Timpa Semua" : "Overwrite All"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Date Overwrite Undo Toast Notification (Accessible Live Region) */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={
+          dateUndoBuffer
+            ? "fixed bottom-20 md:bottom-6 left-6 z-50 px-4 py-3 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4"
+            : "sr-only"
+        }
+      >
+        {dateUndoBuffer && (
+          <>
+            <span className="text-xs font-bold">
+              {isId
+                ? `Tanggal seluruh baris diubah ke ${dateUndoBuffer.newDate}`
+                : `All row dates updated to ${dateUndoBuffer.newDate}`}
+            </span>
+            <button
+              type="button"
+              onClick={handleUndoDateChange}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+              <span>{isId ? "Batalkan (Undo)" : "Undo"}</span>
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

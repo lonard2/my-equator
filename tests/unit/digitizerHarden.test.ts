@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-describe("Archive Digitizer Hardening (Impeccable P0)", () => {
+describe("Archive Digitizer Hardening & Data Integrity (Impeccable P0 & P1)", () => {
   const digitizerSource = fs.readFileSync(
     path.join(process.cwd(), "src/components/delivery-orders/ArchiveDigitizer.tsx"),
     "utf-8"
@@ -137,6 +137,98 @@ describe("Archive Digitizer Hardening (Impeccable P0)", () => {
       assert.ok(
         digitizerSource.includes("min-h-[40px]") || digitizerSource.includes("min-h-[44px]"),
         "Mobile inputs must provide comfortable touch targets"
+      );
+    });
+  });
+
+  describe("4. Duplicate-SJ Collision Warnings (In-Batch & Against DB)", () => {
+    it("verifies in-batch duplicate tracking detects duplicate order numbers across rows", () => {
+      assert.ok(
+        digitizerSource.includes("duplicateOrderNumbersInBatch"),
+        "Component must compute duplicateOrderNumbersInBatch"
+      );
+      assert.ok(
+        digitizerSource.includes('data-testid="duplicate-sj-warning"'),
+        "Desktop row must render duplicate warning badge on collision"
+      );
+      assert.ok(
+        digitizerSource.includes('data-testid="mobile-duplicate-sj-warning"'),
+        "Mobile card must render duplicate warning badge on collision"
+      );
+    });
+
+    it("verifies handleSaveBatch enforces in-batch duplicate check before network commit", () => {
+      assert.ok(
+        digitizerSource.includes("if (duplicateOrderNumbersInBatch.size > 0)"),
+        "handleSaveBatch must guard against in-batch duplicates"
+      );
+    });
+
+    it("verifies handleSaveBatch queries existing database orders to block DB collisions before writes", () => {
+      assert.ok(
+        digitizerSource.includes('fetch("/api/orders")'),
+        "handleSaveBatch must pre-fetch existing orders to detect DB collisions"
+      );
+      assert.ok(
+        digitizerSource.includes("existingDbSet.has"),
+        "handleSaveBatch must cross-check each order number against existing DB records"
+      );
+    });
+
+    it("verifies handleAddRow automatically resolves collisions when assigning sequence numbers", () => {
+      assert.ok(
+        digitizerSource.includes("existingNumbers.has(newOrderNumber.toUpperCase())"),
+        "handleAddRow must increment sequence to guarantee a unique order number"
+      );
+    });
+  });
+
+  describe("5. Confirm & Undo Guard on Date-Offset Chips", () => {
+    it("verifies date-offset chips check for divergent row dates before overwriting", () => {
+      assert.ok(
+        digitizerSource.includes("executeOrConfirmDateChange"),
+        "Must route date changes through executeOrConfirmDateChange guard"
+      );
+      assert.ok(
+        digitizerSource.includes("r.deliveryDate !== globalDate"),
+        "Must detect rows with custom divergent dates"
+      );
+    });
+
+    it("verifies confirmation modal appears when divergent row dates are present", () => {
+      assert.ok(
+        digitizerSource.includes("pendingDateChange"),
+        "Must maintain pendingDateChange state for confirmation modal"
+      );
+      assert.ok(
+        digitizerSource.includes('id="date-confirm-dialog-title"'),
+        "Confirmation dialog must have accessible title"
+      );
+    });
+
+    it("verifies date change snapshot enables 1-click Undo live region toast", () => {
+      assert.ok(
+        digitizerSource.includes("dateUndoBuffer"),
+        "Component must store dateUndoBuffer snapshot for rollback"
+      );
+      assert.ok(
+        digitizerSource.includes("handleUndoDateChange"),
+        "Component must implement handleUndoDateChange"
+      );
+    });
+
+    it("verifies quick date offset chips display active state corresponding to globalDate", () => {
+      assert.ok(
+        digitizerSource.includes("isTodayActive"),
+        "Must evaluate isTodayActive"
+      );
+      assert.ok(
+        digitizerSource.includes("isYesterdayActive"),
+        "Must evaluate isYesterdayActive"
+      );
+      assert.ok(
+        digitizerSource.includes("isWeekAgoActive"),
+        "Must evaluate isWeekAgoActive"
       );
     });
   });
