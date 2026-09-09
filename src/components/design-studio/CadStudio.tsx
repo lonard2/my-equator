@@ -131,12 +131,24 @@ export function CadStudio({ language }: CadStudioProps) {
   const [baselineRef, setBaselineRef] = useState<string>("");
   const [pendingOverwriteAction, setPendingOverwriteAction] = useState<(() => void) | null>(null);
   const cancelOverwriteRef = useRef<HTMLButtonElement | null>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showToast = (msg: string, tone: "success" | "error" = "success") => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToastTone(tone);
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    toastTimeoutRef.current = setTimeout(() => setToastMessage(null), 3500);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Recalculate derived dimensions when sizing changes
   useEffect(() => {
@@ -473,11 +485,11 @@ export function CadStudio({ language }: CadStudioProps) {
         markClean();
         fetchBlueprints();
       } else {
-        showToast(json.error || (isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint."));
+        showToast(json.error || (isId ? "Gagal menyimpan blueprint." : "Failed to save blueprint."), "error");
       }
     } catch (err) {
       console.error("Failed to save blueprint:", err);
-      showToast(isId ? "Terjadi kesalahan saat menyimpan blueprint." : "Error saving blueprint.");
+      showToast(isId ? "Terjadi kesalahan saat menyimpan blueprint." : "Error saving blueprint.", "error");
     }
   };
 

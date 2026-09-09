@@ -51,6 +51,7 @@ export function CadAiModal({
   const isId = language === "id";
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [generatedResult, setGeneratedResult] = useState<any | null>(null);
 
   if (!isOpen) return null;
@@ -79,6 +80,7 @@ export function CadAiModal({
     if (!text.trim() || loading) return;
 
     setLoading(true);
+    setError(null);
     setGeneratedResult(null);
 
     try {
@@ -159,6 +161,13 @@ export function CadAiModal({
               : "Biomechanical curvature, TPU bridge span, and heel cup depth optimized for footbed stability.",
           });
         }
+      } else {
+        setError(
+          json.error ||
+            (isId
+              ? "Gagal menghasilkan rancangan insole AI dari server."
+              : "Failed to generate AI insole design from server.")
+        );
       }
     } catch (err) {
       console.error("AI Generation error:", err);
@@ -303,6 +312,27 @@ export function CadAiModal({
               <span>{loading ? (isId ? "Khatulistiwa AI Sedang Merancang..." : "AI Designing...") : isId ? "Generate Model CAD" : "Generate CAD Model"}</span>
             </button>
           </div>
+
+          {/* Error Card (Mirroring Library Card) */}
+          {error && (
+            <div
+              role="alert"
+              className="p-8 text-center border border-red-900/60 bg-red-950/30 rounded-xl text-red-300 space-y-3 animate-in zoom-in-95 duration-150"
+            >
+              <AlertTriangle className="h-8 w-8 mx-auto text-red-400" />
+              <p className="text-xs font-bold">{error}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  handleGenerate();
+                }}
+                className="px-3.5 py-2 min-h-[44px] rounded-xl border border-gray-700 text-xs font-bold text-gray-200 hover:bg-gray-800 transition"
+              >
+                {isId ? "Coba Lagi" : "Retry"}
+              </button>
+            </div>
+          )}
 
           {/* Generated Result Preview Card */}
           {generatedResult && (
