@@ -191,7 +191,21 @@ export function CadStudio({ language }: CadStudioProps) {
       // Don't trigger if typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      if (e.key === "Escape") {
+        if (pendingOverwriteAction) {
+          e.preventDefault();
+          setPendingOverwriteAction(null);
+        } else if (isCncPreFlightOpen) {
+          e.preventDefault();
+          setIsCncPreFlightOpen(false);
+        } else if (isLibraryOpen) {
+          e.preventDefault();
+          setIsLibraryOpen(false);
+        } else if (isAiModalOpen) {
+          e.preventDefault();
+          setIsAiModalOpen(false);
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         handleSaveBlueprint();
       } else if (e.key === "+" || e.key === "=") {
@@ -209,7 +223,7 @@ export function CadStudio({ language }: CadStudioProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [blueprintName, sizingSystem, rawSizeValue, customLengthMm, foot, archProfile, archFactor, toeShape, ballWidth, heelWidth, waistWidth, forefootThickness, heelThickness, materialType, archPlateLength, archPlateWidth, archPlateLateralWing, heelCupDepth, heelCupRadius, metatarsalSize, metatarsalYPos]);
+  }, [blueprintName, sizingSystem, rawSizeValue, customLengthMm, foot, archProfile, archFactor, toeShape, ballWidth, heelWidth, waistWidth, forefootThickness, heelThickness, materialType, archPlateLength, archPlateWidth, archPlateLateralWing, heelCupDepth, heelCupRadius, metatarsalSize, metatarsalYPos, pendingOverwriteAction, isCncPreFlightOpen, isLibraryOpen, isAiModalOpen]);
 
   // Compute Active Sizing Conversion
   const conversion = convertSizing(sizingSystem, sizingSystem === "CUSTOM_MM" ? customLengthMm : rawSizeValue);
@@ -782,7 +796,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setFoot("LEFT")}
                 className={`py-2 rounded-xl text-xs font-bold border transition ${
                   foot === "LEFT"
-                    ? "bg-blue-900/80 text-blue-200 border-blue-600"
+                    ? "bg-brand text-white border-brand shadow-xs"
                     : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                 }`}
               >
@@ -793,7 +807,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setFoot("RIGHT")}
                 className={`py-2 rounded-xl text-xs font-bold border transition ${
                   foot === "RIGHT"
-                    ? "bg-brand text-white border-brand"
+                    ? "bg-brand text-white border-brand shadow-xs"
                     : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                 }`}
               >
@@ -804,7 +818,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setFoot("PAIR")}
                 className={`py-2 rounded-xl text-xs font-bold border transition ${
                   foot === "PAIR"
-                    ? "bg-emerald-800 text-emerald-100 border-emerald-500 shadow-xs"
+                    ? "bg-brand text-white border-brand shadow-xs"
                     : "bg-gray-800 text-gray-400 border-gray-700 hover:text-white"
                 }`}
               >
@@ -1040,6 +1054,8 @@ export function CadStudio({ language }: CadStudioProps) {
             }}
           >
             <svg
+              role="img"
+              aria-label={isId ? `Pratinjau vektor CAD insole ${geometry.sizingLabel} ${foot}` : `CAD insole vector preview ${geometry.sizingLabel} ${foot}`}
               viewBox={`0 0 ${vbW} ${vbH}`}
               className="drop-shadow-2xl"
               style={{
@@ -1194,7 +1210,12 @@ export function CadStudio({ language }: CadStudioProps) {
           </div>
 
           {/* Bottom Live Dimension Callout Strip */}
-          <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between p-2.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs">
+          <div
+            role="status"
+            aria-live="polite"
+            aria-label={isId ? "Dimensi insole langsung" : "Live insole dimensions"}
+            className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between p-2.5 rounded-xl bg-gray-900/85 backdrop-blur-md border border-gray-800 text-white text-xs"
+          >
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 font-mono text-[11px]">
               <span>
                 <strong className="text-red-400">{geometry.sizingLabel}</strong> ({foot})
@@ -1653,6 +1674,7 @@ export function CadStudio({ language }: CadStudioProps) {
                     <button
                       type="button"
                       onClick={() => handleLoadSavedBlueprint(bp)}
+                      aria-label={isId ? `Muat blueprint ${bp.name}` : `Load blueprint ${bp.name}`}
                       className="px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shrink-0 active:scale-95 transition"
                     >
                       {isId ? "Muat Model" : "Load Model"}

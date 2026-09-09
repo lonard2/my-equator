@@ -161,5 +161,66 @@ describe("Insole CAD Studio P0 Hardenings (Impeccable Harden)", () => {
       );
     });
   });
+
+  describe("Full Critique Heuristics: Global Escape, Sam's A11y & Layer Color Separation", () => {
+    it("verifies global window Escape handling closes modals in CadStudio and CadAiModal", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+      const freshCadAiModal = fs.readFileSync(cadAiModalPath, "utf-8");
+
+      assert.ok(
+        freshCadStudio.includes('if (e.key === "Escape")') &&
+          freshCadStudio.includes("setPendingOverwriteAction(null)") &&
+          freshCadStudio.includes("setIsCncPreFlightOpen(false)") &&
+          freshCadStudio.includes("setIsLibraryOpen(false)") &&
+          freshCadStudio.includes("setIsAiModalOpen(false)"),
+        "CadStudio window keydown listener must handle Escape to close any open modal"
+      );
+
+      assert.ok(
+        freshCadAiModal.includes('if (e.key === "Escape")') &&
+          freshCadAiModal.includes("onClose()"),
+        "CadAiModal window keydown listener must handle Escape"
+      );
+    });
+
+    it("verifies Sam's a11y: distinct load button aria-labels, role=img on SVG, role=status on HUD", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+      // Load model button aria-label includes blueprint name
+      assert.ok(
+        freshCadStudio.includes('aria-label={isId ? `Muat blueprint ${bp.name}` : `Load blueprint ${bp.name}`}'),
+        "Load Model buttons must have distinct aria-label naming the blueprint"
+      );
+
+      // SVG role and aria-label
+      assert.ok(
+        freshCadStudio.includes('role="img"') &&
+          freshCadStudio.includes('aria-label={isId ? `Pratinjau vektor CAD insole ${geometry.sizingLabel} ${foot}` : `CAD insole vector preview ${geometry.sizingLabel} ${foot}`}'),
+        "Main CAD canvas SVG must have role=img and descriptive aria-label"
+      );
+
+      // HUD role=status aria-live=polite
+      assert.ok(
+        freshCadStudio.includes('role="status"') &&
+          freshCadStudio.includes('aria-live="polite"'),
+        "Live dimension HUD strip must be announced to screen readers as a live region"
+      );
+    });
+
+    it("verifies laterality buttons use brand active color without colliding with layer colors (blue/emerald)", () => {
+      const freshCadStudio = fs.readFileSync(cadStudioPath, "utf-8");
+
+      assert.ok(
+        freshCadStudio.includes('foot === "LEFT"\n                    ? "bg-brand text-white border-brand shadow-xs"') ||
+          freshCadStudio.includes('foot === "LEFT" ? "bg-brand text-white border-brand shadow-xs"'),
+        "Foot laterality buttons must use brand active color rather than layer-owned blue"
+      );
+      assert.ok(
+        freshCadStudio.includes('foot === "PAIR"\n                    ? "bg-brand text-white border-brand shadow-xs"') ||
+          freshCadStudio.includes('foot === "PAIR" ? "bg-brand text-white border-brand shadow-xs"'),
+        "Foot laterality buttons must use brand active color rather than layer-owned emerald"
+      );
+    });
+  });
 });
 
