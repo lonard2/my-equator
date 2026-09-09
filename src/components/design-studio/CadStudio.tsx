@@ -310,6 +310,9 @@ export function CadStudio({ language }: CadStudioProps) {
         e.preventDefault();
         const step = e.shiftKey ? 5 : 25;
         setPanOffset((p) => ({ ...p, y: p.y - step }));
+      } else if (e.key === "g" || e.key === "G") {
+        e.preventDefault();
+        setShowGrid((v) => !v);
       } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
         setIsShortcutsOpen((v) => !v);
@@ -1503,11 +1506,17 @@ export function CadStudio({ language }: CadStudioProps) {
               {/* SINGLE FOOT VIEW */}
               {foot !== "PAIR" ? (
                 <g id="single-insole-viewport" className="drop-shadow-2xl">
-                  {/* Outer Cut Outline */}
+                  {/* Insole Base Bed (Substrate Body) */}
+                  <path
+                    d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
+                    className="fill-gray-100/95 dark:fill-gray-800/95 transition-all duration-300 ease-out"
+                  />
+
+                  {/* Outer Cut Outline (Red CNC Toolpath) */}
                   {showOutline && (
                     <path
                       d={foot === "LEFT" ? geometry.svgPathLeft : geometry.svgPathRight}
-                      className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                      className="fill-none stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                     />
                   )}
 
@@ -1582,10 +1591,15 @@ export function CadStudio({ language }: CadStudioProps) {
                 <g id="pair-insole-viewport" className="drop-shadow-2xl">
                   {/* Left Foot Insole */}
                   <g id="insole-left-side">
+                    {/* Insole Base Bed (Substrate Body) */}
+                    <path
+                      d={geometry.svgPathLeft}
+                      className="fill-gray-100/95 dark:fill-gray-800/95 transition-all duration-300 ease-out"
+                    />
                     {showOutline && (
                       <path
                         d={geometry.svgPathLeft}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                        className="fill-none stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
@@ -1613,10 +1627,15 @@ export function CadStudio({ language }: CadStudioProps) {
 
                   {/* Right Foot Insole */}
                   <g id="insole-right-side" transform={`translate(${singleW + pairGap}, 0)`}>
+                    {/* Insole Base Bed (Substrate Body) */}
+                    <path
+                      d={geometry.svgPathRight}
+                      className="fill-gray-100/95 dark:fill-gray-800/95 transition-all duration-300 ease-out"
+                    />
                     {showOutline && (
                       <path
                         d={geometry.svgPathRight}
-                        className="fill-gray-100/95 dark:fill-gray-800/95 stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
+                        className="fill-none stroke-brand stroke-[1.8] drop-shadow-md transition-all duration-300 ease-out"
                       />
                     )}
                     {showArchPlate && (
@@ -1641,15 +1660,77 @@ export function CadStudio({ language }: CadStudioProps) {
                       RIGHT ({geometry.sizingLabel})
                     </text>
                   </g>
+
+                  {/* Dimension Reference Lines & Labels for Pair View */}
+                  {showDimensions && (
+                    <g fontFamily="monospace" fontSize="7" fill="#3b82f6" fontWeight="bold">
+                      {/* Vertical Length Dimension Line */}
+                      <line
+                        x1={vbW - 12}
+                        y1={15}
+                        x2={vbW - 12}
+                        y2={vbH - 15}
+                        stroke="#3b82f6"
+                        strokeWidth="0.8"
+                        strokeDasharray="2,2"
+                      />
+                      <text
+                        x={vbW - 9}
+                        y={vbH / 2}
+                        transform={`rotate(90, ${vbW - 9}, ${vbH / 2})`}
+                      >
+                        L: {geometry.length} mm
+                      </text>
+
+                      {/* Forefoot Width Dimension Line - Left Foot */}
+                      <line
+                        x1={singleW / 2 - ballWidth / 2}
+                        y1={vbH * 0.28}
+                        x2={singleW / 2 + ballWidth / 2}
+                        y2={vbH * 0.28}
+                        stroke="#eab308"
+                        strokeWidth="0.8"
+                        strokeDasharray="2,2"
+                      />
+                      <text
+                        x={singleW / 2}
+                        y={vbH * 0.26}
+                        fill="#eab308"
+                        textAnchor="middle"
+                      >
+                        W(Ball): {ballWidth} mm
+                      </text>
+
+                      {/* Forefoot Width Dimension Line - Right Foot */}
+                      <line
+                        x1={singleW + pairGap + singleW / 2 - ballWidth / 2}
+                        y1={vbH * 0.28}
+                        x2={singleW + pairGap + singleW / 2 + ballWidth / 2}
+                        y2={vbH * 0.28}
+                        stroke="#eab308"
+                        strokeWidth="0.8"
+                        strokeDasharray="2,2"
+                      />
+                      <text
+                        x={singleW + pairGap + singleW / 2}
+                        y={vbH * 0.26}
+                        fill="#eab308"
+                        textAnchor="middle"
+                      >
+                        W(Ball): {ballWidth} mm
+                      </text>
+                    </g>
+                  )}
                 </g>
               )}
             </svg>
           </div>
 
           {/* Bottom Live Dimension Callout Strip */}
-          <div
-            role="status"
-            aria-live="polite"
+          {showDimensions && (
+            <div
+              role="status"
+              aria-live="polite"
             aria-label={isId ? "Dimensi insole langsung" : "Live insole dimensions"}
             className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-20 flex flex-col gap-1.5 p-2.5 rounded-xl bg-gray-900/90 backdrop-blur-md border border-gray-800 text-white text-xs shadow-2xl"
           >
@@ -1708,6 +1789,7 @@ export function CadStudio({ language }: CadStudioProps) {
               </div>
             )}
           </div>
+        )}
         </div>
 
         {/* Right Sidebar: Orthotic Components, Layers & Specs */}
@@ -2114,6 +2196,16 @@ export function CadStudio({ language }: CadStudioProps) {
                       checked={showDimensions}
                       onChange={(e) => setShowDimensions(e.target.checked)}
                       className="rounded text-blue-600 focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-gray-400 font-bold">{isId ? "Garis Kisi / Grid (mm)" : "Engineering Grid (mm)"}</span>
+                    <input
+                      type="checkbox"
+                      checked={showGrid}
+                      onChange={(e) => setShowGrid(e.target.checked)}
+                      className="rounded text-gray-500 focus:ring-0"
                     />
                   </label>
                 </div>
@@ -2537,6 +2629,12 @@ export function CadStudio({ language }: CadStudioProps) {
                 <span className="text-gray-300">{isId ? "Zoom Kursor / Cubit Layar" : "Wheel Zoom / Pinch-to-Zoom"}</span>
                 <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
                   {isId ? "Roda Mouse / 2 Jari" : "Mouse Wheel / 2-Finger"}
+                </kbd>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
+                <span className="text-gray-300">{isId ? "Tampilkan / Sembunyikan Grid" : "Toggle Engineering Grid"}</span>
+                <kbd className="px-2 py-1 rounded bg-gray-950 text-red-300 font-mono font-bold text-[11px] border border-gray-800">
+                  G
                 </kbd>
               </div>
               <div className="flex items-center justify-between p-2 rounded-lg bg-gray-800/60 border border-gray-700/60">
