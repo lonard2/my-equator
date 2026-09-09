@@ -125,6 +125,40 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [libraryError, setLibraryError] = useState(false);
   const [isLibraryLoading, setIsLibraryLoading] = useState(true);
+  const libraryOpenerRef = useRef<HTMLElement | null>(null);
+  const cncOpenerRef = useRef<HTMLElement | null>(null);
+  const libraryCloseRef = useRef<HTMLButtonElement | null>(null);
+  const cncCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  // Shared modal focus contract: move focus in on open, restore on close
+  useEffect(() => {
+    if (isLibraryOpen) libraryCloseRef.current?.focus();
+    if (!isLibraryOpen && libraryOpenerRef.current) {
+      libraryOpenerRef.current.focus();
+      libraryOpenerRef.current = null;
+    }
+  }, [isLibraryOpen]);
+
+  useEffect(() => {
+    if (isCncPreFlightOpen) cncCloseRef.current?.focus();
+    if (!isCncPreFlightOpen && cncOpenerRef.current) {
+      cncOpenerRef.current.focus();
+      cncOpenerRef.current = null;
+    }
+  }, [isCncPreFlightOpen]);
+
+  const trapModalTab = (e: React.KeyboardEvent, firstRef: React.RefObject<HTMLElement | null>, lastRef: React.RefObject<HTMLElement | null>) => {
+    if (e.key !== "Tab") return;
+    if (e.shiftKey) {
+      if (document.activeElement === firstRef.current) {
+        e.preventDefault();
+        lastRef.current?.focus();
+      }
+    } else if (document.activeElement === lastRef.current) {
+      e.preventDefault();
+      firstRef.current?.focus();
+    }
+  };
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [inspectorTab, setInspectorTab] = useState<"COMPONENTS" | "LAYERS" | "SPECS">("COMPONENTS");
   const [isCncPreFlightOpen, setIsCncPreFlightOpen] = useState(false);
@@ -742,7 +776,10 @@ export function CadStudio({ language }: CadStudioProps) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsLibraryOpen(true)}
+            onClick={(e) => {
+              libraryOpenerRef.current = e.currentTarget;
+              setIsLibraryOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 text-xs font-bold active:scale-95 transition"
             title={isId ? "Buka Arsip Blueprint Tersimpan" : "Open Saved Blueprint Archive"}
           >
@@ -766,7 +803,10 @@ export function CadStudio({ language }: CadStudioProps) {
 
           <button
             type="button"
-            onClick={() => setIsCncPreFlightOpen(true)}
+            onClick={(e) => {
+              cncOpenerRef.current = e.currentTarget;
+              setIsCncPreFlightOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:border-brand hover:text-brand text-xs font-bold active:scale-95 transition"
           >
             <Scissors className="h-4 w-4" />
@@ -1837,7 +1877,7 @@ export function CadStudio({ language }: CadStudioProps) {
       {isLibraryOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
-          onKeyDown={(e) => { if (e.key === "Escape") setIsLibraryOpen(false); }}
+          onKeyDown={(e) => trapModalTab(e, libraryCloseRef, libraryCloseRef)}
         >
           <div
             role="dialog"
@@ -1860,9 +1900,11 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
               </div>
               <button
+                ref={libraryCloseRef}
                 type="button"
                 onClick={() => setIsLibraryOpen(false)}
                 className="p-1 text-gray-400 hover:text-white"
+                aria-label={isId ? "Tutup arsip blueprint" : "Close blueprint library"}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1941,7 +1983,7 @@ export function CadStudio({ language }: CadStudioProps) {
       {isCncPreFlightOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
-          onKeyDown={(e) => { if (e.key === "Escape") setIsCncPreFlightOpen(false); }}
+          onKeyDown={(e) => trapModalTab(e, cncCloseRef, cncCloseRef)}
         >
           <div
             role="dialog"
@@ -1964,9 +2006,11 @@ export function CadStudio({ language }: CadStudioProps) {
                 </div>
               </div>
               <button
+                ref={cncCloseRef}
                 type="button"
                 onClick={() => setIsCncPreFlightOpen(false)}
                 className="p-1 text-gray-400 hover:text-white"
+                aria-label={isId ? "Tutup verifikasi CNC" : "Close CNC pre-flight"}
               >
                 <X className="h-5 w-5" />
               </button>
