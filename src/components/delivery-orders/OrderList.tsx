@@ -441,7 +441,7 @@ export function OrderList({
                       e.stopPropagation();
                       if (isPrintable) onOpenPrint(order);
                     }}
-                    className={`opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 max-md:opacity-100 p-1.5 rounded-lg transition-all min-h-[28px] min-w-[28px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    className={`opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg transition-all min-h-[28px] min-w-[28px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       !isPrintable
                         ? "cursor-not-allowed text-gray-300 dark:text-gray-600 hover:bg-transparent"
                         : "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 active:scale-95"

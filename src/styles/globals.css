@@ -30,6 +30,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes enter-slide-top {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .animate-in {
   animation-duration: 180ms;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -39,6 +44,7 @@
 .fade-in { animation-name: enter-fade; }
 .zoom-in-95 { animation-name: enter-zoom; }
 .slide-in-from-bottom { animation-name: enter-slide-bottom; }
+.slide-in-from-top-2 { animation-name: enter-slide-top; }
 
 @layer base {
   /* 5-Step Granular Typography & Density Scale Engine */

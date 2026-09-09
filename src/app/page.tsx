@@ -516,7 +516,7 @@ export default function HomePage() {
                               setMobileSearchTerm("");
                             }
                           }}
-                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-11 text-xs text-white placeholder-red-100 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
+                          className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-9 pr-11 text-xs text-white placeholder-red-100 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
                         />
                         {mobileSearchTerm && (
                           <button
@@ -637,7 +637,7 @@ export default function HomePage() {
                           <span>{isId ? "Coba Lagi" : "Retry"}</span>
                         </button>
                       </div>
-                    ) : loading ? (
+                    ) : loading && orders.length === 0 ? (
                       <div className="space-y-3 py-2">
                         {[1, 2, 3].map((n) => (
                           <div
@@ -865,7 +865,7 @@ export default function HomePage() {
                       }}
                       onOpenPrint={(order) => setPrintOrder(order)}
                       language={language}
-                      loading={loading}
+                      loading={loading && orders.length === 0}
                     />
                     )}
                   </div>
@@ -1180,7 +1180,7 @@ export default function HomePage() {
         aria-atomic="true"
         className={
           appToast
-            ? `fixed right-4 bottom-20 md:bottom-auto md:top-4 z-50 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 md:slide-in-from-top-2 slide-in-from-bottom duration-150 ${
+            ? `fixed right-4 bottom-20 md:bottom-auto md:top-4 z-50 text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom md:slide-in-from-top-2 duration-150 ${
                 appToast.type === "error"
                   ? "bg-red-950 text-red-100 border-red-800 shadow-red-950/50"
                   : "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-700 dark:border-gray-300 shadow-xl"
