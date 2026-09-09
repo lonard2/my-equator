@@ -108,6 +108,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [savedBlueprints, setSavedBlueprints] = useState<any[]>([]);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [libraryError, setLibraryError] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [inspectorTab, setInspectorTab] = useState<"COMPONENTS" | "LAYERS" | "SPECS">("COMPONENTS");
   const [isCncPreFlightOpen, setIsCncPreFlightOpen] = useState(false);
@@ -140,9 +141,15 @@ export function CadStudio({ language }: CadStudioProps) {
     try {
       const res = await fetch("/api/cad/blueprints");
       const json = await res.json();
-      if (json.success) setSavedBlueprints(json.data || []);
+      if (json.success) {
+        setSavedBlueprints(json.data || []);
+        setLibraryError(false);
+      } else {
+        setLibraryError(true);
+      }
     } catch (err) {
       console.error("Failed to load blueprints:", err);
+      setLibraryError(true);
     }
   };
 
@@ -361,7 +368,7 @@ export function CadStudio({ language }: CadStudioProps) {
       showToast(isId ? "File AutoCAD R12 DXF berhasil diunduh" : "AutoCAD R12 DXF file downloaded");
     } catch (err) {
       console.error("DXF export failed:", err);
-      showToast(isId ? "Gagal mengekspor file DXF." : "Failed to export DXF file.");
+      showToast(isId ? "Gagal mengekspor file DXF." : "Failed to export DXF file.", "error");
     } finally {
       setExporting(null);
     }
@@ -409,7 +416,7 @@ export function CadStudio({ language }: CadStudioProps) {
       showToast(isId ? "File Vector SVG berhasil diunduh" : "Vector SVG file downloaded");
     } catch (err) {
       console.error("SVG export failed:", err);
-      showToast(isId ? "Gagal mengekspor file SVG." : "Failed to export SVG file.");
+      showToast(isId ? "Gagal mengekspor file SVG." : "Failed to export SVG file.", "error");
     } finally {
       setExporting(null);
     }
@@ -512,7 +519,11 @@ export function CadStudio({ language }: CadStudioProps) {
       >
         {toastMessage && (
           <>
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            {toastTone === "error" ? (
+              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            )}
             <span>{toastMessage}</span>
           </>
         )}
@@ -928,6 +939,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setZoomScale((z) => Math.min(2.5, z + 0.15))}
                 className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-90 transition-transform"
                 title="Zoom In (+)"
+                aria-label={isId ? "Perbesar tampilan" : "Zoom in"}
               >
                 <ZoomIn className="h-4 w-4" />
               </button>
@@ -936,6 +948,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 onClick={() => setZoomScale((z) => Math.max(0.5, z - 0.15))}
                 className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-90 transition-transform"
                 title="Zoom Out (-)"
+                aria-label={isId ? "Perkecil tampilan" : "Zoom out"}
               >
                 <ZoomOut className="h-4 w-4" />
               </button>
@@ -947,6 +960,7 @@ export function CadStudio({ language }: CadStudioProps) {
                 }}
                 className="p-1.5 rounded-xl hover:bg-gray-800 active:scale-90 transition-transform"
                 title="Reset View (0)"
+                aria-label={isId ? "Reset tampilan" : "Reset view"}
               >
                 <RotateCcw className="h-4 w-4" />
               </button>
@@ -1516,15 +1530,23 @@ export function CadStudio({ language }: CadStudioProps) {
 
       {/* Blueprint Library Drawer / Modal */}
       {isLibraryOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-xl rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[85vh] flex flex-col">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
+          onKeyDown={(e) => { if (e.key === "Escape") setIsLibraryOpen(false); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cad-library-title"
+            className="w-full max-w-xl rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[85vh] flex flex-col"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-amber-950/80 text-amber-400 border border-amber-800">
                   <FolderOpen className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-white">
+                  <h3 id="cad-library-title" className="font-extrabold text-base text-white">
                     {isId ? "Arsip Blueprint Insole CAD" : "CAD Blueprint Library"}
                   </h3>
                   <p className="text-[11px] text-gray-400">
@@ -1543,7 +1565,27 @@ export function CadStudio({ language }: CadStudioProps) {
 
             {/* Blueprints List */}
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
-              {savedBlueprints.length === 0 ? (
+              {libraryError ? (
+                <div
+                  role="alert"
+                  className="p-8 text-center border border-red-900/60 bg-red-950/30 rounded-xl text-red-300 space-y-3"
+                >
+                  <AlertTriangle className="h-8 w-8 mx-auto text-red-400" />
+                  <p className="text-xs font-bold">
+                    {isId ? "Gagal memuat arsip blueprint dari server." : "Failed to load the blueprint archive."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLibraryError(false);
+                      fetchBlueprints();
+                    }}
+                    className="px-3.5 py-2 min-h-[44px] rounded-xl border border-gray-700 text-xs font-bold text-gray-200 hover:bg-gray-800 transition"
+                  >
+                    {isId ? "Coba Lagi" : "Retry"}
+                  </button>
+                </div>
+              ) : savedBlueprints.length === 0 ? (
                 <div className="p-8 text-center border border-dashed border-gray-800 rounded-xl text-gray-500">
                   <FolderOpen className="h-8 w-8 mx-auto mb-2 text-gray-600" />
                   <p className="text-xs font-bold">{isId ? "Belum ada blueprint tersimpan" : "No saved blueprints yet"}</p>
@@ -1586,15 +1628,23 @@ export function CadStudio({ language }: CadStudioProps) {
 
       {/* CNC Die Pre-Flight Verification & Export Modal */}
       {isCncPreFlightOpen && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-lg rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in"
+          onKeyDown={(e) => { if (e.key === "Escape") setIsCncPreFlightOpen(false); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cnc-preflight-title"
+            className="w-full max-w-lg rounded-xl bg-gray-900 border border-gray-700 shadow-2xl p-5 sm:p-6 space-y-4"
+          >
             <div className="flex items-center justify-between pb-3 border-b border-gray-800">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-800">
                   <Scissors className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-white">
+                  <h3 id="cnc-preflight-title" className="font-extrabold text-base text-white">
                     {isId ? "Verifikasi Pisau Pond & CNC Cutter" : "CNC Die-Cut Pre-Flight Verification"}
                   </h3>
                   <p className="text-[11px] text-gray-400">

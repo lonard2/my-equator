@@ -8,6 +8,7 @@ import {
   X,
   Send,
   CheckCircle2,
+  AlertTriangle,
   Layers,
   ArrowRight,
   Bot,
@@ -161,9 +162,10 @@ export function CadAiModal({
       }
     } catch (err) {
       console.error("AI Generation error:", err);
-      // Fallback
+      // Offline fallback: an honest, clearly-labeled template — never a fake success.
       setGeneratedResult({
-        name: "Generative Performance Insole EU 42",
+        name: "Offline Template EU 42",
+        isOffline: true,
         shoeSize: 42,
         sizingSystem: "EU",
         rawSizeValue: 42,
@@ -180,7 +182,9 @@ export function CadAiModal({
         metatarsalPadSizeFactor: 1.1,
         metatarsalPadYPosition: 0.65,
         materialType: "High Density EVA + TPU Arch Shank",
-        rationale: "Konfigurasi high-performance dengan kontur arch anatomis dan deep heel cup.",
+        rationale: isId
+          ? "Template generik offline — koneksi ke gateway AI gagal. Parameter TIDAK berasal dari analisis kebutuhan Anda."
+          : "Generic offline template — the AI gateway connection failed. Parameters do NOT reflect your request.",
       });
     } finally {
       setLoading(false);
@@ -211,8 +215,16 @@ export function CadAiModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cad-ai-modal-title"
+        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+      >
         {/* Header */}
         <div className="p-4 bg-brand text-white flex items-center justify-between shrink-0 shadow-sm">
           <div className="flex items-center gap-2.5">
@@ -220,7 +232,7 @@ export function CadAiModal({
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm sm:text-base tracking-wide">
+              <h3 id="cad-ai-modal-title" className="font-extrabold text-sm sm:text-base tracking-wide">
                 <span>{isId ? "Desainer Insole Generatif AI" : "Generative AI Insole Designer"}</span>
               </h3>
               <p className="text-xs text-red-100">
@@ -294,10 +306,34 @@ export function CadAiModal({
 
           {/* Generated Result Preview Card */}
           {generatedResult && (
-            <div className="p-4 rounded-xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40 space-y-3 animate-in zoom-in-95 duration-150">
+            <div
+              className={`p-4 rounded-xl border-2 space-y-3 animate-in zoom-in-95 duration-150 ${
+                generatedResult.isOffline
+                  ? "border-amber-300 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-950/40"
+                  : "border-emerald-300 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/40"
+              }`}
+            >
+              {generatedResult.isOffline && (
+                <div className="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700 text-[11px] font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>
+                    {isId
+                      ? "Template offline — koneksi AI gagal. Parameter tidak mencerminkan permintaan Anda."
+                      : "Offline template — the AI connection failed. Parameters do not reflect your request."}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-300 font-extrabold text-sm">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <div
+                  className={`flex items-center gap-2 font-extrabold text-sm ${
+                    generatedResult.isOffline ? "text-amber-900 dark:text-amber-300" : "text-emerald-900 dark:text-emerald-300"
+                  }`}
+                >
+                  {generatedResult.isOffline ? (
+                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  )}
                   <span>{generatedResult.name}</span>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
@@ -307,7 +343,7 @@ export function CadAiModal({
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-emerald-950 dark:text-emerald-200">
                 <div className="p-2 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900">
-                  <span className="text-[10px] text-gray-500 block">Kontur Arch</span>
+                  <span className="text-[10px] text-gray-500 block">{isId ? "Kontur Arch" : "Arch Contour"}</span>
                   <strong className="text-emerald-900 dark:text-emerald-300">
                     {generatedResult.archProfile} ({generatedResult.archOffsetFactor}x)
                   </strong>
@@ -317,7 +353,7 @@ export function CadAiModal({
                   <strong className="text-emerald-900 dark:text-emerald-300">{generatedResult.toeShape}</strong>
                 </div>
                 <div className="p-2 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900">
-                  <span className="text-[10px] text-gray-500 block">Tebal (Depan / Tumit)</span>
+                  <span className="text-[10px] text-gray-500 block">{isId ? "Tebal (Depan / Tumit)" : "Thickness (Forefoot / Heel)"}</span>
                   <strong className="text-emerald-900 dark:text-emerald-300">
                     {generatedResult.thicknessForefootMm}mm / {generatedResult.thicknessHeelMm}mm
                   </strong>
@@ -325,7 +361,7 @@ export function CadAiModal({
               </div>
 
               <div className="p-2.5 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-emerald-200 dark:border-emerald-900 text-xs">
-                <span className="text-[10px] text-gray-500 block">Rekomendasi Material</span>
+                <span className="text-[10px] text-gray-500 block">{isId ? "Rekomendasi Material" : "Recommended Material"}</span>
                 <strong className="text-emerald-900 dark:text-emerald-300">{generatedResult.materialType}</strong>
               </div>
 
@@ -335,13 +371,23 @@ export function CadAiModal({
                 </p>
               )}
 
-              <button
-                onClick={handleApply}
-                className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition flex items-center justify-center gap-2"
-              >
-                <span>{isId ? "Terapkan ke Studio CAD (1-Click)" : "Apply to CAD Canvas"}</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {generatedResult.isOffline && (
+                  <button
+                    onClick={() => setGeneratedResult(null)}
+                    className="py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition"
+                  >
+                    {isId ? "Buang" : "Discard"}
+                  </button>
+                )}
+                <button
+                  onClick={handleApply}
+                  className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition flex items-center justify-center gap-2"
+                >
+                  <span>{isId ? "Terapkan ke Studio CAD" : "Apply to CAD Canvas"}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
