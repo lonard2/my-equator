@@ -55,6 +55,22 @@ export function CadAiModal({
   const [generatedResult, setGeneratedResult] = useState<any | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const aiOpenerRef = useRef<HTMLElement | null>(null);
+  const aiCloseRef = useRef<HTMLButtonElement | null>(null);
+  const promptRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      aiOpenerRef.current = document.activeElement as HTMLElement | null;
+      const t = setTimeout(() => promptRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+    // Restore focus on close
+    if (aiOpenerRef.current) {
+      aiOpenerRef.current.focus();
+      aiOpenerRef.current = null;
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     return () => {
@@ -293,7 +309,18 @@ export function CadAiModal({
   return (
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") { onClose(); return; }
+        if (e.key === "Tab") {
+          const dlg = aiCloseRef.current?.closest("[role='dialog']");
+          const focusables = dlg?.querySelectorAll<HTMLElement>("button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])");
+          if (!focusables || focusables.length < 2) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }}
     >
       <div
         role="dialog"
@@ -319,6 +346,7 @@ export function CadAiModal({
             </div>
           </div>
           <button
+            ref={aiCloseRef}
             onClick={onClose}
             className="p-1.5 rounded-xl text-red-200 hover:text-white hover:bg-white/10 active:scale-95 transition"
           >
@@ -337,11 +365,12 @@ export function CadAiModal({
               {quickPrompts.map((qp, idx) => (
                 <button
                   key={idx}
+                  disabled={loading}
                   onClick={() => {
                     setPrompt(qp.text);
                     handleGenerate(qp.text);
                   }}
-                  className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-left hover:border-brand hover:bg-red-50/40 dark:hover:bg-red-950/20 active:scale-[0.98] transition group"
+                  className={`p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-left hover:border-brand hover:bg-red-50/40 dark:hover:bg-red-950/20 active:scale-[0.98] transition group ${loading ? "opacity-50 pointer-events-none" : ""}`}
                 >
                   <p className="font-bold text-xs text-gray-800 dark:text-gray-200 group-hover:text-brand dark:group-hover:text-red-300">
                     {qp.label}
@@ -359,6 +388,7 @@ export function CadAiModal({
             </label>
             <div className="flex gap-2">
               <textarea
+                ref={promptRef}
                 rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
