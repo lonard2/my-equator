@@ -1028,7 +1028,25 @@ export function CadStudio({ language }: CadStudioProps) {
               <span className="text-[10px] font-bold uppercase text-gray-400">
                 {isId ? "Pengukuran Caliper Presisi (mm)" : "Precision Caliper Dimensions (mm)"}
               </span>
-              <Wrench className="h-3.5 w-3.5 text-gray-400" />
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setManualWidths(false)}
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide transition ${
+                    manualWidths
+                      ? "bg-amber-900/60 text-amber-300 border border-amber-700/60 hover:bg-amber-900"
+                      : "bg-gray-800 text-gray-500 border border-gray-700/60"
+                  }`}
+                  title={
+                    manualWidths
+                      ? isId ? "Auto-recompute dimatikan — klik untuk aktifkan ulang" : "Manual mode — click to re-enable auto-recompute"
+                      : isId ? "Lebar mengikuti ukuran otomatis" : "Widths follow size auto-recompute"
+                  }
+                >
+                  {manualWidths ? (isId ? "Manual" : "Manual") : (isId ? "Auto ✓" : "Auto ✓")}
+                </button>
+                <Wrench className="h-3.5 w-3.5 text-gray-400" />
+              </div>
             </div>
 
             {/* Forefoot Ball Width */}
@@ -2146,6 +2164,7 @@ export function CadStudio({ language }: CadStudioProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="cad-overwrite-title"
+            onKeyDown={(e) => trapModalTab(e, cancelOverwriteRef, cancelOverwriteRef)}
             className="w-full max-w-sm rounded-xl bg-gray-900 border border-amber-700/60 shadow-2xl p-6 space-y-4"
           >
             <div className="flex items-center gap-2.5 text-amber-400">
