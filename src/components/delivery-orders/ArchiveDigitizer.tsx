@@ -1820,8 +1820,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       ? "border-l-4 border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30"
                       : row.status === "error"
                       ? "border-l-4 border-l-red-600 bg-red-50/50 dark:bg-red-950/40"
-                      : isInvalid || isBatchDuplicate
+                      : isInvalid
                       ? "border-l-4 border-l-red-400 bg-red-50/30 dark:bg-red-950/20"
+                      : isBatchDuplicate
+                      ? "border-l-4 border-l-amber-400 bg-amber-50/30 dark:bg-amber-950/20"
                       : "border-l-4 border-l-transparent bg-white dark:bg-gray-900";
 
                   return (
