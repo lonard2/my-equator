@@ -780,9 +780,10 @@ export function OrderDetail({
                   </button>
 
                   {isMoreMenuOpen && (
-                    <div className="absolute right-0 mt-1.5 w-60 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div role="menu" aria-label={isId ? "Menu tindakan lainnya" : "More actions"} className="absolute right-0 mt-1.5 w-60 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1.5 z-30 text-xs animate-in fade-in zoom-in-95 duration-100">
                       {/* Download PRN Stream (Status-gated) */}
                       <button
+                        role="menuitem"
                         type="button"
                         disabled={!isPrintable}
                         onClick={() => {
@@ -1727,14 +1728,8 @@ export function OrderDetail({
                   {isId ? "Pilih Status Target:" : "Select Target Status:"}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(["DRAFT", "CONFIRMED", "PRINTED", "DISPATCHED", "CANCELLED"] as DeliveryOrderStatus[]).map((st) => {
-                    const isAvailable =
-                      st === "CANCELLED" ||
-                      availableRollbacks.includes(st) ||
-                      (order.status === "CANCELLED" && st === "DRAFT");
-
-                    if (!isAvailable) return null;
-
+                  {/* Only genuine rollback targets (<=3); CANCELLED has its dedicated More-menu entry */}
+                  {availableRollbacks.map((st) => {
                     const semanticHelp = isId ? ROLLBACK_SEMANTICS[st]?.id : ROLLBACK_SEMANTICS[st]?.en;
 
                     return (

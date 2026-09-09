@@ -57,7 +57,11 @@ export function OrderList({
         (order.driverName && order.driverName.toLowerCase().includes(q)) ||
         (order.vehicleNumber && order.vehicleNumber.toLowerCase().includes(q));
 
-      const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        (statusFilter === "ARCHIVED"
+          ? order.status === "DELIVERED" || order.status === "CANCELLED"
+          : order.status === statusFilter);
       return matchesSearch && matchesStatus;
     });
   }, [orders, searchTerm, statusFilter]);
@@ -164,6 +168,7 @@ export function OrderList({
   // Calculate live counts for filter chips
   const countByStatus = (st: string) => {
     if (st === "ALL") return orders.length;
+    if (st === "ARCHIVED") return orders.filter((o) => o.status === "DELIVERED" || o.status === "CANCELLED").length;
     return orders.filter((o) => o.status === st).length;
   };
 

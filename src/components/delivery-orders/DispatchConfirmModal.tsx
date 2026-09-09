@@ -78,7 +78,7 @@ export function DispatchConfirmModal({
         {/* Modal Header */}
         <div
           className={`p-4 text-white flex items-center justify-between shadow-xs ${
-            STATUS_COLOR_MAP[isDispatching ? "DISPATCHED" : "DELIVERED"].cta.buttonClasses.split(" ")[0]
+            STATUS_COLOR_MAP[isDispatching ? "DISPATCHED" : "DELIVERED"].headerBg
           }`}
         >
           <div className="flex items-center gap-2.5">

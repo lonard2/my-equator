@@ -299,7 +299,11 @@ export default function HomePage() {
       (order.poNumber && order.poNumber.toLowerCase().includes(q)) ||
       (order.driverName && order.driverName.toLowerCase().includes(q));
 
-    const matchesStatus = mobileStatusFilter === "ALL" || order.status === mobileStatusFilter;
+    const matchesStatus =
+      mobileStatusFilter === "ALL" ||
+      (mobileStatusFilter === "ARCHIVED"
+        ? order.status === "DELIVERED" || order.status === "CANCELLED"
+        : order.status === mobileStatusFilter);
     return matchesSearch && matchesStatus;
   });
 
@@ -485,6 +489,12 @@ export default function HomePage() {
                           placeholder={isId ? "Cari No. SJ, Customer, PO, Sopir..." : "Search Order, Client, PO, Driver..."}
                           value={mobileSearchTerm}
                           onChange={(e) => setMobileSearchTerm(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape" && mobileSearchTerm) {
+                              e.stopPropagation();
+                              setMobileSearchTerm("");
+                            }
+                          }}
                           className="w-full rounded-xl bg-black/20 border border-white/20 py-2 pl-8.5 pr-11 text-xs text-white placeholder-red-100 focus:bg-black/30 focus:border-white focus:outline-none transition shadow-inner"
                         />
                         {mobileSearchTerm && (

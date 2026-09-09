@@ -43,11 +43,14 @@ export interface StatusVisualToken {
   cta: {
     buttonClasses: string;
   };
+  /** Solid mid-tone header surface for confirm dialogs keyed by target status. */
+  headerBg: string;
 }
 
 export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = {
   DRAFT: {
     status: "DRAFT",
+    headerBg: "bg-gray-600 dark:bg-gray-700",
     hex: "#6B7280",
     labelId: "Draft",
     labelEn: "Draft",
@@ -73,6 +76,7 @@ export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = 
   },
   CONFIRMED: {
     status: "CONFIRMED",
+    headerBg: "bg-blue-800 dark:bg-blue-900",
     hex: "#1D4ED8",
     labelId: "Terkonfirmasi",
     labelEn: "Confirmed",
@@ -98,6 +102,7 @@ export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = 
   },
   PRINTED: {
     status: "PRINTED",
+    headerBg: "bg-amber-700 dark:bg-amber-800",
     hex: "#B45309",
     labelId: "Tercetak",
     labelEn: "Printed",
@@ -123,6 +128,7 @@ export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = 
   },
   DISPATCHED: {
     status: "DISPATCHED",
+    headerBg: "bg-purple-800 dark:bg-purple-900",
     hex: "#6D28D9",
     labelId: "Dikirim",
     labelEn: "Dispatched",
@@ -148,6 +154,7 @@ export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = 
   },
   DELIVERED: {
     status: "DELIVERED",
+    headerBg: "bg-emerald-800 dark:bg-emerald-900",
     hex: "#047857",
     labelId: "Diterima",
     labelEn: "Delivered",
@@ -173,6 +180,7 @@ export const STATUS_COLOR_MAP: Record<DeliveryOrderStatus, StatusVisualToken> = 
   },
   CANCELLED: {
     status: "CANCELLED",
+    headerBg: "bg-red-800 dark:bg-red-900",
     hex: "#B91C1C",
     labelId: "Dibatalkan",
     labelEn: "Cancelled",
@@ -208,7 +216,7 @@ export function getStatusToken(status: DeliveryOrderStatus): StatusVisualToken {
 export interface OrderFilterOption {
   id: string;
   label: string;
-  statusKey?: DeliveryOrderStatus;
+  statusKey?: DeliveryOrderStatus | "ARCHIVED";
 }
 
 /**
@@ -224,7 +232,6 @@ export function getOrderFilterOptions(language: "id" | "en"): OrderFilterOption[
     { id: "CONFIRMED", label: isId ? STATUS_COLOR_MAP.CONFIRMED.labelId : STATUS_COLOR_MAP.CONFIRMED.labelEn, statusKey: "CONFIRMED" },
     { id: "PRINTED", label: isId ? STATUS_COLOR_MAP.PRINTED.labelId : STATUS_COLOR_MAP.PRINTED.labelEn, statusKey: "PRINTED" },
     { id: "DISPATCHED", label: isId ? STATUS_COLOR_MAP.DISPATCHED.labelId : STATUS_COLOR_MAP.DISPATCHED.labelEn, statusKey: "DISPATCHED" },
-    { id: "DELIVERED", label: isId ? STATUS_COLOR_MAP.DELIVERED.labelId : STATUS_COLOR_MAP.DELIVERED.labelEn, statusKey: "DELIVERED" },
-    { id: "CANCELLED", label: isId ? STATUS_COLOR_MAP.CANCELLED.labelId : STATUS_COLOR_MAP.CANCELLED.labelEn, statusKey: "CANCELLED" },
+    { id: "ARCHIVED", label: isId ? "Selesai / Arsip" : "Done / Archive", statusKey: "ARCHIVED" },
   ];
 }
