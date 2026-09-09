@@ -125,6 +125,8 @@ export function CadStudio({ language }: CadStudioProps) {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [libraryError, setLibraryError] = useState(false);
   const [isLibraryLoading, setIsLibraryLoading] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [inspectorTab, setInspectorTab] = useState<"COMPONENTS" | "LAYERS" | "SPECS">("COMPONENTS");
   const libraryOpenerRef = useRef<HTMLElement | null>(null);
   const cncOpenerRef = useRef<HTMLElement | null>(null);
   const libraryCloseRef = useRef<HTMLButtonElement | null>(null);
@@ -159,8 +161,6 @@ export function CadStudio({ language }: CadStudioProps) {
       firstRef.current?.focus();
     }
   };
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
-  const [inspectorTab, setInspectorTab] = useState<"COMPONENTS" | "LAYERS" | "SPECS">("COMPONENTS");
   const [isCncPreFlightOpen, setIsCncPreFlightOpen] = useState(false);
   const [exporting, setExporting] = useState<"DXF" | "SVG" | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
