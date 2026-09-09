@@ -78,6 +78,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const [photoPreviewRowId, setPhotoPreviewRowId] = useState<string | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
@@ -344,8 +345,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     setRows((prev) => [...prev, newRow]);
     setSuccessMessage(
       isId
-        ? `Foto fisik surat jalan "${file.name}" berhasil disiapkan ke lembar kerja. Lengkapi customer dan ukuran.`
-        : `Physical slip photo "${file.name}" staged into worksheet. Please enter customer and sizes.`
+        ? `Foto referensi "${file.name}" dilampirkan ke baris kerja. Baris ini adalah transkrip manual: lengkapi customer, ukuran, dan harga dengan membaca foto.`
+        : `Reference photo "${file.name}" attached to the row. This is a manual transcript: fill in customer, sizes, and price by reading the photo.`
     );
     e.target.value = "";
   };
@@ -494,6 +495,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     const targetIndex = rows.findIndex((r) => r.id === id);
     if (targetIndex === -1) return;
     const targetRow = rows[targetIndex];
+    if (targetRow.photoPreviewUrl) URL.revokeObjectURL(targetRow.photoPreviewUrl);
 
     if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
     setDeletedRowBuffer({ row: targetRow, index: targetIndex });
@@ -517,12 +519,22 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   };
 
   const handleClearAllRows = () => {
+    rows.forEach((r) => r.photoPreviewUrl && URL.revokeObjectURL(r.photoPreviewUrl));
     setRows([]);
     setFailedOrderNumbers([]);
     setShowClearConfirm(false);
+    setPhotoPreviewRowId(null);
     clearButtonRef.current?.focus();
     handleAddRow();
   };
+
+  // Revoke any staged object URLs when the surface unmounts
+  useEffect(() => {
+    return () => {
+      rows.forEach((r) => r.photoPreviewUrl && URL.revokeObjectURL(r.photoPreviewUrl));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getRowTotalPairs = (sizes: SizeBreakdown) => {
     return Object.values(sizes).reduce((sum, q) => sum + (q || 0), 0);
@@ -1066,10 +1078,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand inline-flex items-center gap-1.5"
-            title={isId ? "Ambil foto fisik surat jalan untuk disiapkan otomatis" : "Capture photo of physical delivery slip"}
+            title={isId ? "Lampirkan foto referensi slip fisik (transkrip manual)" : "Attach a reference photo of the physical slip (manual transcription)"}
           >
             <Camera className="h-3.5 w-3.5 text-brand" />
-            <span className="hidden sm:inline">{isId ? "Foto Slip" : "Slip Photo"}</span>
+            <span className="hidden sm:inline">{isId ? "Lampirkan Foto" : "Attach Photo"}</span>
           </button>
 
           {/* Clear Table Trigger */}
@@ -1371,8 +1383,20 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                       <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shrink-0 inline-flex items-center gap-1">
                         #{idx + 1}
                         {row.photoPreviewUrl && (
-                          <span title={isId ? "Foto Fisik" : "Slip Photo"}>
-                            <Camera className="h-3 w-3 text-brand" />
+                          <button
+                            type="button"
+                            data-testid="mobile-photo-preview-trigger"
+                            onClick={() => setPhotoPreviewRowId(row.id)}
+                            title={isId ? "Lihat foto referensi" : "View reference photo"}
+                            aria-label={isId ? `Lihat foto referensi baris ${idx + 1}` : `View reference photo row ${idx + 1}`}
+                            className="text-brand dark:text-red-400 hover:text-brand-strong transition"
+                          >
+                            <Camera className="h-3 w-3" />
+                          </button>
+                        )}
+                        {row.photoPreviewUrl && (
+                          <span className="text-[9px] font-bold uppercase text-gray-400">
+                            {isId ? "Transkrip Manual" : "Manual"}
                           </span>
                         )}
                       </span>
@@ -1642,7 +1666,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                         >
                           <Camera className="h-4 w-4 text-brand" />
-                          <span>{isId ? "Foto Slip Fisik" : "Capture Physical Slip"}</span>
+                          <span>{isId ? "Lampirkan Foto Referensi" : "Attach Reference Photo"}</span>
                         </button>
                       </div>
                     </div>
@@ -1686,12 +1710,24 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                         <div className="flex items-center justify-center gap-1">
                           <span>{rIdx + 1}</span>
                           {row.photoPreviewUrl && (
-                            <span
+                            <button
+                              type="button"
                               data-testid="photo-slip-badge"
-                              title={isId ? "Disiapkan dari foto fisik slip" : "Staged from physical slip photo"}
-                              className="text-brand dark:text-red-400"
+                              onClick={() => setPhotoPreviewRowId(row.id)}
+                              title={isId ? "Lihat foto referensi" : "View reference photo"}
+                              aria-label={isId ? `Lihat foto referensi baris ${rIdx + 1}` : `View reference photo row ${rIdx + 1}`}
+                              className="text-brand dark:text-red-400 hover:text-brand-strong transition"
                             >
                               <Camera className="h-3 w-3" />
+                            </button>
+                          )}
+                          {row.photoPreviewUrl && (
+                            <span
+                              data-testid="manual-transcript-label"
+                              title={isId ? "Transkrip manual dari foto referensi" : "Manual transcript from reference photo"}
+                              className="hidden lg:inline text-[9px] font-bold uppercase text-gray-400"
+                            >
+                              {isId ? "Manual" : "Manual"}
                             </span>
                           )}
                         </div>
@@ -1915,10 +1951,10 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
               type="button"
               onClick={() => cameraInputRef.current?.click()}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand"
-              title={isId ? "Ambil foto kamera slip fisik surat jalan" : "Capture physical slip via camera"}
+              title={isId ? "Lampirkan foto referensi slip fisik (transkrip manual)" : "Attach a reference photo of the physical slip (manual transcription)"}
             >
               <Camera className="h-4 w-4 text-brand" />
-              <span>{isId ? "Foto Slip" : "Capture Slip"}</span>
+              <span>{isId ? "Lampirkan Foto" : "Attach Photo"}</span>
             </button>
 
             <span className="text-[11px] text-gray-500 font-mono hidden sm:inline tabular-nums">
@@ -2053,6 +2089,52 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           </div>
         </div>
       )}
+
+      {/* Reference Photo Preview Overlay (click-to-open from the row badge) */}
+      {photoPreviewRowId && (() => {
+        const previewRow = rows.find((r) => r.id === photoPreviewRowId);
+        if (!previewRow?.photoPreviewUrl) return null;
+        return (
+          <div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+            onClick={() => setPhotoPreviewRowId(null)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setPhotoPreviewRowId(null);
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={isId ? "Foto referensi slip" : "Slip reference photo"}
+              className="max-w-lg w-full bg-gray-950 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewRow.photoPreviewUrl}
+                alt={isId ? `Foto referensi slip ${previewRow.orderNumber}` : `Reference photo for slip ${previewRow.orderNumber}`}
+                className="w-full max-h-[70vh] object-contain bg-black"
+              />
+              <div className="p-3 flex items-center justify-between bg-gray-900 border-t border-gray-800">
+                <div>
+                  <p className="font-mono font-bold text-xs text-gray-200">{previewRow.orderNumber}</p>
+                  <p className="text-[10px] text-gray-500">
+                    {isId ? "Foto referensi — transkrip manual di lembar kerja" : "Reference photo — manual transcript in the worksheet"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPhotoPreviewRowId(null)}
+                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition"
+                  aria-label={isId ? "Tutup foto referensi" : "Close reference photo"}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Date Overwrite Undo Toast Notification (Accessible Live Region) */}
       <div
