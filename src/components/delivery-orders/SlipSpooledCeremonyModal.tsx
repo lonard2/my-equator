@@ -128,12 +128,12 @@ export function SlipSpooledCeremonyModal({
           {/* Heading */}
           <div className="space-y-1">
             <h2 id="spool-ceremony-title" className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              {isId ? "Slip Surat Jalan Berhasil Di-Spool!" : "Delivery Slip Spooled Successfully!"}
+              {isId ? "File .PRN Siap Dicetak!" : ".PRN File Ready to Print!"}
             </h2>
             <p id="spool-ceremony-desc" className="text-xs sm:text-sm text-gray-400 max-w-sm mx-auto">
               {isId
-                ? "Format ESC/P 80-Kolom terkirim ke antrean printer dot-matrix Epson LX-310 pabrik."
-                : "ESC/P 80-Column binary stream spooled to the factory Epson LX-310 dot-matrix printer."}
+                ? "Stream ESC/P 80-Kolom terunduh. Buka di stasiun cetak untuk spool ke printer dot-matrix Epson LX-310."
+                : "The ESC/P 80-column binary stream downloaded. Open it at the print station to spool to the Epson LX-310."}
             </p>
           </div>
 
