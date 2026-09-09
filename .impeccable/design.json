@@ -1,85 +1,282 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-25T20:37:25Z",
+  "generatedAt": "2026-09-09T05:01:22Z",
   "title": "Design System: MyEquator",
   "extensions": {
     "colorMeta": {
       "primary": {
         "role": "primary",
         "displayName": "Equator Crimson",
-        "canonical": "oklch(40% 0.18 25)",
+        "canonical": "#8B0000",
         "tonalRamp": [
-          "#3a0000",
-          "#550000",
-          "#700000",
+          "#4A0000",
+          "#6B0000",
           "#8B0000",
-          "#A81818",
-          "#C83232",
-          "#E55050",
-          "#FEE2E2"
+          "#A00000",
+          "#B42929",
+          "#C64F4F",
+          "#D97B7B",
+          "#F0DADA"
+        ]
+      },
+      "data-present": {
+        "role": "tertiary",
+        "displayName": "Data Amber",
+        "canonical": "#B45309",
+        "tonalRamp": [
+          "#452005",
+          "#5C2B06",
+          "#783908",
+          "#B45309",
+          "#C97A34",
+          "#DCA468",
+          "#EBC9A3",
+          "#F8ECD9"
         ]
       },
       "surface": {
         "role": "neutral",
-        "displayName": "Pure Surface",
-        "canonical": "oklch(100% 0 0)",
+        "displayName": "Pure Canvas",
+        "canonical": "#FFFFFF",
         "tonalRamp": [
-          "#030712",
+          "#111827",
+          "#1F2937",
+          "#374151",
+          "#6B7280",
+          "#9CA3AF",
+          "#D1D5DB",
+          "#E5E7EB",
+          "#FFFFFF"
+        ]
+      },
+      "surface-subtle": {
+        "role": "neutral",
+        "displayName": "Subtle Floor",
+        "canonical": "#F9FAFB",
+        "tonalRamp": [
           "#111827",
           "#1F2937",
           "#374151",
           "#6B7280",
           "#9CA3AF",
           "#E5E7EB",
-          "#FFFFFF"
+          "#F3F4F6",
+          "#F9FAFB"
         ]
       },
-      "cad-outline": {
-        "role": "cad",
-        "displayName": "Cut Outline (ACI 7)",
-        "canonical": "#FFFFFF",
-        "tonalRamp": ["#FFFFFF", "#F1F5F9", "#E2E8F0", "#CBD5E1", "#94A3B8", "#64748B", "#334155", "#0F172A"]
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Primary Ink",
+        "canonical": "#111827",
+        "tonalRamp": [
+          "#111827",
+          "#1F2937",
+          "#374151",
+          "#4B5563",
+          "#6B7280",
+          "#9CA3AF",
+          "#D1D5DB",
+          "#F9FAFB"
+        ]
       },
-      "cad-arch": {
-        "role": "cad",
-        "displayName": "TPU Arch Bridge (ACI 1)",
-        "canonical": "#EF4444",
-        "tonalRamp": ["#450A0A", "#7F1D1D", "#991B1B", "#DC2626", "#EF4444", "#F87171", "#FCA5A5", "#FEE2E2"]
+      "status-draft": {
+        "role": "tertiary",
+        "displayName": "Draft Slate",
+        "canonical": "#6B7280",
+        "tonalRamp": [
+          "#374151",
+          "#4B5563",
+          "#6B7280",
+          "#9CA3AF",
+          "#C4CAD2",
+          "#DDE0E5",
+          "#EEF0F3",
+          "#F8F9FA"
+        ]
       },
-      "cad-heel": {
-        "role": "cad",
-        "displayName": "Heel Cup Profile (ACI 3)",
-        "canonical": "#10B981",
-        "tonalRamp": ["#022C22", "#064E3B", "#065F46", "#047857", "#10B981", "#34D399", "#6EE7B7", "#D1FAE5"]
+      "status-confirmed": {
+        "role": "tertiary",
+        "displayName": "Confirmed Royal",
+        "canonical": "#1D4ED8",
+        "tonalRamp": [
+          "#12266B",
+          "#1A3AA8",
+          "#1D4ED8",
+          "#4C79E5",
+          "#7BA0ED",
+          "#A7C0F3",
+          "#D0DDF9",
+          "#EDF2FD"
+        ]
       },
-      "cad-meta": {
-        "role": "cad",
-        "displayName": "Metatarsal Cushion (ACI 4)",
-        "canonical": "#06B6D4",
-        "tonalRamp": ["#083344", "#164E63", "#155E75", "#0E7490", "#06B6D4", "#22D3EE", "#67E8F9", "#CFFAFE"]
+      "status-printed": {
+        "role": "tertiary",
+        "displayName": "Printed Gold",
+        "canonical": "#B45309",
+        "tonalRamp": [
+          "#452005",
+          "#5C2B06",
+          "#B45309",
+          "#C97A34",
+          "#DCA468",
+          "#EBC9A3",
+          "#F5E2C8",
+          "#FBF3E6"
+        ]
+      },
+      "status-dispatched": {
+        "role": "tertiary",
+        "displayName": "Dispatched Violet",
+        "canonical": "#6D28D9",
+        "tonalRamp": [
+          "#2E1065",
+          "#4C1D95",
+          "#6D28D9",
+          "#8B5CF0",
+          "#AC8BF5",
+          "#CBB4F9",
+          "#E4D8FC",
+          "#F4EFFE"
+        ]
+      },
+      "status-delivered": {
+        "role": "tertiary",
+        "displayName": "Delivered Forest",
+        "canonical": "#047857",
+        "tonalRamp": [
+          "#022C22",
+          "#065F46",
+          "#047857",
+          "#10B981",
+          "#4ADE80",
+          "#86EFAC",
+          "#BBF7D0",
+          "#ECFDF5"
+        ]
+      },
+      "status-cancelled": {
+        "role": "tertiary",
+        "displayName": "Cancelled Danger",
+        "canonical": "#B91C1C",
+        "tonalRamp": [
+          "#450A0A",
+          "#7F1D1D",
+          "#B91C1C",
+          "#DC2626",
+          "#EF6B6B",
+          "#F49E9E",
+          "#FAC6C6",
+          "#FEECEC"
+        ]
+      },
+      "terminal-text": {
+        "role": "tertiary",
+        "displayName": "Phosphor Green",
+        "canonical": "#34d399",
+        "tonalRamp": [
+          "#022C22",
+          "#065F46",
+          "#047857",
+          "#34D399",
+          "#6EE7B7",
+          "#A7F3D0",
+          "#D1FAE5",
+          "#ECFDF5"
+        ]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display 28px", "purpose": "Module titles, executive IDR revenue figures." },
-      "headline": { "displayName": "Headline 20px", "purpose": "Section headers, modal titles." },
-      "title": { "displayName": "Title 14px", "purpose": "Card headers, customer names." },
-      "body": { "displayName": "Body 12px", "purpose": "Form fields, addresses, notes." },
-      "label": { "displayName": "Label / Data 11px", "purpose": "Tabular footwear sizes, pairs, dates, calipers." },
-      "terminal": { "displayName": "Terminal 13px", "purpose": "ESC/P dot-matrix 80-column monospace emulator." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Module titles and executive IDR figures."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headers and modal titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card headers and customer names."
+      },
+      "terminal": {
+        "displayName": "Terminal",
+        "purpose": "ESC/P dot-matrix preview, order codes, matrix numerals."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inputs, addresses, dialog copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Sizes, pairs, dates, mm dimensions."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "The 10px type floor for metadata."
+      }
     },
     "shadows": [
-      { "name": "subtle-surface", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Base card perimeters." },
-      { "name": "active-lift", "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1)", "purpose": "Primary CTAs and action drawers." },
-      { "name": "modal-overlay", "value": "0 25px 50px -12px rgba(0, 0, 0, 0.25)", "purpose": "Dialog popovers and print sheets." }
+      {
+        "name": "subtle-surface",
+        "value": "0 1px 2px 0 rgba(0,0,0,0.05)",
+        "purpose": "Cards, chips, resting controls."
+      },
+      {
+        "name": "active-lift",
+        "value": "0 4px 6px -1px rgba(0,0,0,0.1)",
+        "purpose": "Primary CTAs and floating launcher."
+      },
+      {
+        "name": "modal-overlay",
+        "value": "0 25px 50px -12px rgba(0,0,0,0.25)",
+        "purpose": "Dialogs, ceremony stages, command palette."
+      },
+      {
+        "name": "ceremony-glow",
+        "value": "0 0 50px rgba(4,120,87,0.35)",
+        "purpose": "Ceremony stages only; amber twin uses rgba(180,83,9,0.35)."
+      }
     ],
     "motion": [
-      { "name": "ease-spring", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Button presses and drawer transitions." }
+      {
+        "name": "ease-enter",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Entrance family (fade/zoom-95/slide) at 180ms; also the system easing."
+      },
+      {
+        "name": "feedback-bump",
+        "value": "scale(1.04) 200ms",
+        "purpose": "Tactile press acknowledgment."
+      },
+      {
+        "name": "paper-feed",
+        "value": "translateY(12px) 350ms",
+        "purpose": "New content arriving (chat messages, print preview)."
+      },
+      {
+        "name": "ledger-flash",
+        "value": "emerald-tint 1.2s forwards",
+        "purpose": "Successful ledger mutation confirmation."
+      },
+      {
+        "name": "status-pulse",
+        "value": "ring 1.8s infinite",
+        "purpose": "Current lifecycle step only; badges stay calm."
+      }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "md", "value": "768px" },
-      { "name": "lg", "value": "1024px" },
-      { "name": "xl", "value": "1280px" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
     ]
   },
   "components": [
@@ -87,79 +284,134 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Authoritative primary action button in Equator Crimson.",
-      "html": "<button class=\"ds-btn-primary\">SIMPAN PERUBAHAN</button>",
-      "css": ".ds-btn-primary { background: #8B0000; color: #ffffff; padding: 8px 16px; font-weight: 700; font-size: 12px; border-radius: 12px; border: none; cursor: pointer; transition: background 0.15s, transform 0.15s; } .ds-btn-primary:hover { background: #A00000; } .ds-btn-primary:active { transform: scale(0.95); }"
+      "description": "Crimson brand CTA; the only solid crimson control besides danger.",
+      "html": "<button class=\"ds-btn-primary\">Simpan Perubahan</button>",
+      "css": ".ds-btn-primary { background:#8B0000; color:#fff; font-weight:700; font-size:12px; padding:8px 14px; border:none; border-radius:12px; box-shadow:0 1px 2px 0 rgba(0,0,0,0.05); font-family:inherit; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:background .15s, transform .1s; } .ds-btn-primary:hover { background:#A00000; } .ds-btn-primary:active { transform:scale(.95); } .ds-btn-primary:focus-visible { outline:none; box-shadow:0 0 0 2px #8B0000; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Bordered surface button for non-primary actions.",
+      "html": "<button class=\"ds-btn-secondary\">Batal</button>",
+      "css": ".ds-btn-secondary { background:#fff; color:#111827; font-weight:600; font-size:12px; padding:8px 12px; border:1px solid #E5E7EB; border-radius:12px; font-family:inherit; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:background .15s, transform .1s; } .ds-btn-secondary:hover { background:#F9FAFB; } .ds-btn-secondary:active { transform:scale(.95); } .ds-btn-secondary:focus-visible { outline:none; box-shadow:0 0 0 2px #8B0000; } @media (prefers-color-scheme: dark) { .ds-btn-secondary { background:#1F2937; color:#F9FAFB; border-color:#374151; } }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Standard text field with brand focus ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Cari No. SJ, Customer, PO...\" />",
+      "css": ".ds-input { background:#fff; color:#111827; font-size:12px; font-weight:500; padding:6px 12px; border:1px solid #E5E7EB; border-radius:12px; font-family:inherit; width:100%; } .ds-input:focus { outline:none; border-color:#8B0000; box-shadow:0 0 0 1px #8B0000; } @media (prefers-color-scheme: dark) { .ds-input { background:#1F2937; color:#F9FAFB; border-color:#374151; } }"
+    },
+    {
+      "name": "Status Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Lifecycle filter chip with live count; aria-pressed carries selection.",
+      "html": "<div style=\"display:flex; gap:4px; font-family:inherit;\"><button class=\"ds-chip ds-chip-selected\" aria-pressed=\"true\">Tercetak <span class=\"ds-chip-count\">12</span></button><button class=\"ds-chip\" aria-pressed=\"false\">Draft <span class=\"ds-chip-count ds-chip-count-muted\">3</span></button></div>",
+      "css": ".ds-chip { background:#F3F4F6; color:#6B7280; font-weight:700; font-size:11px; padding:4px 10px; border:none; border-radius:12px; display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-family:inherit; transition:all .15s; } .ds-chip:active { transform:scale(.95); } .ds-chip-selected { background:#8B0000; color:#fff; box-shadow:0 1px 2px 0 rgba(0,0,0,0.05); } .ds-chip-count { background:rgba(255,255,255,.25); border-radius:9999px; padding:0 4px; font-family:ui-monospace,monospace; font-size:10px; font-variant-numeric:tabular-nums; } .ds-chip-count-muted { background:#D1D5DB; color:#374151; }"
     },
     {
       "name": "Status Badge",
       "kind": "chip",
-      "refersTo": "status-delivered",
-      "description": "Matched-hue pill badge for operational state tracking.",
-      "html": "<span class=\"ds-status-badge\"><span class=\"ds-dot\"></span>Terkirim (Delivered)</span>",
-      "css": ".ds-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #ecfdf5; color: #047857; font-size: 11px; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.2); } .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: #10b981; }"
+      "refersTo": null,
+      "description": "Matched-hue lifecycle pill with semantic dot; static by doctrine.",
+      "html": "<div style=\"display:flex; gap:6px; font-family:inherit;\"><span class=\"ds-badge ds-badge-printed\"><span class=\"ds-dot ds-dot-printed\"></span>Tercetak</span><span class=\"ds-badge ds-badge-delivered\"><span class=\"ds-dot ds-dot-delivered\"></span>Diterima</span></div>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:2px 8px; border-radius:9999px; } .ds-badge-printed { background:#FEF3E2; color:#B45309; } .ds-badge-delivered { background:#ECFDF5; color:#047857; } .ds-dot { width:6px; height:6px; border-radius:9999px; } .ds-dot-printed { background:#B45309; } .ds-dot-delivered { background:#047857; }"
     },
     {
-      "name": "Caliper Numeric Input",
-      "kind": "input",
-      "refersTo": "input-field",
-      "description": "Direct millimeter numeric entry synchronized with CAD sliders.",
-      "html": "<div class=\"ds-caliper-box\"><input type=\"number\" value=\"96.5\" step=\"0.1\" class=\"ds-caliper-input\" /><span class=\"ds-unit\">mm</span></div>",
-      "css": ".ds-caliper-box { display: inline-flex; align-items: center; gap: 4px; } .ds-caliper-input { width: 64px; padding: 2px 6px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: #f59e0b; font-family: monospace; font-weight: 700; font-size: 12px; text-align: right; } .ds-unit { font-size: 10px; color: #9ca3af; font-weight: 600; }"
-    },
-    {
-      "name": "CNC Pre-Flight Modal",
+      "name": "Card",
       "kind": "card",
       "refersTo": "card",
-      "description": "High-assurance pre-flight modal for verifying laser and knife die toolpaths.",
-      "html": "<div class=\"ds-modal-card\"><div class=\"ds-modal-header\">✓ 100% Manifold Closed Loop</div><div class=\"ds-modal-body\">Total Cut Perimeter: 742.8 mm</div></div>",
-      "css": ".ds-modal-card { background: #111827; border: 1px solid #374151; border-radius: 24px; padding: 20px; color: #f9fafb; font-size: 12px; } .ds-modal-header { font-weight: 800; color: #10b981; margin-bottom: 8px; } .ds-modal-body { font-family: monospace; color: #38bdf8; }"
+      "description": "Flat-at-rest content container; 1px border carries hierarchy.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">SJ/EQ/2026/09/0042</p><p class=\"ds-card-body\">PT KMK Global Sport • 1.240 psg</p></div>",
+      "css": ".ds-card { background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:16px; box-shadow:0 1px 2px 0 rgba(0,0,0,0.05); font-family:inherit; } .ds-card-title { margin:0 0 4px; font-weight:700; font-size:13px; color:#111827; font-family:ui-monospace,monospace; } .ds-card-body { margin:0; font-size:12px; color:#6B7280; } @media (prefers-color-scheme: dark) { .ds-card { background:#111827; border-color:#374151; } .ds-card-title { color:#F9FAFB; } }"
+    },
+    {
+      "name": "Size Matrix Cell (Data Present)",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Amber data-present encoding; the anti-crimson doctrine made visible.",
+      "html": "<div style=\"display:flex; gap:6px; font-family:ui-monospace,monospace;\"><span class=\"ds-cell ds-cell-data\">80</span><span class=\"ds-cell ds-cell-empty\">-</span></div>",
+      "css": ".ds-cell { display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; border-radius:8px; border:1px solid #E5E7EB; font-size:12px; font-weight:700; } .ds-cell-data { background:#FEF3E2; border-color:#DCA468; color:#783908; } .ds-cell-empty { color:#D1D5DB; }"
+    },
+    {
+      "name": "Ceremony Stage (Spool)",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Dark full-screen ritual card: seal, mono recap, verification gate. The system's emotional peak.",
+      "html": "<div class=\"ds-ceremony\"><div class=\"ds-seal\">✓</div><h3 class=\"ds-ceremony-title\">Slip Surat Jalan Berhasil Di-Spool!</h3><p class=\"ds-ceremony-order\">SJ/EQ/2026/09/0042</p><div class=\"ds-ceremony-plies\"><span>1. Putih</span><span>2. Merah</span><span>3. Kuning</span></div></div>",
+      "css": ".ds-ceremony { background:#030712; color:#fff; border:1px solid rgba(180,83,9,.4); border-radius:16px; padding:32px; max-width:420px; text-align:center; box-shadow:0 0 50px rgba(180,83,9,.35); font-family:inherit; } .ds-seal { width:88px; height:88px; margin:0 auto 16px; border-radius:9999px; background:rgba(69,32,5,.8); border:2px solid #B45309; display:flex; align-items:center; justify-content:center; color:#FBBF24; font-size:28px; } .ds-ceremony-title { margin:0 0 8px; font-size:20px; font-weight:900; letter-spacing:-.025em; } .ds-ceremony-order { margin:0 0 12px; font-family:ui-monospace,monospace; color:#FCD34D; font-weight:700; } .ds-ceremony-plies { display:flex; justify-content:center; gap:8px; font-size:10px; color:#9CA3AF; font-family:ui-monospace,monospace; }"
     }
   ],
   "narrative": {
     "northStar": "The Precision Vulcanizer",
-    "overview": "MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson (#8B0000), structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, precision millimeter-scale CAD drafting grids, and crisp mechanical affordances.",
+    "overview": "MyEquator's visual identity reflects the physical, tactile world of footwear insole manufacturing in Bandung, West Java. It blends rugged industrial reliability with modern digital precision: deep vulcanized crimson, structured sizing breakdown matrices, high-contrast monospace ESC/P dot-matrix emulators, precision millimeter-scale CAD drafting grids, and crisp mechanical affordances. The system is designed for high-throughput daily operations under real factory floor conditions: dust, overhead fluorescent lighting, warehouse gloves, digital calipers, and split-second verification needs. Color is doctrine, not decoration: crimson is scarce and means danger or brand chrome; amber means data present; the six status hues speak only about lifecycle state.",
     "keyCharacteristics": [
-      "Crimson Brand Dominance: Dark Red (#8B0000) is the singular primary accent.",
-      "Physical Matrix Ergonomics: Sizing matrices (EU 36–48) are structured tabular grids.",
-      "CAD & CNC Vector Precision: Parametric insole splines with millimeter caliper controls and AutoCAD R12 DXF layer streaming.",
-      "Industrial Terminal Evocation: Continuous form printing features authentic CRT phosphor green previews."
+      "Crimson Scarcity: reserved for brand chrome and danger; its rarity is the point.",
+      "Amber Means Data: value presence wears amber, never crimson.",
+      "Physical Matrix Ergonomics: tabular sizing grids with hold-to-x10 touch pad.",
+      "Truth-Gated Confirmations: modals stay open on rejection; PRINTED advances only after human verification.",
+      "Ceremony Family: Delivered (emerald) and Slip-Spooled (amber) share one dark full-screen anatomy.",
+      "Industrial Terminal Evocation: CRT phosphor green dot-matrix preview with tractor perforations."
     ],
     "rules": [
       {
-        "name": "The Singular Accent Rule",
-        "body": "Deep crimson (#8B0000) is used on ≤10% of any view. Its rarity guarantees immediate visual hierarchy for primary CTAs and active states.",
+        "name": "The Crimson-Is-Danger Rule",
+        "body": "Crimson (the #8B0000 family) appears as brand chrome or danger — selection, data presence, and success may never wear it. If a color could mean two things at the loading dock, it means nothing.",
+        "section": "colors"
+      },
+      {
+        "name": "The Amber-Is-Data Rule",
+        "body": "Non-zero sizing cells, data chips, and touch-pad quantity tiles wear amber. Amber encodes value presence; it never signals error.",
         "section": "colors"
       },
       {
         "name": "The Matched Hue Rule",
-        "body": "Status badges and alerts always pair text and background from the same color family (e.g., text-blue-700 on bg-blue-50).",
+        "body": "Status badges and alerts always pair text and background from the same color family; never gray text on a colored surface.",
+        "section": "colors"
+      },
+      {
+        "name": "The Calm Status Rule",
+        "body": "Status indicators are static. Motion is reserved for state transitions and the current-step pulse — never on badges.",
         "section": "colors"
       },
       {
         "name": "The Tabular Numerals Rule",
-        "body": "All dynamic numbers, footwear sizes, currency amounts, and order codes must specify tabular-nums or font-mono with OpenType tnum enabled.",
+        "body": "All dynamic numbers, sizes, currency, and dates specify tabular-nums or font-mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The 10px Floor Rule",
+        "body": "The smallest rendered text is 10px; metadata below that is deleted, not shrunk.",
         "section": "typography"
       },
       {
         "name": "The Inset Indicator Rule",
-        "body": "Active list items and selected tabs use an inset indicator bar rather than a thick left border, completely preventing box-sizing displacement.",
+        "body": "Active list items and selected tabs use an inset indicator bar, never a thick border — no box-sizing displacement.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Shadows appear only as a response to state (hover, focus, elevation), or on floating chrome.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "Do format all currency in Indonesian Rupiah with thousand-separator dots: Rp 1.250.000.",
-      "Do include Indonesian Terbilang spelled-out text on printable Delivery Orders and Invoices.",
-      "Do use tabular-nums on all footwear quantities, sizes, prices, dates, and caliper dimensions.",
-      "Do ensure all mobile action buttons satisfy minimum 44px touch targets.",
-      "Do guard multi-field forms against accidental loss with isDirty discard confirmations."
+      "Do format all currency in Indonesian Rupiah with dot separators (Rp 1.250.000) and include Terbilang on printable orders.",
+      "Do use tabular-nums on every dynamic number, and keep all text >=10px.",
+      "Do ensure >=44px touch targets on every mobile/tablet control; announce state changes via aria-live/aria-pressed/sr-only text.",
+      "Do guard multi-field forms with isDirty, autosave (800ms debounce), and a discard modal with Keep-Editing focused.",
+      "Do route every status mutation through the truth gate: confirm modal returns a result, stays open on rejection, and toasts success only on verified outcomes."
     ],
     "donts": [
-      "Don't use generic floating decorative gradients or rainbow AI accents.",
-      "Don't place dark gray text on saturated background colors (gray-on-color).",
-      "Don't use native browser alert() or window.confirm() popups; use accessible in-app modals.",
-      "Don't use pulse/ping animations on status badges; keep status indicators calm and static.",
-      "Don't apply border-left-4 on list cards; use inset indicator bars to avoid layout shifts."
+      "Don't use crimson for selection, data presence, or success — crimson is brand chrome and danger only.",
+      "Don't render raw English status enums (DRAFT, DISPATCHED) in Indonesian UI — speak labelId/labelEn tokens.",
+      "Don't use native alert()/window.confirm(); use the in-app modal and toast patterns.",
+      "Don't use pulse/ping animations on status badges; keep status indicators calm.",
+      "Don't use rounded-3xl or border-left-4 on cards; honor the radius law and the inset indicator rule.",
+      "Don't claim states the system hasn't verified — copy states expectations, gates state truth."
     ]
   }
 }
