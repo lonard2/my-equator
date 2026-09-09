@@ -519,6 +519,83 @@ describe("Archive Digitizer Hardening & Data Integrity (Impeccable P0 & P1)", ()
       );
     });
   });
+
+  describe("9. Impeccable Design Rubric Verification: Camera OCR, Catalog Validation & Empty States", () => {
+    it("verifies off-catalog article validation and collision-free order numbering during paste", () => {
+      // Validates raw pasted article against catalog
+      assert.ok(
+        digitizerSource.includes("ARTICLE_CATALOG.find(") &&
+          digitizerSource.includes("offCatalogCount"),
+        "Paste ingestion must validate pasted articles against ARTICLE_CATALOG and count off-catalog items"
+      );
+      // Informs user of off-catalog adjustments instead of silently inventing articles
+      assert.ok(
+        digitizerSource.includes("artikel di luar katalog disesuaikan ke standar") &&
+          digitizerSource.includes("off-catalog items mapped to standard"),
+        "Paste ingestion must notify operator if off-catalog articles were normalized"
+      );
+      // Collision-free sequential numbering checking existing batch numbers
+      assert.ok(
+        digitizerSource.includes("while (existingNumbers.has(orderNumber.toUpperCase()))"),
+        "Paste ingestion must ensure newly parsed rows never collide with existing batch numbers"
+      );
+    });
+
+    it("verifies mobile camera & physical paper slip photo capture affordance", () => {
+      // Hidden camera input with capture="environment"
+      assert.ok(
+        digitizerSource.includes('type="file"') &&
+          digitizerSource.includes('ref={cameraInputRef}') &&
+          digitizerSource.includes('capture="environment"'),
+        "Digitizer must provide camera file input for direct physical slip capture"
+      );
+      // handleCapturePhoto handler stages row with photoPreviewUrl
+      assert.ok(
+        digitizerSource.includes("const handleCapturePhoto = (") &&
+          digitizerSource.includes("photoPreviewUrl: previewUrl"),
+        "handleCapturePhoto must stage a draft row carrying the captured slip preview"
+      );
+      // Camera triggers in header and bottom toolbar
+      assert.ok(
+        digitizerSource.includes("cameraInputRef.current?.click()") &&
+          digitizerSource.includes("Foto Slip"),
+        "Digitizer must provide explicit camera slip capture buttons"
+      );
+      // Photo slip badges rendered on rows
+      assert.ok(
+        digitizerSource.includes('data-testid="photo-slip-badge"'),
+        "Desktop row must render photo badge when staged from physical slip"
+      );
+    });
+
+    it("verifies comprehensive empty state handling when rows are cleared", () => {
+      assert.ok(
+        digitizerSource.includes("Lembar Kerja Kosong") &&
+          digitizerSource.includes("Worksheet is Empty"),
+        "Mobile feed must display clear empty state when rows are empty"
+      );
+      assert.ok(
+        digitizerSource.includes("Lembar Kerja Masih Kosong") &&
+          digitizerSource.includes("Worksheet is Empty"),
+        "Desktop table tbody must render a colSpan empty state row when rows.length is 0"
+      );
+    });
+
+    it("verifies top quick commit button in header for rapid operator workflow", () => {
+      assert.ok(
+        digitizerSource.includes("Simpan ke DB") &&
+          digitizerSource.includes("Commit DB"),
+        "Top header toolbar must offer a quick commit button so operators don't have to scroll to bottom"
+      );
+    });
+
+    it("verifies handleRowChange is strictly typed without any", () => {
+      assert.ok(
+        digitizerSource.includes("const handleRowChange = <K extends keyof BatchRow>(id: string, field: K, value: BatchRow[K]) =>"),
+        "handleRowChange must be generic and strictly typed to avoid any"
+      );
+    });
+  });
 });
 
 

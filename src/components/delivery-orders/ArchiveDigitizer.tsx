@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Loader2,
   X,
+  Camera,
 } from "lucide-react";
 
 interface ArchiveDigitizerProps {
@@ -36,6 +37,7 @@ interface BatchRow {
   unitPrice: number;
   status: "idle" | "saving" | "saved" | "error";
   errorMessage?: string;
+  photoPreviewUrl?: string;
 }
 
 const CUSTOMER_DIRECTORY = [
@@ -43,29 +45,24 @@ const CUSTOMER_DIRECTORY = [
   "CV BANDUNG SNEAKER WORKSHOP",
   "PT PRIMA FOOTWEAR NUSANTARA",
   "CV MANDIRI INSOLE SUKSES",
-  "TOKO BAHAN SEPATU BAROKAH",
-  "PT KENCANA JAYA ABADI FOOTWEAR",
-  "CV CITRA KREASI ALAS KAKI",
+  "PT SEPATU BINTANG TIMUR",
+  "CV FOOTWEAR SENTOSA",
 ];
 
 const ARTICLE_CATALOG = [
-  { code: "EQ-SPORT-01", name: "Insole Dynamic Running Sport EVA+Latex" },
-  { code: "EQ-ARCH-01", name: "Insole Ortho High Density EVA 8mm" },
-  { code: "EQ-CASUAL-02", name: "Insole Daily Comfort Cushion EVA Soft" },
-  { code: "EQ-RUN-02", name: "Insole Dynamic Cushion Latex" },
   { code: "EQ-EVA-01", name: "Insole EVA Footbed Standard" },
+  { code: "EQ-ARCH-01", name: "Insole Ortho High Density EVA" },
+  { code: "EQ-RUN-02", name: "Insole Dynamic Cushion Latex" },
+  { code: "EQ-PU-SPORT", name: "Insole PU Molded Sport Cushion" },
+  { code: "EQ-TPU-SUPPORT", name: "Insole EVA with TPU Arch Bridge" },
 ];
 
 export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps) {
   const isId = language === "id";
-  const [globalDate, setGlobalDate] = useState(new Date().toISOString().split("T")[0]);
-  const [savingProgress, setSavingProgress] = useState<{ current: number; total: number; orderNumber: string } | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [failedOrderNumbers, setFailedOrderNumbers] = useState<string[]>([]);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
-  const [invalidRowIds, setInvalidRowIds] = useState<string[]>([]);
+
+  const [globalDate, setGlobalDate] = useState(() => {
+    return new Date().toISOString().split("T")[0];
+  });
 
   type NonSizeField = "orderNumber" | "recipientName" | "deliveryDate" | "articleCode" | "unitPrice";
 
@@ -80,10 +77,19 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const confirmClearButtonRef = useRef<HTMLButtonElement | null>(null);
   const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
   const pendingFocusRef = useRef<PendingFocus | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   // Undo row deletion buffer
   const [deletedRowBuffer, setDeletedRowBuffer] = useState<{ row: BatchRow; index: number } | null>(null);
   const undoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [savingProgress, setSavingProgress] = useState<{ current: number; total: number; orderNumber: string } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [failedOrderNumbers, setFailedOrderNumbers] = useState<string[]>([]);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSpreadsheetTip, setShowSpreadsheetTip] = useState(true);
+  const [invalidRowIds, setInvalidRowIds] = useState<string[]>([]);
 
   // Date overwrite confirmation & undo state
   const [pendingDateChange, setPendingDateChange] = useState<{
@@ -294,18 +300,54 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     if (dateUndoTimeoutRef.current) clearTimeout(dateUndoTimeoutRef.current);
   }, [dateUndoBuffer]);
 
-  const handleRowChange = (id: string, field: keyof BatchRow, value: any) => {
+  const handleRowChange = <K extends keyof BatchRow>(id: string, field: K, value: BatchRow[K]) => {
     setInvalidRowIds((prev) => prev.filter((rowId) => rowId !== id));
     setRows((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
         if (field === "articleCode") {
           const matched = ARTICLE_CATALOG.find((a) => a.code === value);
-          return { ...r, articleCode: value, articleName: matched ? matched.name : r.articleName };
+          return { ...r, articleCode: value as string, articleName: matched ? matched.name : r.articleName };
         }
         return { ...r, [field]: value };
       })
     );
+  };
+
+  const handleCapturePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    let nextSeq = rows.length + 1;
+    let newOrderNumber = generateOrderNumber(nextSeq, globalDate);
+    const existingNumbers = new Set(rows.map((r) => r.orderNumber.trim().toUpperCase()));
+    while (existingNumbers.has(newOrderNumber.toUpperCase())) {
+      nextSeq++;
+      newOrderNumber = generateOrderNumber(nextSeq, globalDate);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    const newRow: BatchRow = {
+      id: `row-photo-${Date.now()}`,
+      orderNumber: newOrderNumber,
+      recipientName: "",
+      destinationAddress: "Bandung, Jawa Barat",
+      deliveryDate: globalDate,
+      articleCode: "EQ-EVA-01",
+      articleName: "Insole EVA Footbed Standard",
+      sizes: {},
+      unitPrice: 18000,
+      status: "idle",
+      photoPreviewUrl: previewUrl,
+    };
+
+    setRows((prev) => [...prev, newRow]);
+    setSuccessMessage(
+      isId
+        ? `Foto fisik surat jalan "${file.name}" berhasil disiapkan ke lembar kerja. Lengkapi customer dan ukuran.`
+        : `Physical slip photo "${file.name}" staged into worksheet. Please enter customer and sizes.`
+    );
+    e.target.value = "";
   };
 
   const handleSizeChange = (id: string, size: FootwearSize, valStr: string) => {
@@ -505,10 +547,24 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
     if (lines.length === 0) return;
 
+    const existingNumbers = new Set(rows.map((r) => r.orderNumber.trim().toUpperCase()));
+    let nextSeq = rows.length + 1;
+    let offCatalogCount = 0;
+
     const newParsedRows: BatchRow[] = lines.map((line, idx) => {
       const cells = line.split("\t").map((c) => c.trim());
       const recipient = cells[0] || `Customer Import ${idx + 1}`;
-      const article = cells[1] || "EQ-EVA-01";
+      const rawArticle = cells[1]?.trim() || "EQ-EVA-01";
+
+      const matchedArticle = ARTICLE_CATALOG.find(
+        (a) => a.code.toUpperCase() === rawArticle.toUpperCase() || a.name.toLowerCase().includes(rawArticle.toLowerCase())
+      );
+      if (!matchedArticle && cells[1]?.trim()) {
+        offCatalogCount++;
+      }
+      const articleCode = matchedArticle ? matchedArticle.code : "EQ-EVA-01";
+      const articleName = matchedArticle ? matchedArticle.name : (rawArticle ? `${rawArticle} (Katalog Standar)` : "Insole EVA Footbed Standard");
+
       const sizeQtyMap: SizeBreakdown = {};
 
       // Check if subsequent columns are numbers for sizes 36-45
@@ -520,14 +576,23 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         }
       });
 
+      // Sequential collision-free order number generation
+      let orderNumber = generateOrderNumber(nextSeq, globalDate);
+      while (existingNumbers.has(orderNumber.toUpperCase())) {
+        nextSeq++;
+        orderNumber = generateOrderNumber(nextSeq, globalDate);
+      }
+      existingNumbers.add(orderNumber.toUpperCase());
+      nextSeq++;
+
       return {
         id: `row-paste-${Date.now()}-${idx}`,
-        orderNumber: generateOrderNumber(rows.length + idx + 10, globalDate),
+        orderNumber,
         recipientName: recipient,
         destinationAddress: "Bandung, Jawa Barat",
         deliveryDate: globalDate,
-        articleCode: article,
-        articleName: "Insole Footwear Import",
+        articleCode,
+        articleName,
         sizes: sizeQtyMap,
         unitPrice: 18000,
         status: "idle",
@@ -535,10 +600,18 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
     });
 
     setRows((prev) => [...prev, ...newParsedRows]);
+
+    const catalogNotice =
+      offCatalogCount > 0
+        ? isId
+          ? ` (${offCatalogCount} artikel di luar katalog disesuaikan ke standar)`
+          : ` (${offCatalogCount} off-catalog items mapped to standard)`
+        : "";
+
     setSuccessMessage(
       isId
-        ? `${newParsedRows.length} baris Surat Jalan berhasil dimasukkan ke lembar kerja (draf belum disimpan ke database). Tekan 'Simpan ke Database' untuk menyimpan resmi.`
-        : `${newParsedRows.length} delivery orders staged to worksheet (drafts not yet committed to database). Click 'Commit to Database' to persist.`
+        ? `${newParsedRows.length} baris Surat Jalan berhasil dimasukkan ke lembar kerja (draf belum disimpan ke database)${catalogNotice}. Tekan 'Simpan ke Database' untuk menyimpan resmi.`
+        : `${newParsedRows.length} delivery orders staged to worksheet (drafts not yet committed to database)${catalogNotice}. Click 'Commit to Database' to persist.`
     );
   };
 
@@ -887,7 +960,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 {isId ? "Digitalisasi Massal Arsip Surat Jalan" : "Batch Delivery Order Digitizer"}
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-red-50 dark:bg-red-950/60 text-brand dark:text-red-300 border border-red-200 dark:border-red-900/60">
-                BATCH
+                {isId ? "GRID CEPAT" : "KEYBOARD-FIRST"}
               </span>
             </div>
             <p className="text-[11px] text-gray-500">
@@ -897,6 +970,17 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </p>
           </div>
         </div>
+
+        {/* Hidden Camera / File Input for Physical Slip Ingestion */}
+        <input
+          type="file"
+          ref={cameraInputRef}
+          accept="image/*"
+          capture="environment"
+          onChange={handleCapturePhoto}
+          className="hidden"
+          aria-hidden="true"
+        />
 
         {/* Global Date & Action Tools */}
         <div className="flex flex-wrap items-center gap-2">
@@ -977,6 +1061,17 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <HelpCircle className="h-4 w-4" />
           </button>
 
+          {/* Camera Slip Intake Button */}
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus-visible:ring-2 focus-visible:ring-brand inline-flex items-center gap-1.5"
+            title={isId ? "Ambil foto fisik surat jalan untuk disiapkan otomatis" : "Capture photo of physical delivery slip"}
+          >
+            <Camera className="h-3.5 w-3.5 text-brand" />
+            <span className="hidden sm:inline">{isId ? "Foto Slip" : "Slip Photo"}</span>
+          </button>
+
           {/* Clear Table Trigger */}
           <button
             ref={clearButtonRef}
@@ -987,6 +1082,22 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
           >
             <RotateCcw className="h-3.5 w-3.5 inline mr-1" />
             <span>{isId ? "Kosongkan Lembar Kerja" : "Clear Worksheet"}</span>
+          </button>
+
+          {/* Top Quick Commit Trigger (Casey mobile & Jordan desktop convenience) */}
+          <button
+            type="button"
+            onClick={handleSaveBatch}
+            disabled={!!savingProgress || rows.length === 0}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand"
+            title={isId ? "Simpan seluruh baris surat jalan ke database (Pintasan: Ctrl+S)" : "Commit all orders to database (Ctrl+S)"}
+          >
+            {savingProgress ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            )}
+            <span>{isId ? "Simpan ke DB" : "Commit DB"}</span>
           </button>
         </div>
       </div>
@@ -1199,34 +1310,72 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xs overflow-hidden flex flex-col flex-1">
         {/* MOBILE VIEW (< md) Touch Card Feed */}
         <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2 space-y-3">
-          {rows.map((row, idx) => {
-            const rowTotal = getRowTotalPairs(row.sizes);
-            const isInvalid = invalidRowIds.includes(row.id);
-            const isBatchDuplicate = duplicateOrderNumbersInBatch.has(row.orderNumber.trim().toUpperCase());
+          {rows.length === 0 ? (
+            <div className="p-8 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 space-y-3 my-2">
+              <div className="w-12 h-12 mx-auto rounded-full bg-red-50 dark:bg-red-950/60 flex items-center justify-center text-brand dark:text-red-400">
+                <FileSpreadsheet className="h-6 w-6" />
+              </div>
+              <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                {isId ? "Lembar Kerja Kosong" : "Worksheet is Empty"}
+              </h4>
+              <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                {isId
+                  ? "Belum ada draf surat jalan. Tambah baris baru atau foto fisik slip surat jalan."
+                  : "No delivery order rows staged. Add a row or capture a slip photo."}
+              </p>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-strong transition shadow-xs"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{isId ? "Tambah Baris" : "Add Row"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold hover:bg-gray-200 transition"
+                >
+                  <Camera className="h-4 w-4 text-brand" />
+                  <span>{isId ? "Foto Slip" : "Capture Slip"}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            rows.map((row, idx) => {
+              const rowTotal = getRowTotalPairs(row.sizes);
+              const isInvalid = invalidRowIds.includes(row.id);
+              const isBatchDuplicate = duplicateOrderNumbersInBatch.has(row.orderNumber.trim().toUpperCase());
 
-            const cardStatusClass =
-              row.status === "saving"
-                ? "border-amber-400 border-l-4 border-l-amber-500 bg-amber-50/15 dark:bg-amber-950/15"
-                : row.status === "saved"
-                ? "border-emerald-400 border-l-4 border-l-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/15"
-                : row.status === "error"
-                ? "border-red-500 border-l-4 border-l-red-600 bg-red-50/25 dark:bg-red-950/25"
-                : isInvalid || isBatchDuplicate
-                ? "border-red-500 border-l-4 border-l-red-400 ring-2 ring-red-200 dark:ring-red-950"
-                : "border-gray-200 dark:border-gray-800 border-l-4 border-l-transparent";
+              const cardStatusClass =
+                row.status === "saving"
+                  ? "border-amber-400 border-l-4 border-l-amber-500 bg-amber-50/15 dark:bg-amber-950/15"
+                  : row.status === "saved"
+                  ? "border-emerald-400 border-l-4 border-l-emerald-500 bg-emerald-50/15 dark:bg-emerald-950/15"
+                  : row.status === "error"
+                  ? "border-red-500 border-l-4 border-l-red-600 bg-red-50/25 dark:bg-red-950/25"
+                  : isInvalid || isBatchDuplicate
+                  ? "border-red-500 border-l-4 border-l-red-400 ring-2 ring-red-200 dark:ring-red-950"
+                  : "border-gray-200 dark:border-gray-800 border-l-4 border-l-transparent";
 
-            return (
-              <div
-                key={row.id}
-                data-row-id={row.id}
-                data-row-status={row.status}
-                className={`p-3.5 rounded-xl border bg-white dark:bg-gray-900 shadow-xs space-y-3 transition ${cardStatusClass}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shrink-0">
-                      #{idx + 1}
-                    </span>
+              return (
+                <div
+                  key={row.id}
+                  data-row-id={row.id}
+                  data-row-status={row.status}
+                  className={`p-3.5 rounded-xl border bg-white dark:bg-gray-900 shadow-xs space-y-3 transition ${cardStatusClass}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-extrabold text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shrink-0 inline-flex items-center gap-1">
+                        #{idx + 1}
+                        {row.photoPreviewUrl && (
+                          <span title={isId ? "Foto Fisik" : "Slip Photo"}>
+                            <Camera className="h-3 w-3 text-brand" />
+                          </span>
+                        )}
+                      </span>
                     <input
                       type="text"
                       value={row.orderNumber}
@@ -1430,7 +1579,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 </div>
               </div>
             );
-          })}
+          })
+        )}
         </div>
 
         {/* DESKTOP VIEW (>= md) 16-Column High-Speed Table */}
@@ -1462,42 +1612,90 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </thead>
 
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
-              {rows.map((row, rIdx) => {
-                const rowTotal = getRowTotalPairs(row.sizes);
-                const isInvalid = invalidRowIds.includes(row.id);
-                const isBatchDuplicate = duplicateOrderNumbersInBatch.has(row.orderNumber.trim().toUpperCase());
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={17} className="p-12 text-center">
+                    <div className="max-w-sm mx-auto space-y-3">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-red-50 dark:bg-red-950/60 flex items-center justify-center text-brand dark:text-red-400">
+                        <FileSpreadsheet className="h-6 w-6" />
+                      </div>
+                      <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+                        {isId ? "Lembar Kerja Masih Kosong" : "Worksheet is Empty"}
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        {isId
+                          ? "Belum ada baris surat jalan. Tambah baris manual (Alt+N), ambil foto fisik slip surat jalan, atau tempel tabel dari spreadsheet (Ctrl+V)."
+                          : "No delivery order rows staged. Add a row manually (Alt+N), capture a paper slip photo, or paste from spreadsheet (Ctrl+V)."}
+                      </p>
+                      <div className="flex items-center justify-center gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={handleAddRow}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-strong transition shadow-xs"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>{isId ? "Tambah Baris (Alt+N)" : "Add Row (Alt+N)"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        >
+                          <Camera className="h-4 w-4 text-brand" />
+                          <span>{isId ? "Foto Slip Fisik" : "Capture Physical Slip"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row, rIdx) => {
+                  const rowTotal = getRowTotalPairs(row.sizes);
+                  const isInvalid = invalidRowIds.includes(row.id);
+                  const isBatchDuplicate = duplicateOrderNumbersInBatch.has(row.orderNumber.trim().toUpperCase());
 
-                const firstCellBorderClass =
-                  row.status === "saving"
-                    ? "border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/30"
-                    : row.status === "saved"
-                    ? "border-l-4 border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30"
-                    : row.status === "error"
-                    ? "border-l-4 border-l-red-600 bg-red-50/50 dark:bg-red-950/40"
-                    : isInvalid || isBatchDuplicate
-                    ? "border-l-4 border-l-red-400 bg-red-50/30 dark:bg-red-950/20"
-                    : "border-l-4 border-l-transparent bg-white dark:bg-gray-900";
+                  const firstCellBorderClass =
+                    row.status === "saving"
+                      ? "border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/30"
+                      : row.status === "saved"
+                      ? "border-l-4 border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30"
+                      : row.status === "error"
+                      ? "border-l-4 border-l-red-600 bg-red-50/50 dark:bg-red-950/40"
+                      : isInvalid || isBatchDuplicate
+                      ? "border-l-4 border-l-red-400 bg-red-50/30 dark:bg-red-950/20"
+                      : "border-l-4 border-l-transparent bg-white dark:bg-gray-900";
 
-                return (
-                  <tr
-                    key={row.id}
-                    data-row-id={row.id}
-                    data-row-status={row.status}
-                    className={`hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition ${
-                      row.status === "saving"
-                        ? "bg-amber-50/15 dark:bg-amber-950/10"
-                        : row.status === "saved"
-                        ? "bg-emerald-50/15 dark:bg-emerald-950/10"
-                        : row.status === "error"
-                        ? "bg-red-50/25 dark:bg-red-950/15"
-                        : isInvalid || isBatchDuplicate
-                        ? "bg-red-50/20 dark:bg-red-950/10"
-                        : ""
-                    }`}
-                  >
-                    <td className={`p-2 text-center text-gray-400 font-mono sticky left-0 z-10 ${firstCellBorderClass}`}>
-                      {rIdx + 1}
-                    </td>
+                  return (
+                    <tr
+                      key={row.id}
+                      data-row-id={row.id}
+                      data-row-status={row.status}
+                      className={`hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition ${
+                        row.status === "saving"
+                          ? "bg-amber-50/15 dark:bg-amber-950/10"
+                          : row.status === "saved"
+                          ? "bg-emerald-50/15 dark:bg-emerald-950/10"
+                          : row.status === "error"
+                          ? "bg-red-50/25 dark:bg-red-950/15"
+                          : isInvalid || isBatchDuplicate
+                          ? "bg-red-50/20 dark:bg-red-950/10"
+                          : ""
+                      }`}
+                    >
+                      <td className={`p-2 text-center text-gray-400 font-mono sticky left-0 z-10 ${firstCellBorderClass}`}>
+                        <div className="flex items-center justify-center gap-1">
+                          <span>{rIdx + 1}</span>
+                          {row.photoPreviewUrl && (
+                            <span
+                              data-testid="photo-slip-badge"
+                              title={isId ? "Disiapkan dari foto fisik slip" : "Staged from physical slip photo"}
+                              className="text-brand dark:text-red-400"
+                            >
+                              <Camera className="h-3 w-3" />
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
                     <td className="p-2 sticky left-10 bg-white dark:bg-gray-900 z-10 shadow-xs border-r border-gray-200 dark:border-gray-800">
                       <div className="flex items-center gap-1.5">
@@ -1671,7 +1869,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
 
             {/* Batch Aggregate Summary Footer (Sticky) */}
@@ -1710,6 +1909,16 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             >
               <Plus className="h-4 w-4 text-brand" />
               <span>{isId ? "Tambah Baris (Alt+N)" : "Add Row (Alt+N)"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand"
+              title={isId ? "Ambil foto kamera slip fisik surat jalan" : "Capture physical slip via camera"}
+            >
+              <Camera className="h-4 w-4 text-brand" />
+              <span>{isId ? "Foto Slip" : "Capture Slip"}</span>
             </button>
 
             <span className="text-[11px] text-gray-500 font-mono hidden sm:inline tabular-nums">
