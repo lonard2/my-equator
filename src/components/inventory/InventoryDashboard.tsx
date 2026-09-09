@@ -68,6 +68,12 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   const [activeTab, setActiveTab] = useState<"MATERIALS" | "HISTORY">("MATERIALS");
   // Movement log period filter (30/90 days or all history)
   const [logPeriod, setLogPeriod] = useState<"30D" | "90D" | "ALL">("ALL");
+  // KPI derivations (needed by the acknowledgment logic below)
+  const totalValuation = materials.reduce((sum, m) => sum + m.currentStock * m.unitCost, 0);
+  const criticalItems = materials.filter((m) => m.healthStatus === "CRITICAL");
+  const warningItems = materials.filter((m) => m.healthStatus === "WARNING");
+  const lowStockTotal = criticalItems.length + warningItems.length;
+
   // Shift-scoped critical-stock acknowledgment: hides the red banner for today
   // unless a NEW critical item appears (count change) or the day rolls over.
   const [lowStockAck, setLowStockAck] = useState<{ date: string; count: number } | null>(null);
@@ -323,12 +329,6 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       return sortDirection === "asc" ? (valA as number) - (valB as number) : (valB as number) - (valA as number);
     });
   }, [materials, searchTerm, categoryFilter, onlyLowStock, sortColumn, sortDirection]);
-
-  // Calculate KPIs
-  const totalValuation = materials.reduce((sum, m) => sum + m.currentStock * m.unitCost, 0);
-  const criticalItems = materials.filter((m) => m.healthStatus === "CRITICAL");
-  const warningItems = materials.filter((m) => m.healthStatus === "WARNING");
-  const lowStockTotal = criticalItems.length + warningItems.length;
 
   // BOM Calculation calculation
   const bomResult = useMemo(() => {
