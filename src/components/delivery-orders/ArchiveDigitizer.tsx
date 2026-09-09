@@ -77,6 +77,8 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   const confirmClearButtonRef = useRef<HTMLButtonElement | null>(null);
   const cancelDateButtonRef = useRef<HTMLButtonElement | null>(null);
   const dateOpenerRef = useRef<HTMLElement | null>(null);
+  const shortcutsFooterRef = useRef<HTMLButtonElement | null>(null);
+  const dateConfirmRef = useRef<HTMLButtonElement | null>(null);
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [photoPreviewRowId, setPhotoPreviewRowId] = useState<string | null>(null);
@@ -953,6 +955,11 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   // Keyboard shortcut listener (memoized with stable handler)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Batch shortcuts never fire behind an open modal (Ctrl+S must not commit behind a dialog)
+      const modalOpen = showShortcuts || showClearConfirm || !!pendingDateChange;
+      if ((e.altKey && (e.key === "n" || e.key === "N")) || ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S"))) {
+        if (modalOpen) return;
+      }
       if (e.key === "Escape") {
         if (showShortcuts) {
           setShowShortcuts(false);
@@ -1021,7 +1028,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={handleUndoDelete}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex items-center gap-1 min-h-[44px] px-3 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Undo2 className="h-3.5 w-3.5" />
               <span>{isId ? "Batalkan Hapus" : "Undo"}</span>
@@ -1212,7 +1219,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       {showShortcuts && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
-          onKeyDown={(e) => trapModalTab(e, shortcutsCloseRef, shortcutsCloseRef)}
+          onKeyDown={(e) => trapModalTab(e, shortcutsCloseRef, shortcutsFooterRef)}
         >
           <div
             role="dialog"
@@ -1297,6 +1304,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             </div>
 
             <button
+              ref={shortcutsFooterRef}
               type="button"
               onClick={() => {
                 setShowShortcuts(false);
@@ -1387,6 +1395,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
         <div
           role="status"
           aria-live="polite"
+          aria-atomic="false"
           className="p-4 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xl flex items-center justify-between gap-3 animate-in fade-in"
         >
           <div className="flex items-center gap-3">
@@ -2175,7 +2184,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       {pendingDateChange && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
-          onKeyDown={(e) => trapModalTab(e, cancelDateButtonRef, cancelDateButtonRef)}
+          onKeyDown={(e) => trapModalTab(e, cancelDateButtonRef, dateConfirmRef)}
         >
           <div
             role="dialog"
@@ -2207,6 +2216,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
                 {isId ? "Batal (Pertahankan)" : "Cancel (Keep Dates)"}
               </button>
               <button
+                ref={dateConfirmRef}
                 type="button"
                 onClick={() => applyDateChangeWithUndo(pendingDateChange.targetDate)}
                 className="px-3.5 py-2 min-h-[44px] rounded-xl bg-brand hover:bg-brand-dark text-xs font-bold text-white shadow-xs active:scale-95 transition"
@@ -2291,7 +2301,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             <button
               type="button"
               onClick={handleUndoDateChange}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-brand hover:bg-brand-dark text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex items-center gap-1 min-h-[44px] px-3 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Undo2 className="h-3.5 w-3.5" />
               <span>{isId ? "Batalkan (Undo)" : "Undo"}</span>
