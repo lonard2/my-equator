@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { FootwearSize, SizeBreakdown } from "@/types";
 import { Plus, Minus, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -34,6 +34,29 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
   const handleAdjust = (delta: number) => {
     const nextVal = Math.max(0, currentQty + delta);
     handleSetQty(nextVal);
+  };
+  // Press-and-hold on +/- applies a x10 step (glove-proof; the +/-10 buttons are gone)
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdFiredRef = useRef(false);
+  const startHold = (delta10: number) => {
+    holdFiredRef.current = false;
+    holdTimerRef.current = setTimeout(() => {
+      handleAdjust(delta10);
+      holdFiredRef.current = true;
+    }, 450);
+  };
+  const endHold = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  };
+  const clickStep = (delta1: number) => {
+    if (holdFiredRef.current) {
+      holdFiredRef.current = false;
+      return;
+    }
+    handleAdjust(delta1);
   };
 
   return (
@@ -103,16 +126,11 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           <div className="flex items-center space-x-1">
           <button
             type="button"
-            onClick={() => handleAdjust(-10)}
-            aria-label={isId ? "Kurangi 10 pasang" : "Decrease 10 pairs"}
-            className="min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
-          >
-            -10
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAdjust(-1)}
-            aria-label={isId ? "Kurangi 1 pasang" : "Decrease 1 pair"}
+            onPointerDown={() => startHold(-10)}
+            onPointerUp={endHold}
+            onPointerLeave={endHold}
+            onClick={() => clickStep(-1)}
+            aria-label={isId ? "Kurangi 1 pasang (tahan untuk kurangi 10)" : "Decrease 1 pair (hold to decrease 10)"}
             className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
           >
             <Minus className="h-4 w-4" />
@@ -140,11 +158,14 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
           </button>
           <button
             type="button"
-            onClick={() => handleAdjust(10)}
-            aria-label={isId ? "Tambah 10 pasang" : "Increase 10 pairs"}
-            className="min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
+            onPointerDown={() => startHold(10)}
+            onPointerUp={endHold}
+            onPointerLeave={endHold}
+            onClick={() => clickStep(1)}
+            aria-label={isId ? "Tambah 1 pasang (tahan untuk tambah 10)" : "Increase 1 pair (hold to increase 10)"}
+            className="min-h-[44px] min-w-[44px] p-2 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 active:scale-95 transition flex items-center justify-center"
           >
-            +10
+            <Plus className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -152,7 +173,7 @@ export function TouchSizePad({ sizes, onChange, language }: TouchSizePadProps) {
             className="min-h-[44px] px-3 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-300 active:scale-95 transition flex items-center gap-1.5 justify-center"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>{isId ? "Reset" : "Clear"}</span>
+            <span aria-label={isId ? "Kosongkan jumlah" : "Clear quantity"}>{isId ? "Kosongkan" : "Clear"}</span>
           </button>
           </div>
         </div>

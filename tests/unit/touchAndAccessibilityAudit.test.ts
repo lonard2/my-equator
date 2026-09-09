@@ -12,10 +12,11 @@ describe("Impeccable Audit: Touch Targets, Screen Reader Attributes, and Keyboar
       const touchPadFilePath = path.join(rootDir, "src/components/delivery-orders/TouchSizePad.tsx");
       const content = fs.readFileSync(touchPadFilePath, "utf-8");
 
-      // Stepper buttons (-10, -1, +1, +10)
+      // Stepper buttons (-1/+1 with hold-to-x10; dedicated +/-10 buttons removed)
+      const stepperCount = (content.match(/min-h-\[44px\] min-w-\[44px\] p-2 rounded-xl/g) || []).length;
       assert.ok(
-        content.includes("min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl"),
-        "TouchSizePad stepper buttons must feature min-h-[44px] min-w-[44px]"
+        stepperCount >= 2,
+        "TouchSizePad +/- stepper buttons must feature min-h-[44px] min-w-[44px]"
       );
 
       // Direct numeric input
