@@ -181,7 +181,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
       articleCode: "EQ-EVA-01",
       articleName: "Insole EVA Footbed Standard",
       sizes: {},
-      unitPrice: 18000,
+      unitPrice: 0,
       status: "idle",
     };
     setRows((prev) => [...prev, newRow]);
@@ -962,7 +962,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Batch shortcuts never fire behind an open modal (Ctrl+S must not commit behind a dialog)
-      const modalOpen = showShortcuts || showClearConfirm || !!pendingDateChange;
+      const modalOpen = showShortcuts || showClearConfirm || !!pendingDateChange || !!photoPreviewRowId;
       if ((e.altKey && (e.key === "n" || e.key === "N")) || ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S"))) {
         if (modalOpen) return;
       }
