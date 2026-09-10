@@ -56,6 +56,7 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isPurchasesModalOpen, setIsPurchasesModalOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
 
   // Fetch reconciliation and invoices
   const fetchData = useCallback(async () => {
@@ -116,10 +117,15 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
     setSelectedInvoiceIds(ids);
   };
 
-  // Delete draft invoice
-  const handleDeleteInvoice = async (id: string) => {
-    if (!confirm(isId ? "Hapus draft faktur pajak ini?" : "Delete this draft invoice?")) return;
+  // Delete draft invoice trigger
+  const handleDeleteInvoice = (id: string) => {
+    setInvoiceToDelete(id);
+  };
 
+  // Confirm delete draft invoice
+  const handleConfirmDelete = async () => {
+    if (!invoiceToDelete) return;
+    const id = invoiceToDelete;
     try {
       const res = await fetch(`/api/tax/invoices/${id}`, {
         method: "DELETE",
@@ -128,9 +134,25 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
       if (res.ok) {
         fetchData();
         setSelectedInvoiceIds((prev) => prev.filter((i) => i !== id));
+        setFeedback({
+          type: "success",
+          text: isId ? "Draft faktur pajak berhasil dihapus" : "Draft tax invoice deleted successfully",
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setFeedback({
+          type: "error",
+          text: data.error || (isId ? "Gagal menghapus draft faktur" : "Failed to delete invoice"),
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete invoice:", err);
+      setFeedback({
+        type: "error",
+        text: err?.message || (isId ? "Gagal menghapus draft faktur" : "Failed to delete invoice"),
+      });
+    } finally {
+      setInvoiceToDelete(null);
     }
   };
 
@@ -270,13 +292,13 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
       {/* Top Header & Global Actions Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-neutral-100 flex items-center gap-2.5">
-            <span className="p-2 rounded-lg bg-red-950/60 border border-red-800 text-red-400">
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2.5">
+            <span className="p-2 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
               <FileSpreadsheet className="w-5 h-5" />
             </span>
             {isId ? "Persiapan Pengisian Pajak (Coretax)" : "Coretax Tax Filing Preparation"}
           </h2>
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             {isId
               ? "Integrasi Surat Jalan & Bahan Baku ke Format Resmi DJP Coretax (XML & Excel) NPWP 16 / NITKU 22"
               : "Integrated delivery orders & materials into official DJP Coretax (XML & Excel) NPWP 16 / NITKU 22"}
@@ -286,21 +308,21 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Period Selector */}
-          <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-1">
+          <div className="flex items-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-1 shadow-sm">
             <button
               onClick={handlePrevMonth}
               aria-label="Bulan sebelumnya"
-              className="p-1.5 text-neutral-400 hover:text-neutral-100 rounded hover:bg-neutral-800 transition-colors"
+              className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="px-3 text-xs font-mono font-semibold text-neutral-200">
+            <span className="px-3 text-xs font-mono font-semibold text-neutral-800 dark:text-neutral-200">
               {currentPeriod}
             </span>
             <button
               onClick={handleNextMonth}
               aria-label="Bulan berikutnya"
-              className="p-1.5 text-neutral-400 hover:text-neutral-100 rounded hover:bg-neutral-800 transition-colors"
+              className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -310,7 +332,7 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
           <button
             onClick={fetchData}
             title={isId ? "Segarkan Data" : "Refresh"}
-            className="p-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-lg text-neutral-400 hover:text-neutral-200 transition-colors"
+            className="p-2 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors shadow-sm"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -320,18 +342,18 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
             onClick={handleSeedDemoData}
             disabled={seedingDemo}
             title={isId ? "Muat contoh 4 faktur siap Coretax" : "Load 4 demo Coretax invoices"}
-            className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            className="px-3 py-2 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
           >
-            <Sparkles className={`w-4 h-4 text-amber-400 ${seedingDemo ? "animate-spin" : ""}`} />
+            <Sparkles className={`w-4 h-4 text-amber-500 dark:text-amber-400 ${seedingDemo ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">{isId ? "Contoh Data" : "Demo Data"}</span>
           </button>
 
           {/* PKP Tax Profile Button */}
           <button
             onClick={() => setIsProfileModalOpen(true)}
-            className="px-3 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+            className="px-3 py-2 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
           >
-            <Building2 className="w-4 h-4 text-neutral-400" />
+            <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             <span className="hidden sm:inline">{isId ? "Profil PKP" : "PKP Profile"}</span>
           </button>
 
@@ -340,9 +362,9 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
             onClick={handleDirectDownloadExcel}
             disabled={downloadingDirectExcel}
             title={isId ? "Unduh langsung workbook Excel resmi DJP (.xlsx)" : "Direct download official DJP Excel (.xlsx)"}
-            className="px-3 py-2 bg-neutral-900 hover:bg-emerald-950/60 border border-neutral-800 hover:border-emerald-800 text-emerald-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            className="px-3 py-2 bg-white dark:bg-neutral-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-neutral-200 dark:border-neutral-800 hover:border-emerald-300 dark:hover:border-emerald-800 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="hidden md:inline">
               {invoices.length > 0
                 ? isId ? "Unduh Excel (.xlsx)" : "Download Excel"
@@ -364,23 +386,23 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
       {/* Feedback Toast/Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs transition-all ${
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs transition-all shadow-sm ${
             feedback.type === "success"
-              ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-200"
-              : "bg-rose-950/40 border-rose-800/60 text-rose-200"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200"
+              : "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200"
           }`}
         >
           <div className="flex items-center gap-2">
             {feedback.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             )}
             <span>{feedback.text}</span>
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-neutral-400 hover:text-neutral-200 text-xs px-1"
+            className="text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 text-xs px-1"
           >
             ✕
           </button>
@@ -389,8 +411,8 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
 
       {/* Error alert if any */}
       {error && (
-        <div className="bg-red-950/40 border border-red-800/80 rounded-xl p-4 flex items-center gap-3 text-xs text-red-300">
-          <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/80 rounded-xl p-4 flex items-center gap-3 text-xs text-red-800 dark:text-red-300">
+          <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -479,6 +501,48 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
         period={currentPeriod}
         purchases={summary?.materialPurchases || []}
       />
+
+      {/* Accessible Non-blocking Delete Confirmation Dialog */}
+      {invoiceToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-tax-dialog-title"
+        >
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 id="delete-tax-dialog-title" className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  {isId ? "Hapus Draft Faktur Pajak?" : "Delete Draft Invoice?"}
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  {isId
+                    ? "Draft faktur ini akan dihapus permanen dari sistem."
+                    : "This draft invoice will be permanently removed."}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+              <button
+                onClick={() => setInvoiceToDelete(null)}
+                className="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs font-medium transition-colors"
+              >
+                {isId ? "Batal" : "Cancel"}
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+              >
+                {isId ? "Hapus Faktur" : "Delete Invoice"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

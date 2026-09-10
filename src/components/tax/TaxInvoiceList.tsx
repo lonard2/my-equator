@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { TaxInvoice, TaxInvoiceStatus } from "@/types/tax";
 import { formatRupiahTax, formatNpwp16 } from "@/lib/utils/taxFormatters";
+import { validateNpwp16, validateNitku22 } from "@/services/tax/taxValidator";
 import {
   Search,
   X,
@@ -149,13 +150,13 @@ export function TaxInvoiceList({
   ];
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg">
       {/* Controls Bar: Search & Status Filters */}
-      <div className="p-4 border-b border-neutral-800 space-y-3">
+      <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Search box */}
           <div className="relative flex-1 min-w-[240px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
             <input
               type="text"
               aria-label={isId ? "Cari nomor faktur, pembeli, atau NPWP" : "Search invoice number, buyer, or NPWP"}
@@ -166,13 +167,13 @@ export function TaxInvoiceList({
               }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 min-h-[38px]"
+              className="w-full pl-9 pr-8 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 min-h-[38px]"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
                 aria-label="Hapus pencarian"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -183,9 +184,9 @@ export function TaxInvoiceList({
             {onOpenManualModal && (
               <button
                 onClick={onOpenManualModal}
-                className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors min-h-[38px]"
+                className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors min-h-[38px]"
               >
-                <Plus className="w-3.5 h-3.5 text-neutral-400" />
+                <Plus className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 <span>{isId ? "Faktur Manual" : "Manual Invoice"}</span>
               </button>
             )}
@@ -211,16 +212,16 @@ export function TaxInvoiceList({
                 onClick={() => setStatusFilter(chip.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 min-h-[34px] ${
                   isSelected
-                    ? "bg-red-900/80 text-white border border-red-700"
-                    : "bg-neutral-950 text-neutral-400 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-700"
+                    ? "bg-red-800 text-white border border-red-700 shadow-sm"
+                    : "bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
                 }`}
               >
                 <span>{chip.label}</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                     isSelected
-                      ? "bg-red-800 text-white"
-                      : "bg-neutral-800 text-neutral-400"
+                      ? "bg-red-950/60 text-white"
+                      : "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-400"
                   }`}
                 >
                   {count}
@@ -233,17 +234,17 @@ export function TaxInvoiceList({
 
       {/* Table of Tax Invoices */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-neutral-300">
-          <thead className="bg-neutral-950/80 text-neutral-400 uppercase tracking-wider text-[11px] border-b border-neutral-800">
+        <table className="w-full text-left text-xs text-neutral-700 dark:text-neutral-300">
+          <thead className="bg-neutral-50 dark:bg-neutral-950/80 text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
             <tr>
               <th className="py-3 px-3 w-10 text-center">
                 <button
                   onClick={handleToggleSelectAll}
                   aria-label="Pilih semua baris faktur"
-                  className="text-neutral-400 hover:text-neutral-200 p-1"
+                  className="text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 p-1"
                 >
                   {allFilteredSelected ? (
-                    <CheckSquare className="w-4 h-4 text-red-400" />
+                    <CheckSquare className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
                   ) : (
                     <Square className="w-4 h-4" />
                   )}
@@ -254,19 +255,20 @@ export function TaxInvoiceList({
               <th className="py-3 px-3">{isId ? "Pembeli & NPWP 16" : "Buyer & Tax ID"}</th>
               <th className="py-3 px-3 text-right">{isId ? "DPP (Rupiah)" : "Tax Base (DPP)"}</th>
               <th className="py-3 px-3 text-right">{isId ? "PPN (11%/12%)" : "VAT"}</th>
+              <th className="py-3 px-3 text-center">{isId ? "Kesiapan Coretax" : "Coretax Readiness"}</th>
               <th className="py-3 px-3 text-center">{isId ? "Status Coretax" : "Coretax Status"}</th>
-              <th className="py-3 px-3 text-center w-24">{isId ? "Aksi" : "Actions"}</th>
+              <th className="py-3 px-3 text-center w-28">{isId ? "Aksi" : "Actions"}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-800/60 font-normal">
+          <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800/60 font-normal">
             {filteredInvoices.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-neutral-500">
-                  <FileText className="w-9 h-9 mx-auto mb-2 opacity-30 text-neutral-400" />
-                  <p className="text-xs font-medium text-neutral-400">
+                <td colSpan={9} className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+                  <FileText className="w-9 h-9 mx-auto mb-2 opacity-30 text-neutral-400 dark:text-neutral-500" />
+                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
                     {isId ? "Belum ada Faktur Pajak yang sesuai kriteria" : "No tax invoices matching criteria"}
                   </p>
-                  <p className="text-[11px] text-neutral-500 mt-1 max-w-sm mx-auto">
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm mx-auto">
                     {isId
                       ? "Anda dapat memuat contoh data faktur pabrik, mengonversi dari Surat Jalan, atau menginput faktur manual."
                       : "You can load demo footwear invoices, generate from Delivery Orders, or create manual invoices."}
@@ -284,7 +286,7 @@ export function TaxInvoiceList({
                     {onOpenManualModal && (
                       <button
                         onClick={onOpenManualModal}
-                        className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{isId ? "Input Faktur Manual" : "Manual Invoice"}</span>
@@ -292,9 +294,9 @@ export function TaxInvoiceList({
                     )}
                     <button
                       onClick={onOpenBatchModal}
-                      className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-red-400" />
+                      <Sparkles className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                       <span>{isId ? "Buat dari Surat Jalan" : "From Delivery Orders"}</span>
                     </button>
                   </div>
@@ -304,49 +306,74 @@ export function TaxInvoiceList({
               filteredInvoices.map((inv) => {
                 const isSelected = selectedIds.includes(inv.id);
                 const statusMeta = STATUS_CONFIG[inv.status] || STATUS_CONFIG.DRAFT;
+                const npwpCheck = validateNpwp16(inv.buyerNpwp16 || "");
+                const nitkuCheck = validateNitku22(inv.buyerNitku22 || "");
+                const isCoretaxReady = npwpCheck.isValid && nitkuCheck.isValid && inv.dpp > 0;
 
                 return (
                   <tr
                     key={inv.id}
-                    className={`hover:bg-neutral-800/40 transition-colors ${
-                      isSelected ? "bg-red-950/20" : ""
+                    className={`hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors ${
+                      isSelected
+                        ? "bg-neutral-100 dark:bg-neutral-800/60 ring-1 ring-inset ring-neutral-300 dark:ring-neutral-700"
+                        : ""
                     }`}
                   >
                     <td className="py-3 px-3 text-center">
                       <button
                         onClick={() => onToggleSelect(inv.id)}
                         aria-label={`Pilih faktur ${inv.nomorFaktur}`}
-                        className="text-neutral-400 hover:text-neutral-200 p-1"
+                        className="text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 p-1"
                       >
                         {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-red-400" />
+                          <CheckSquare className="w-4 h-4 text-neutral-800 dark:text-neutral-200" />
                         ) : (
                           <Square className="w-4 h-4" />
                         )}
                       </button>
                     </td>
-                    <td className="py-3 px-3 font-mono font-medium text-neutral-100">
+                    <td className="py-3 px-3 font-mono font-medium text-neutral-900 dark:text-neutral-100">
                       <div>{inv.nomorFaktur}</div>
                       {inv.referenceNumber && (
-                        <div className="text-[10px] text-neutral-400 font-sans mt-0.5">
+                        <div className="text-[10px] text-neutral-500 dark:text-neutral-400 font-sans mt-0.5">
                           Ref: {inv.referenceNumber}
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-neutral-400 whitespace-nowrap">
+                    <td className="py-3 px-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                       {inv.invoiceDate}
                     </td>
                     <td className="py-3 px-3">
-                      <div className="font-medium text-neutral-200">{inv.buyerName}</div>
-                      <div className="font-mono text-[11px] text-neutral-400 mt-0.5">
+                      <div className="font-medium text-neutral-800 dark:text-neutral-200">{inv.buyerName}</div>
+                      <div className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
                         {formatNpwp16(inv.buyerNpwp16)}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-medium text-neutral-200">
+                    <td className="py-3 px-3 text-right font-mono font-medium text-neutral-800 dark:text-neutral-200">
                       {formatRupiahTax(inv.dpp)}
                     </td>
-                    <td className="py-3 px-3 text-right font-mono font-semibold text-red-400">
+                    <td className="py-3 px-3 text-right font-mono font-semibold text-neutral-900 dark:text-neutral-100">
                       {formatRupiahTax(inv.ppn)}
+                    </td>
+                    {/* Coretax Validation Readiness Badge */}
+                    <td className="py-3 px-3 text-center">
+                      {isCoretaxReady ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"
+                          title={isId ? "NPWP 16 & NITKU 22 lengkap dan valid" : "16-digit NPWP & 22-digit NITKU valid"}
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>{isId ? "Siap Ekspor" : "Ready"}</span>
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20"
+                          title={!npwpCheck.isValid ? npwpCheck.error : nitkuCheck.error}
+                        >
+                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          <span>{!npwpCheck.isValid ? (isId ? "Perlu NPWP 16" : "Needs NPWP 16") : (isId ? "Perlu NITKU 22" : "Needs NITKU 22")}</span>
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-3 text-center">
                       <span
@@ -362,7 +389,7 @@ export function TaxInvoiceList({
                         <button
                           onClick={() => onViewInvoice(inv)}
                           title={isId ? "Lihat Detail" : "View Details"}
-                          className="p-1.5 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 rounded transition-colors"
+                          className="p-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -372,7 +399,7 @@ export function TaxInvoiceList({
                           <button
                             onClick={() => onDownloadSingleExcel(inv)}
                             title={isId ? "Unduh Excel Faktur Ini (.xlsx)" : "Download Excel for this invoice (.xlsx)"}
-                            className="p-1.5 text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/50 rounded transition-colors"
+                            className="p-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors"
                           >
                             <FileSpreadsheet className="w-4 h-4" />
                           </button>
@@ -383,7 +410,7 @@ export function TaxInvoiceList({
                           <button
                             onClick={() => onUpdateStatus(inv.id, "READY")}
                             title={isId ? "Tandai Siap Ekspor" : "Mark as Ready to Export"}
-                            className="p-1.5 text-blue-400 hover:text-blue-200 hover:bg-blue-950/50 rounded transition-colors"
+                            className="p-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -394,7 +421,7 @@ export function TaxInvoiceList({
                           <button
                             onClick={() => onDeleteInvoice(inv.id)}
                             title={isId ? "Hapus Draft" : "Delete Draft"}
-                            className="p-1.5 text-rose-400 hover:text-rose-200 hover:bg-rose-950/40 rounded transition-colors"
+                            className="p-1.5 min-w-[32px] min-h-[32px] flex items-center justify-center text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
