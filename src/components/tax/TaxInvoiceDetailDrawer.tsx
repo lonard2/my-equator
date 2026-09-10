@@ -151,7 +151,7 @@ export function TaxInvoiceDetailDrawer({
         className="w-full max-w-xl bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 h-full flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-200 focus:outline-none"
       >
         {/* Drawer Header */}
-        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-950/80">
+        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-950/80 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-red-100 text-red-700 dark:bg-red-950/40 dark:border dark:border-red-800/60 dark:text-red-400">
               <Receipt className="w-5 h-5" />
@@ -175,7 +175,7 @@ export function TaxInvoiceDetailDrawer({
         </div>
 
         {/* Tab switch: Details vs XML */}
-        <div className="flex border-b border-neutral-200 dark:border-neutral-800 px-4 bg-neutral-100/50 dark:bg-neutral-950/40">
+        <div className="flex border-b border-neutral-200 dark:border-neutral-800 px-4 bg-neutral-100/50 dark:bg-neutral-950/40 shrink-0">
           <button
             onClick={() => setActiveTab("DETAILS")}
             className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
@@ -201,7 +201,7 @@ export function TaxInvoiceDetailDrawer({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
           {activeTab === "DETAILS" ? (
             <>
               {/* Identitas Pembeli Card */}
@@ -330,7 +330,7 @@ export function TaxInvoiceDetailDrawer({
         </div>
 
         {/* Drawer Action Footer */}
-        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/80 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
           {/* Status selector */}
           <div className="flex items-center gap-2 text-xs">
             <label htmlFor="drawer-invoice-status" className="text-neutral-600 dark:text-neutral-400 font-medium">

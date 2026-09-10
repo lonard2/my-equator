@@ -679,7 +679,7 @@ export function OrderDetail({
   const canEdit = order.status === "DRAFT" || order.status === "CONFIRMED";
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 overflow-y-auto relative">
+    <div className="flex flex-col h-full min-h-0 bg-gray-50 dark:bg-gray-950 overflow-y-auto relative">
       {/* Top Header Banner */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 sm:p-5 sticky top-0 z-20 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

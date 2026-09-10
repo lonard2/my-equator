@@ -1012,7 +1012,7 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
   return (
     <div
       onPaste={handlePasteSpreadsheet}
-      className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 pb-28 md:pb-8"
+      className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 pb-28 md:pb-8"
     >
       {/* Autocomplete Suggestions Datalists */}
       <datalist id="customer-directory-suggestions">

@@ -179,10 +179,10 @@ export function OrderList({
     <aside
       role="region"
       aria-label={isId ? "Daftar Surat Jalan" : "Delivery Orders List"}
-      className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 select-none"
+      className="flex flex-col h-full min-h-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800"
     >
       {/* Search and Action Header */}
-      <div className="p-3.5 border-b border-gray-200 dark:border-gray-800 space-y-2.5 bg-gray-50/80 dark:bg-gray-800/40">
+      <div className="p-3.5 border-b border-gray-200 dark:border-gray-800 space-y-2.5 bg-gray-50/80 dark:bg-gray-800/40 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-extrabold text-gray-900 dark:text-white tracking-tight">
@@ -313,7 +313,7 @@ export function OrderList({
         role="listbox"
         aria-orientation="vertical"
         aria-label={isId ? "Daftar Surat Jalan" : "Delivery Orders List"}
-        className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80 focus:outline-none"
+        className="flex-1 min-h-0 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800/80 focus:outline-none"
       >
         {loading ? (
           <div className="p-3 space-y-3">
@@ -463,7 +463,7 @@ export function OrderList({
       </div>
 
       {/* Keyboard Shortcut Guidance Footer */}
-      <div className="px-3.5 py-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/60 text-[10px] text-gray-400 flex items-center justify-between">
+      <div className="px-3.5 py-2 border-t border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/60 text-[10px] text-gray-400 flex items-center justify-between shrink-0">
         <span>{filteredOrders.length} {isId ? "dokumen ditampilkan" : "orders displayed"}</span>
         <span className="font-mono hidden sm:inline text-gray-400/80">
           {isId ? "↑/↓ / Home / End Navigasi" : "↑/↓ / Home / End Nav"}

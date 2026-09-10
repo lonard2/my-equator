@@ -91,7 +91,7 @@ export function PrintModal({ isOpen, order, onClose, language, onSpoolSuccess }:
         className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-2xl w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
       >
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40">
+        <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400">
               <Printer className="h-4 w-4" />
@@ -153,7 +153,7 @@ export function PrintModal({ isOpen, order, onClose, language, onSpoolSuccess }:
         </div>
 
         {/* Live Override Bar */}
-        <div className="bg-red-50/70 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900/40 px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-3 text-xs">
+        <div className="bg-red-50/70 dark:bg-red-950/30 border-b border-red-100 dark:border-red-900/40 px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-3 text-xs shrink-0">
           <div className="flex items-center gap-1.5 text-brand dark:text-red-300 font-bold">
             <Edit3 className="h-3.5 w-3.5" />
             <span>{isId ? "Tweak Cetak Sementara:" : "Temporary Print Tweak:"}</span>
@@ -194,7 +194,7 @@ export function PrintModal({ isOpen, order, onClose, language, onSpoolSuccess }:
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-950">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-950">
           {activeTab === "DOT_MATRIX" ? (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-500">

@@ -288,7 +288,7 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6 space-y-6 pb-16">
       {/* Top Header & Global Actions Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

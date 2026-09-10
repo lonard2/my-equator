@@ -447,7 +447,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
       {/* Toast Notification (Accessible Live Region) */}
       <div
         role="status"

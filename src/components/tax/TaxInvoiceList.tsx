@@ -233,9 +233,9 @@ export function TaxInvoiceList({
       </div>
 
       {/* Table of Tax Invoices */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
         <table className="w-full text-left text-xs text-neutral-700 dark:text-neutral-300">
-          <thead className="bg-neutral-50 dark:bg-neutral-950/80 text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
+          <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-950/95 backdrop-blur-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
             <tr>
               <th className="py-3 px-3 w-10 text-center">
                 <button

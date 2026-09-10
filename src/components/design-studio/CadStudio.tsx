@@ -828,7 +828,7 @@ export function CadStudio({ language }: CadStudioProps) {
   const vbH = totalH;
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-950 text-gray-100">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-gray-950 text-gray-100">
       {/* Toast Notification (Accessible Live Region) */}
       <div
         role="status"
@@ -1012,10 +1012,10 @@ export function CadStudio({ language }: CadStudioProps) {
       </div>
 
       {/* Main CAD Studio Body Workspace */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* Left Sidebar: Sizing, Presets, and Caliper Parameters */}
         <div
-          className={`w-full md:w-80 lg:w-88 border-r border-gray-800 bg-gray-900/95 overflow-y-auto p-4 space-y-4 text-xs ${
+          className={`w-full md:w-80 lg:w-88 border-r border-gray-800 bg-gray-900/95 overflow-y-auto min-h-0 shrink-0 p-4 space-y-4 text-xs ${
             mobileCadView === "PARAMETERS" ? "block" : "hidden md:block"
           }`}
         >
@@ -1849,7 +1849,7 @@ export function CadStudio({ language }: CadStudioProps) {
         {/* Right Sidebar: Orthotic Components, Layers & Specs */}
         {isRightSidebarOpen && (
           <div
-            className={`w-full md:w-80 lg:w-88 border-l border-gray-800 bg-gray-900/95 overflow-y-auto p-4 space-y-4 text-xs ${
+            className={`w-full md:w-80 lg:w-88 border-l border-gray-800 bg-gray-900/95 overflow-y-auto min-h-0 shrink-0 p-4 space-y-4 text-xs ${
               mobileCadView === "ORTHOTICS" || mobileCadView === "EXPORT" ? "block" : "hidden md:block"
             }`}
           >

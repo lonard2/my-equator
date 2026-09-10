@@ -375,7 +375,7 @@ export default function HomePage() {
       />
 
       {/* Main Workspace Layout Shell */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Desktop Navigation Sidebar */}
         <div className="hidden md:flex shrink-0">
           <Sidebar
@@ -390,10 +390,10 @@ export default function HomePage() {
         </div>
 
         {/* Dynamic Center Work Area */}
-        <main className="flex-1 flex flex-col overflow-hidden relative">
-          <div key={currentTab} className="flex-1 flex flex-col overflow-hidden animate-view-enter">
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+          <div key={currentTab} className="flex-1 flex flex-col min-h-0 overflow-hidden animate-view-enter">
           {currentTab === "DELIVERY_ORDERS" ? (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
               {/* Top KPI Micro Strip: one compact lifecycle line on mobile, full cards from tablet up */}
               <div className="sm:hidden px-3 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
                 <p className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2 whitespace-nowrap overflow-x-auto">
@@ -467,10 +467,10 @@ export default function HomePage() {
               </div>
 
               {/* Master-Detail Dual Pane */}
-              <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+              <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden relative">
                 {/* Left Rail (List) */}
                 <div
-                  className={`transition-all duration-200 overflow-hidden flex flex-col shrink-0 ${
+                  className={`transition-all duration-200 overflow-hidden flex flex-col min-h-0 shrink-0 ${
                     isListRailCollapsed
                       ? "md:w-0 border-none"
                       : "w-full md:w-80 lg:w-[360px] h-full border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800"
@@ -830,7 +830,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Desktop & Tablet OrderList */}
-                  <div className="hidden md:flex flex-col flex-1 overflow-hidden">
+                  <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-hidden">
                     {loadError ? (
                       <div
                         role="alert"
@@ -872,7 +872,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Right Rail (Detail Workspace) */}
-                <div className="hidden md:flex flex-1 flex-col h-full overflow-hidden relative">
+                <div className="hidden md:flex flex-1 flex-col h-full min-h-0 overflow-hidden relative">
                   {/* Expand / Collapse List Rail Button */}
                   <div className="absolute top-4 left-4 z-20">
                     <button

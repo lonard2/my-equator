@@ -174,10 +174,10 @@ export function CoretaxExportModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="coretax-export-modal-title"
-        className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150"
+        className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150"
       >
         {/* Header */}
-        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-950/80">
+        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-950/80 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400">
               <Download className="w-5 h-5" />
@@ -203,7 +203,7 @@ export function CoretaxExportModal({
         </div>
 
         {/* Content */}
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
           {/* Summary Box */}
           <div className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-3.5 flex justify-between items-center text-xs">
             <div>
@@ -334,7 +334,7 @@ export function CoretaxExportModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-end bg-neutral-50 dark:bg-neutral-950/80">
+        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-end bg-neutral-50 dark:bg-neutral-950/80 shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-300 rounded-lg text-xs font-medium transition-colors"
