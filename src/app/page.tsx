@@ -941,7 +941,7 @@ export default function HomePage() {
           ) : currentTab === "CAD_STUDIO" ? (
             <CadStudio language={language} />
           ) : currentTab === "ANALYTICS" ? (
-            <AnalyticsDashboard language={language} />
+            <AnalyticsDashboard language={language} onNavigateTab={(tab) => setCurrentTab(tab)} />
           ) : currentTab === "TAX_FILING" ? (
             <TaxDashboard language={language} userRole={currentUser?.role} />
           ) : (

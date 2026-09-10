@@ -35,8 +35,8 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
   const maxVal = Math.max(...values, 1);
   const chartHeight = 180;
   const chartWidth = 500;
-  const paddingX = 40;
-  const paddingY = 20;
+  const paddingX = 48;
+  const paddingY = 22;
 
   const points = data.map((d, idx) => {
     const x = paddingX + (idx / Math.max(data.length - 1, 1)) * (chartWidth - 2 * paddingX);
@@ -53,57 +53,53 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
 
   return (
     <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
-      {/* Header & Toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Header & Metric Switcher */}
+      <div className="flex items-center justify-between">
         <div>
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-brand" />
-            <span>{isId ? "Tren Pendapatan & Volume Bulanan" : "Monthly Revenue & Volume Trends"}</span>
+            <span>{isId ? "Tren Omzet & Volume Bulanan" : "Monthly Revenue & Volume Trends"}</span>
           </h3>
           <p className="text-[11px] text-gray-500">
-            {isId ? "Visualisasi performa pesanan dan total pasang insole terkirim" : "Monthly factory order performance & volume output"}
+            {isId ? "Grafik performa pengiriman & aggregate nominal IDR" : "Delivery performance & aggregated IDR revenue"}
           </p>
         </div>
 
-        {/* Metric Switcher Tabs */}
         <div className="flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 text-[11px] font-bold">
           <button
             onClick={() => setMetric("REVENUE")}
-            className={`px-3 py-1 rounded-lg transition ${
+            className={`px-3 py-1 rounded-xl transition ${
               metric === "REVENUE"
-                ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
-                : "text-gray-600 dark:text-gray-400"
+                ? "bg-white dark:bg-gray-900 text-brand shadow-xs"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
-            {isId ? "Omzet (IDR)" : "Revenue (IDR)"}
+            {isId ? "Omzet" : "Revenue"}
           </button>
           <button
             onClick={() => setMetric("VOLUME")}
-            className={`px-3 py-1 rounded-lg transition ${
+            className={`px-3 py-1 rounded-xl transition ${
               metric === "VOLUME"
-                ? "bg-white dark:bg-gray-700 text-brand dark:text-red-300 shadow-xs"
-                : "text-gray-600 dark:text-gray-400"
+                ? "bg-white dark:bg-gray-900 text-brand shadow-xs"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
-            {isId ? "Volume (Pasang)" : "Volume (Pairs)"}
+            {isId ? "Volume" : "Volume"}
           </button>
         </div>
       </div>
 
-      {/* Interactive SVG Chart Container */}
+      {/* SVG Line / Area Chart */}
       <div className="relative w-full overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          className="w-full h-48 drop-shadow-xs"
-        >
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={isId ? "Grafik tren bulanan" : "Monthly trends chart"} className="w-full h-48 drop-shadow-xs">
           <defs>
             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#8B0000" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#8B0000" stopOpacity="0.0" />
+              <stop offset="100%" stopColor="#8B0000" stopOpacity="0.02" />
             </linearGradient>
           </defs>
 
-          {/* Horizontal Gridlines */}
+          {/* Grid Lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
             const y = chartHeight - paddingY - pct * (chartHeight - 2 * paddingY);
             return (
@@ -122,11 +118,11 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
                   x={paddingX - 6}
                   y={y + 3}
                   textAnchor="end"
-                  fontSize="7"
-                  className="fill-gray-400 font-mono"
+                  fontSize="10"
+                  className="fill-gray-500 dark:fill-gray-400 font-mono"
                 >
                   {metric === "REVENUE"
-                    ? `Rp ${Math.round((maxVal * pct) / 1000000)}jt`
+                    ? `Rp ${Math.round((maxVal * pct) / 1000000)} ${isId ? "Jt" : "M"}`
                     : Math.round(maxVal * pct)}
                 </text>
               </g>
@@ -151,9 +147,9 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
             <g
               key={idx}
               tabIndex={0}
-              role="graphics-symbol"
-              aria-label={`${p.data.monthLabel}: ${metric === "REVENUE" ? p.data.revenueFormatted : `${p.data.volumePairs} pasang`} (${p.data.orderCount} Surat Jalan)`}
-              className="cursor-pointer focus:outline-none"
+              role="button"
+              aria-label={`${p.data.monthLabel}: ${metric === "REVENUE" ? p.data.revenueFormatted : `${p.data.volumePairs} ${isId ? "pasang" : "pairs"}`} (${p.data.orderCount} ${isId ? "Surat Jalan" : "Delivery Orders"})`}
+              className="cursor-pointer focus:outline-2 focus:outline-blue-500 rounded-sm"
               onMouseEnter={() => setHoveredIndex(idx)}
               onMouseLeave={() => setHoveredIndex(null)}
               onFocus={() => setHoveredIndex(idx)}
@@ -170,8 +166,8 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
                 x={p.x}
                 y={chartHeight - 6}
                 textAnchor="middle"
-                fontSize="8"
-                className="fill-gray-500 dark:fill-gray-400 font-semibold"
+                fontSize="10"
+                className="fill-gray-600 dark:fill-gray-400 font-semibold"
               >
                 {p.data.monthLabel}
               </text>
@@ -182,6 +178,7 @@ export function RevenueVolumeChart({ data, language }: RevenueVolumeChartProps) 
         {/* Floating Tooltip */}
         {hoveredIndex !== null && points[hoveredIndex] && (
           <div
+            role="tooltip"
             className="absolute top-2 left-1/2 -translate-x-1/2 p-2 rounded-xl bg-gray-900 text-white text-xs shadow-xl pointer-events-none border border-gray-700 animate-in fade-in zoom-in-95 duration-100"
           >
             <p className="font-bold text-[11px] text-red-300">

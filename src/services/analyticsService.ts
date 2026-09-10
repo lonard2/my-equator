@@ -48,9 +48,13 @@ export interface AnalyticsSummary {
     projectedDaysRemaining: number;
     healthStatus: "HEALTHY" | "WARNING" | "CRITICAL";
   }[];
+  filteredCustomer?: string | null;
 }
 
-export async function getAnalyticsSummary(period: "30D" | "Q" | "YTD" | "ALL" = "ALL"): Promise<AnalyticsSummary> {
+export async function getAnalyticsSummary(
+  period: "30D" | "Q" | "YTD" | "ALL" = "ALL",
+  customerName?: string | null
+): Promise<AnalyticsSummary> {
   const rawOrders = await db.select().from(deliveryOrders).orderBy(desc(deliveryOrders.deliveryDate));
   const allItems = await db.select().from(deliveryOrderItems);
   const allMaterials = await db.select().from(materials);
@@ -132,7 +136,16 @@ export async function getAnalyticsSummary(period: "30D" | "Q" | "YTD" | "ALL" = 
   });
 
   // Aggregate Size Breakdown from filtered order items (EU 35 to EU 48)
-  filteredItems.forEach((item) => {
+  const orderRecipientMap = new Map<string, string>();
+  allOrders.forEach((o) => {
+    orderRecipientMap.set(o.id, o.recipientName || "Pelanggan Umum");
+  });
+
+  const targetItems = customerName
+    ? filteredItems.filter((item) => orderRecipientMap.get(item.deliveryOrderId) === customerName)
+    : filteredItems;
+
+  targetItems.forEach((item) => {
     if (item.sizeBreakdown) {
       let breakdown: Record<string, number> = {};
       try {
@@ -256,5 +269,6 @@ export async function getAnalyticsSummary(period: "30D" | "Q" | "YTD" | "ALL" = 
     sizeDistribution,
     customerMarketShare,
     materialBurnRate,
+    filteredCustomer: customerName || null,
   };
 }

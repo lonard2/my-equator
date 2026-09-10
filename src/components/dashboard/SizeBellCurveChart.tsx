@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Compass, Flame, Info } from "lucide-react";
+import { Compass, Flame, Filter, X } from "lucide-react";
 
 interface SizeItem {
   size: number;
@@ -13,9 +13,16 @@ interface SizeItem {
 interface SizeBellCurveChartProps {
   data: SizeItem[];
   language: "id" | "en";
+  selectedCustomer?: string | null;
+  onClearCustomerFilter?: () => void;
 }
 
-export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) {
+export function SizeBellCurveChart({
+  data,
+  language,
+  selectedCustomer,
+  onClearCustomerFilter,
+}: SizeBellCurveChartProps) {
   const isId = language === "id";
   const [hoveredSize, setHoveredSize] = useState<SizeItem | null>(null);
 
@@ -51,32 +58,56 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
   return (
     <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-3 shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
             <Compass className="h-4 w-4 text-brand" />
             <span>{isId ? "Kurva Distribusi Ukuran Sepatu (EU 35-48)" : "Size Matrix Bell Curve (EU 35-48)"}</span>
           </h3>
           <p className="text-[11px] text-gray-500">
-            {isId
-              ? "Distribusi normal produksi pabrik & identifikasi ukuran cetakan terpadat"
-              : "Factory sizing breakdown & peak tooling volume distribution"}
+            {selectedCustomer
+              ? (isId ? `Menampilkan pesanan spesifik mitra: ${selectedCustomer}` : `Showing mold breakdown for: ${selectedCustomer}`)
+              : (isId ? "Distribusi normal produksi pabrik & identifikasi ukuran cetakan terpadat" : "Factory sizing breakdown & peak tooling volume distribution")}
           </p>
         </div>
 
-        {peakItem && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-300 text-xs font-bold shadow-xs">
-            <Flame className="h-3.5 w-3.5 text-amber-500" />
-            <span>
-              {isId ? `Puncak: Size EU ${peakItem.size}` : `Peak: EU ${peakItem.size}`}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedCustomer && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 text-xs font-bold shadow-xs">
+              <Filter className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+              <span className="truncate max-w-[120px]">{selectedCustomer}</span>
+              {onClearCustomerFilter && (
+                <button
+                  onClick={onClearCustomerFilter}
+                  className="ml-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded p-0.5"
+                  title={isId ? "Hapus filter" : "Remove filter"}
+                  aria-label={isId ? "Hapus filter pelanggan" : "Remove customer filter"}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {peakItem && peakItem.totalPairs > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-300 text-xs font-bold shadow-xs">
+              <Flame className="h-3.5 w-3.5 text-amber-500" />
+              <span>
+                {isId ? `Puncak: Size EU ${peakItem.size}` : `Peak: EU ${peakItem.size}`}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* SVG Bell Curve */}
       <div className="relative w-full overflow-x-auto">
-        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-48 drop-shadow-xs">
+        <svg
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+          role="img"
+          aria-label={isId ? "Kurva lonceng distribusi ukuran insole" : "Insole size distribution bell curve"}
+          className="w-full h-48 drop-shadow-xs"
+        >
           <defs>
             <linearGradient id="bellGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#8B0000" stopOpacity="0.4" />
@@ -118,9 +149,9 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
               <g
                 key={idx}
                 tabIndex={0}
-                role="graphics-symbol"
-                aria-label={`Ukuran EU ${p.data.size}: ${p.data.totalPairs} pasang (${p.data.percentage}%)${p.data.isPeak ? ", Puncak Produksi" : ""}`}
-                className="cursor-pointer focus:outline-none"
+                role="button"
+                aria-label={`Ukuran EU ${p.data.size}: ${p.data.totalPairs} ${isId ? "pasang" : "pairs"} (${p.data.percentage}%)${p.data.isPeak ? (isId ? ", Puncak Produksi" : ", Peak Output") : ""}`}
+                className="cursor-pointer focus:outline-2 focus:outline-blue-500 rounded-sm"
                 onMouseEnter={() => setHoveredSize(p.data)}
                 onMouseLeave={() => setHoveredSize(null)}
                 onFocus={() => setHoveredSize(p.data)}
@@ -159,10 +190,10 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
                   x={p.x}
                   y={chartHeight - 8}
                   textAnchor="middle"
-                  fontSize="8"
+                  fontSize="10"
                   className={`font-mono font-bold ${
                     p.data.isPeak
-                      ? "fill-brand dark:fill-red-400 font-extrabold text-[9px]"
+                      ? "fill-brand dark:fill-red-400 font-extrabold"
                       : "fill-gray-600 dark:fill-gray-400"
                   }`}
                 >
@@ -175,15 +206,20 @@ export function SizeBellCurveChart({ data, language }: SizeBellCurveChartProps) 
 
         {/* Hover Tooltip */}
         {hoveredSize && (
-          <div className="absolute top-2 right-4 p-2.5 rounded-xl bg-gray-900 text-white text-xs shadow-xl pointer-events-none border border-gray-700 animate-in fade-in zoom-in-95 duration-100">
+          <div
+            role="tooltip"
+            className="absolute top-2 right-4 p-2.5 rounded-xl bg-gray-900 text-white text-xs shadow-xl pointer-events-none border border-gray-700 animate-in fade-in zoom-in-95 duration-100"
+          >
             <p className="font-extrabold text-sm text-red-300">
               EU {hoveredSize.size}
             </p>
             <p className="font-bold">
-              {hoveredSize.totalPairs.toLocaleString("id-ID")} pasang ({hoveredSize.percentage}%)
+              {hoveredSize.totalPairs.toLocaleString("id-ID")} {isId ? "pasang" : "pairs"} ({hoveredSize.percentage}%)
             </p>
             <p className="text-[10px] text-gray-400">
-              {hoveredSize.isPeak ? "Ukuran paling diminati buyer" : "Porsi produksi pabrik"}
+              {hoveredSize.isPeak
+                ? (isId ? "Ukuran paling diminati buyer" : "Highest tooling mold demand")
+                : (isId ? "Porsi produksi pabrik" : "Factory production share")}
             </p>
           </div>
         )}

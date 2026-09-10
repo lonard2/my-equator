@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Boxes } from "lucide-react";
+import { Boxes, PlusCircle, ShoppingCart } from "lucide-react";
 
-interface MaterialBurnItem {
+export interface MaterialBurnItem {
   id: string;
   name: string;
   category: string;
@@ -17,12 +17,17 @@ interface MaterialBurnItem {
 interface MaterialBurnRateHeatmapProps {
   data: MaterialBurnItem[];
   language: "id" | "en";
+  onStageReorder?: (material: MaterialBurnItem) => void;
 }
 
 /* Ranked days-of-supply (DSI) list. Not a heatmap: the source data is one
    projection per material, so a matrix would be fabricated. Rows are sorted
    by days remaining; status color = semantic only. */
-export function MaterialBurnRateHeatmap({ data, language }: MaterialBurnRateHeatmapProps) {
+export function MaterialBurnRateHeatmap({
+  data,
+  language,
+  onStageReorder,
+}: MaterialBurnRateHeatmapProps) {
   const isId = language === "id";
 
   if (!data || data.length === 0) {
@@ -86,20 +91,45 @@ export function MaterialBurnRateHeatmap({ data, language }: MaterialBurnRateHeat
                 <p className="text-[10px] text-gray-500 font-mono">
                   {mat.currentStock} {mat.unit} &middot; ~{mat.estimatedMonthlyBurn}/{isId ? "bln" : "mo"}
                 </p>
-                <div className="mt-1.5 h-1 w-full rounded-full bg-gray-100 dark:bg-gray-800">
+                <div
+                  role="progressbar"
+                  aria-valuenow={pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={isId ? `Ketahanan stok ${mat.name}: ${pct}%` : `${mat.name} stock runway: ${pct}%`}
+                  className="mt-1.5 h-1 w-full rounded-full bg-gray-100 dark:bg-gray-800"
+                >
                   <div
                     className={`h-full rounded-full ${statusTone(mat.healthStatus)}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-base font-black text-gray-900 dark:text-white font-mono tabular-nums leading-none">
-                  {mat.projectedDaysRemaining}
-                </p>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">
-                  {isId ? "hari" : "days"} &middot; {statusLabel(mat.healthStatus)}
-                </p>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div className="text-right">
+                  <p className="text-base font-black text-gray-900 dark:text-white font-mono tabular-nums leading-none">
+                    {mat.projectedDaysRemaining}
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">
+                    {isId ? "hari" : "days"} &middot; {statusLabel(mat.healthStatus)}
+                  </p>
+                </div>
+                {onStageReorder && (
+                  <button
+                    onClick={() => onStageReorder(mat)}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition shadow-xs shrink-0 ${
+                      mat.healthStatus === "CRITICAL"
+                        ? "bg-red-600 hover:bg-red-700 text-white"
+                        : mat.healthStatus === "WARNING"
+                        ? "bg-amber-600 hover:bg-amber-700 text-white"
+                        : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                    }`}
+                    title={isId ? `Pengadaan masuk untuk ${mat.name}` : `Stage intake order for ${mat.name}`}
+                  >
+                    <PlusCircle className="h-3 w-3" />
+                    <span>{mat.healthStatus === "CRITICAL" ? (isId ? "Restock" : "Restock") : (isId ? "Pesan" : "Order")}</span>
+                  </button>
+                )}
               </div>
             </div>
           );
