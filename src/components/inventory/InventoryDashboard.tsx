@@ -447,7 +447,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto md:overflow-hidden bg-gray-50/70 dark:bg-gray-950 p-3 sm:p-5 space-y-3 pb-20 md:pb-3">
       {/* Toast Notification (Accessible Live Region) */}
       <div
         role="status"
@@ -471,7 +471,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {errorMessage && (
         <div
           role="alert"
-          className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center justify-between gap-2 text-xs text-red-800 dark:text-red-300 font-semibold shadow-xs animate-in fade-in"
+          className="shrink-0 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 flex items-center justify-between gap-2 text-xs text-red-800 dark:text-red-300 font-semibold shadow-xs animate-in fade-in"
         >
           <span className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -489,7 +489,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       )}
 
       {/* Top Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 shadow-xs">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3.5 sm:p-4 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/70 text-brand dark:text-red-400 shrink-0">
             <Boxes className="h-6 w-6" />
@@ -563,7 +563,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
       {/* Interactive Insole BOM Estimator Drawer (For Pak Hendra / Factory Production Staging) */}
       {showBomDrawer && (
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm animate-in fade-in zoom-in-95 duration-150">
+        <div className="shrink-0 max-h-[35vh] overflow-y-auto p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-4 shadow-sm animate-in fade-in zoom-in-95 duration-150">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-gray-800">
             <div>
               <div className="flex items-center gap-2">
@@ -618,9 +618,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                 onChange={(e) => setBomArticleCode(e.target.value)}
                 className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
               >
-                {INSOLE_BOM_PRESETS.map((p) => (
-                  <option key={p.articleCode} value={p.articleCode}>
-                    [{p.articleCode}] {p.articleName}
+                {INSOLE_BOM_PRESETS.map((preset) => (
+                  <option key={preset.articleCode} value={preset.articleCode}>
+                    {preset.articleCode} — {preset.articleName} ({preset.description})
                   </option>
                 ))}
               </select>
@@ -628,53 +628,38 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase text-gray-400 block">
-                {isId ? "Target Produksi (Pasang / psg)" : "Target Volume (Pairs)"}
+                {isId ? "Target Produksi (Pasang)" : "Target Batch (Pairs)"}
               </label>
-              <div className="flex items-center gap-1.5">
+              <div className="relative">
                 <input
                   type="number"
-                  min={1}
-                  step={50}
+                  min="50"
+                  step="50"
                   value={bomTargetPairs}
-                  onChange={(e) => setBomTargetPairs(Math.max(1, parseInt(e.target.value, 10) || 0))}
-                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono font-black text-brand dark:text-red-400 focus:outline-none focus:border-brand"
+                  onChange={(e) => setBomTargetPairs(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-none focus:border-brand"
                 />
-                <div className="flex gap-1 shrink-0">
-                  {[500, 1000, 2500].map((qty) => (
-                    <button
-                      key={qty}
-                      type="button"
-                      onClick={() => setBomTargetPairs(qty)}
-                      className={`px-2 py-2 rounded-xl text-[10px] font-bold border transition ${
-                        bomTargetPairs === qty
-                          ? "bg-brand text-white border-brand"
-                          : "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
-                      }`}
-                    >
-                      {qty}
-                    </button>
-                  ))}
-                </div>
+                <span className="absolute right-3 top-2 text-[10px] text-gray-400 font-bold">psg</span>
               </div>
             </div>
           </div>
 
-          {/* BOM Material Breakdown Matrix */}
+          {/* Required Materials Breakdown Table */}
           <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
             <table className="w-full text-xs text-left">
-              <thead className="bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 font-bold border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="p-3.5">{isId ? "Bahan Baku" : "Material Requirement"}</th>
-                  <th className="p-3.5 text-right w-32">{isId ? "Kebutuhan" : "Required"}</th>
-                  <th className="p-3.5 text-right w-32">{isId ? "Stok Gudang" : "Current Stock"}</th>
-                  <th className="p-3.5 text-center w-36">{isId ? "Kecukupan" : "Status"}</th>
+                  <th className="p-3.5">{isId ? "Bahan Baku & Kategori" : "Material & Category"}</th>
+                  <th className="p-3.5 text-right w-36">{isId ? "Kebutuhan Batch" : "Required Qty"}</th>
+                  <th className="p-3.5 text-right w-36">{isId ? "Stok Gudang Saat Ini" : "Current Stock"}</th>
+                  <th className="p-3.5 text-center w-36">{isId ? "Kecukupan" : "Sufficiency"}</th>
                   <th className="p-3.5 text-right w-36">{isId ? "Estimasi Biaya" : "Est. Cost"}</th>
-                  <th className="p-3.5 text-center w-28">{isId ? "Aksi" : "Action"}</th>
+                  <th className="p-3.5 text-center w-24">{isId ? "Aksi Cepat" : "Action"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
                 {bomResult.requirements.map((req, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition">
+                  <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/40">
                     <td className="p-3.5">
                       <p className="font-bold text-gray-900 dark:text-white">
                         {CATEGORY_NAMES[req.materialCategory]?.id || req.materialCategory}
@@ -743,8 +728,8 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+      <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Item SKU" : "Total SKUs"}
           </span>
@@ -753,7 +738,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Valuasi Stok Gudang" : "Valuation"}
           </span>
@@ -762,7 +747,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Stok Kritis / Minim" : "Low Stock Alert"}
           </span>
@@ -771,7 +756,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </p>
         </div>
 
-        <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1.5">
+        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-1">
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
             {isId ? "Total Mutasi Log" : "Total Movements"}
           </span>
@@ -784,7 +769,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {/* Critical Stock Alert Banner (shift-scoped acknowledgment; re-arms on new criticals) */}
       {criticalItems.length > 0 && (
         lowStockMuted ? (
-          <div className="px-3.5 py-2 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400 shadow-xs">
+          <div className="shrink-0 px-3.5 py-2 rounded-xl bg-gray-100/80 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400 shadow-xs">
             <span className="flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
               {isId
@@ -800,7 +785,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </button>
           </div>
         ) : (
-          <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="shrink-0 p-3 sm:p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs">
             <div className="flex items-center gap-2.5">
               <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
               <div>
@@ -836,9 +821,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       )}
 
       {/* Workspace Card with Tabs & Search */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
+      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
         {/* Tabs & Search Header */}
-        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40">
+        <div className="shrink-0 p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/80 dark:bg-gray-800/40">
           <div className="flex items-center rounded-xl bg-gray-200/80 dark:bg-gray-800 p-1 text-xs font-bold">
             <button
               type="button"
@@ -900,7 +885,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
         {/* Category & Low Stock Filter Pills with Scroll Mask */}
         {activeTab === "MATERIALS" && (
-          <div className="relative border-b border-gray-100 dark:border-gray-800">
+          <div className="shrink-0 relative border-b border-gray-100 dark:border-gray-800">
             <div
               className="p-2.5 sm:p-3 flex items-center gap-1.5 overflow-x-auto scrollbar-none"
               style={{
@@ -963,7 +948,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         )}
 
         {activeTab === "HISTORY" && (
-          <div className="px-3 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+          <div className="shrink-0 px-3 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase text-gray-400">
               {isId ? "Periode" : "Period"}
             </span>
@@ -992,9 +977,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
         {/* TAB 1: MATERIALS VIEW */}
         {activeTab === "MATERIALS" ? (
-          <div>
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* MOBILE TOUCH CARD FEED (md:hidden) */}
-            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
+            <div className="md:hidden flex-1 min-h-0 overflow-y-auto erp-scrollbar divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
               {sortedAndFilteredMaterials.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 space-y-2">
                   <Boxes className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-700" />
@@ -1109,7 +1094,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
 
             {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) WITH STICKY HEADER & DYNAMIC SORTING */}
-            <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[68vh]">
+            <div className="hidden md:block flex-1 min-h-0 overflow-x-auto overflow-y-auto erp-scrollbar">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>
@@ -1308,9 +1293,9 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
           </div>
         ) : (
           /* TAB 2: MOVEMENT LOGS VIEW WITH STICKY HEADER & 1-CLICK CORRECTION */
-          <div>
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             {/* Mobile History Card Feed */}
-            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-2.5">
+            <div className="md:hidden flex-1 min-h-0 overflow-y-auto erp-scrollbar divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-2.5">
               {periodFilteredMovements.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 text-xs">
                   {isId ? "Belum ada riwayat mutasi stok." : "No movement logs found."}
@@ -1366,7 +1351,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
 
             {/* Desktop History Table with Sticky Header & 1-Click Koreksi */}
-            <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[68vh]">
+            <div className="hidden md:block flex-1 min-h-0 overflow-x-auto overflow-y-auto erp-scrollbar">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>
