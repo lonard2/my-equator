@@ -32,6 +32,7 @@ if (process.env.NODE_ENV !== "production") {
 // Bootstrap all schema tables automatically on startup
 async function initializeTables(cli: ReturnType<typeof createClient>) {
   try {
+    await cli.execute("PRAGMA busy_timeout = 5000;");
     await cli.executeMultiple(`
       CREATE TABLE IF NOT EXISTS delivery_orders (
         id TEXT PRIMARY KEY,
