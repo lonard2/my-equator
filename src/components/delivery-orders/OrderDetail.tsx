@@ -1264,11 +1264,11 @@ export function OrderDetail({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[520px] overflow-y-auto">
             {!isEditing ? (
               /* View Mode Table */
               <table className="w-full text-xs text-left">
-                <thead className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 shadow-2xs">
                   <tr>
                     <th className="p-3 w-10 text-center">No</th>
                     <th className="p-3 min-w-[180px]">{isId ? "Artikel & Spesifikasi" : "Article & Specs"}</th>
@@ -1327,7 +1327,7 @@ export function OrderDetail({
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-gray-50 dark:bg-gray-800 font-bold border-t border-gray-200 dark:border-gray-700">
+                <tfoot className="sticky bottom-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs font-bold border-t border-gray-200 dark:border-gray-700 shadow-2xs">
                   <tr>
                     <td colSpan={2} className="p-3 text-gray-800 dark:text-gray-200 uppercase">
                       {isId ? "Grand Total Pengiriman" : "Grand Total"}
@@ -1381,7 +1381,7 @@ export function OrderDetail({
             ) : (
               /* Interactive Grid Table */
               <table className="w-full text-xs text-left">
-                <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                <thead className="sticky top-0 z-10 bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 shadow-2xs">
                   <tr>
                     <th className="p-2.5 text-left w-36">{isId ? "Artikel & Kode" : "Article"}</th>
                     <th className="p-2.5 text-left w-24">{isId ? "Harga (IDR)" : "Price"}</th>

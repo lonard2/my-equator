@@ -994,7 +994,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
         {activeTab === "MATERIALS" ? (
           <div>
             {/* MOBILE TOUCH CARD FEED (md:hidden) */}
-            <div className="lg:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 p-2.5 space-y-3">
               {sortedAndFilteredMaterials.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 space-y-2">
                   <Boxes className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-700" />
@@ -1109,7 +1109,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
 
             {/* DESKTOP/TABLET TABLE VIEW (hidden md:block) WITH STICKY HEADER & DYNAMIC SORTING */}
-            <div className="hidden lg:block overflow-x-auto max-h-[68vh]">
+            <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[68vh]">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>
@@ -1366,7 +1366,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
             </div>
 
             {/* Desktop History Table with Sticky Header & 1-Click Koreksi */}
-            <div className="hidden md:block overflow-x-auto max-h-[68vh]">
+            <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[68vh]">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs text-gray-700 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700 select-none shadow-2xs">
                   <tr>

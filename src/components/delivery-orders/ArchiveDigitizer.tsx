@@ -1740,6 +1740,29 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             );
           })
         )}
+
+        {rows.length > 0 && (
+          <div className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/70 space-y-2 shadow-xs">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-gray-700 dark:text-gray-300">
+                {isId ? `Total Batch Rekap (${rows.length} SJ)` : `Batch Manifest Total (${rows.length} DOs)`}
+              </span>
+              <span className="font-mono font-black text-sm text-brand dark:text-red-400 tabular-nums">
+                {totalBatchPairs.toLocaleString("id-ID")} <span className="text-[10px] font-normal text-gray-500">psg</span>
+              </span>
+            </div>
+            {totalBatchValueIDR > 0 && (
+              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-gray-200 dark:border-gray-700/60">
+                <span className="text-[11px] text-gray-500">
+                  {isId ? "Estimasi Nilai Batch" : "Est. Batch Value"}
+                </span>
+                <span className="font-mono font-black text-xs text-gray-900 dark:text-white tabular-nums">
+                  {formatIDR(totalBatchValueIDR)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
         </div>
 
         {/* DESKTOP VIEW (>= md) 16-Column High-Speed Table */}
@@ -2087,28 +2110,30 @@ export function ArchiveDigitizer({ onSuccess, language }: ArchiveDigitizerProps)
             {/* Batch Aggregate Summary Footer (Sticky) */}
             <tfoot className="bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-xs font-bold border-t-2 border-gray-300 dark:border-gray-700 text-xs sticky bottom-0 z-20 shadow-md">
               <tr>
-                <td colSpan={6} className="p-3 text-gray-700 dark:text-gray-300 sticky left-0 bg-gray-100/95 dark:bg-gray-800/95 z-30">
-                  {isId ? `Total Batch Rekap (${rows.length} Surat Jalan)` : `Batch Manifest Total (${rows.length} Orders)`}
-                  {totalBatchValueIDR > 0 && (
-                    <span className="ml-2 font-mono font-black text-brand dark:text-red-400 tabular-nums">
-                      {formatIDR(totalBatchValueIDR)}
-                    </span>
-                  )}
+                <td colSpan={6} className="p-3 text-gray-700 dark:text-gray-300 bg-gray-100/95 dark:bg-gray-800/95">
+                  <div className="flex items-center gap-2">
+                    <span>{isId ? `Total Batch Rekap (${rows.length} Surat Jalan)` : `Batch Manifest Total (${rows.length} Orders)`}</span>
+                    {totalBatchValueIDR > 0 && (
+                      <span className="px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/80 font-mono font-black text-brand dark:text-red-400 tabular-nums">
+                        {formatIDR(totalBatchValueIDR)}
+                      </span>
+                    )}
+                  </div>
                 </td>
 
                 {STANDARD_SIZES.map((size) => {
                   const columnSum = rows.reduce((sum, r) => sum + (r.sizes[size] || 0), 0);
                   return (
-                    <td key={size} className="p-2 text-center font-mono font-black text-gray-900 dark:text-white tabular-nums border-l border-gray-200 dark:border-gray-700">
+                    <td key={size} className="p-2 text-center min-w-[50px] font-mono font-black text-gray-900 dark:text-white tabular-nums border-l border-gray-200 dark:border-gray-700">
                       {columnSum > 0 ? columnSum : "-"}
                     </td>
                   );
                 })}
 
-                <td className="p-3 text-right font-mono font-black text-sm text-brand dark:text-red-400 tabular-nums border-l border-gray-200 dark:border-gray-700">
+                <td className="p-3 text-right w-24 font-mono font-black text-sm text-brand dark:text-red-400 tabular-nums border-l border-gray-200 dark:border-gray-700">
                   {totalBatchPairs.toLocaleString("id-ID")}
                 </td>
-                <td></td>
+                <td className="p-2 border-l border-gray-200 dark:border-gray-700"></td>
               </tr>
             </tfoot>
           </table>

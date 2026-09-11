@@ -99,7 +99,17 @@ export function MaterialFormModal({
     );
   }, [name, category, unit, safetyThreshold, unitCost, location, notes, currentStock, materialToEdit]);
 
-  if (!isOpen) return null;
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+
+  // Focus the first field on open
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => firstFieldRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
 
   const handleAttemptClose = () => {
     if (isDirty) {
@@ -179,18 +189,6 @@ export function MaterialFormModal({
     }
   };
 
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const firstFieldRef = useRef<HTMLInputElement | null>(null);
-  const closeRef = useRef<HTMLButtonElement | null>(null);
-
-  // Focus the first field on open
-  useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => firstFieldRef.current?.focus(), 50);
-      return () => clearTimeout(t);
-    }
-  }, [isOpen]);
-
   const trapModalTab = (e: React.KeyboardEvent, firstRef: React.RefObject<HTMLElement | null>, lastRef: React.RefObject<HTMLElement | null>) => {
     if (e.key !== "Tab") return;
     if (e.shiftKey) {
@@ -203,6 +201,8 @@ export function MaterialFormModal({
       firstRef.current?.focus();
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div

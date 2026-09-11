@@ -288,9 +288,9 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6 space-y-6 pb-16">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto lg:overflow-hidden bg-neutral-50 dark:bg-neutral-950 p-4 sm:p-6 space-y-4">
       {/* Top Header & Global Actions Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2.5">
             <span className="p-2 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
@@ -386,7 +386,7 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
       {/* Feedback Toast/Banner */}
       {feedback && (
         <div
-          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs transition-all shadow-sm ${
+          className={`shrink-0 p-3.5 rounded-xl border flex items-center justify-between text-xs transition-all shadow-sm ${
             feedback.type === "success"
               ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200"
               : "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200"
@@ -411,35 +411,39 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
 
       {/* Error alert if any */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/80 rounded-xl p-4 flex items-center gap-3 text-xs text-red-800 dark:text-red-300">
+        <div className="shrink-0 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/80 rounded-xl p-4 flex items-center gap-3 text-xs text-red-800 dark:text-red-300">
           <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* 1. Monthly VAT Summary Card */}
-      <SptMasaSummaryCard
-        summary={summary}
-        language={language}
-        onOpenBatchModal={() => setIsBatchModalOpen(true)}
-        onOpenPurchasesModal={() => setIsPurchasesModalOpen(true)}
-      />
+      {/* 1. Monthly VAT Summary Card (Fixed on desktop) */}
+      <div className="shrink-0">
+        <SptMasaSummaryCard
+          summary={summary}
+          language={language}
+          onOpenBatchModal={() => setIsBatchModalOpen(true)}
+          onOpenPurchasesModal={() => setIsPurchasesModalOpen(true)}
+        />
+      </div>
 
-      {/* 2. Tax Invoice Table */}
-      <TaxInvoiceList
-        invoices={invoices}
-        language={language}
-        selectedIds={selectedInvoiceIds}
-        onToggleSelect={handleToggleSelect}
-        onSelectAll={handleSelectAll}
-        onViewInvoice={handleViewInvoice}
-        onDeleteInvoice={handleDeleteInvoice}
-        onOpenBatchModal={() => setIsBatchModalOpen(true)}
-        onOpenManualModal={() => setIsManualModalOpen(true)}
-        onSeedDemoData={handleSeedDemoData}
-        onDownloadSingleExcel={handleDownloadSingleExcel}
-        onUpdateStatus={handleUpdateStatus}
-      />
+      {/* 2. Tax Invoice Table (Scrolls independently) */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <TaxInvoiceList
+          invoices={invoices}
+          language={language}
+          selectedIds={selectedInvoiceIds}
+          onToggleSelect={handleToggleSelect}
+          onSelectAll={handleSelectAll}
+          onViewInvoice={handleViewInvoice}
+          onDeleteInvoice={handleDeleteInvoice}
+          onOpenBatchModal={() => setIsBatchModalOpen(true)}
+          onOpenManualModal={() => setIsManualModalOpen(true)}
+          onSeedDemoData={handleSeedDemoData}
+          onDownloadSingleExcel={handleDownloadSingleExcel}
+          onUpdateStatus={handleUpdateStatus}
+        />
+      </div>
 
       {/* Drawer: Detail Inspection */}
       <TaxInvoiceDetailDrawer

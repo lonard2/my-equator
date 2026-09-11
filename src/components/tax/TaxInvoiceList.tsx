@@ -150,9 +150,9 @@ export function TaxInvoiceList({
   ];
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg">
+    <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm dark:shadow-lg">
       {/* Controls Bar: Search & Status Filters */}
-      <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 space-y-3">
+      <div className="shrink-0 p-4 border-b border-neutral-200 dark:border-neutral-800 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Search box */}
           <div className="relative flex-1 min-w-[240px] max-w-md">
@@ -233,7 +233,7 @@ export function TaxInvoiceList({
       </div>
 
       {/* Table of Tax Invoices */}
-      <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-left text-xs text-neutral-700 dark:text-neutral-300">
           <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-950/95 backdrop-blur-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider text-[11px] border-b border-neutral-200 dark:border-neutral-800">
             <tr>
