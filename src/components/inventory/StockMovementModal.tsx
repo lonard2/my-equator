@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { MaterialItem, MovementType } from "@/types";
 import { X, ArrowDownRight, AlertCircle, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 
 interface StockMovementModalProps {
   isOpen: boolean;
@@ -150,6 +151,8 @@ export function StockMovementModal({
     referenceNumber !== initialFormRef.current.referenceNumber ||
     notes !== initialFormRef.current.notes;
 
+  const keepEditingRef = useRef<HTMLButtonElement | null>(null);
+
   const handleRequestClose = () => {
     if (isDirty) {
       setShowDiscardConfirm(true);
@@ -158,21 +161,33 @@ export function StockMovementModal({
     }
   };
 
-  // Escape key listener
+  const modalRef = useModalSafety({
+    isOpen,
+    onClose: handleRequestClose,
+    disableEscape: showDiscardConfirm,
+  });
+
+  // When discard confirmation opens, focus its non-destructive button (Keep Editing)
   useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
+    if (showDiscardConfirm) {
+      const t = setTimeout(() => keepEditingRef.current?.focus(), 30);
+      return () => clearTimeout(t);
+    }
+  }, [showDiscardConfirm]);
+
+  // Handle escape key specifically for the discard confirmation dialog
+  useEffect(() => {
+    if (!isOpen || !showDiscardConfirm) return;
+    const handleConfirmEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (showDiscardConfirm) {
-          setShowDiscardConfirm(false);
-        } else {
-          handleRequestClose();
-        }
+        e.preventDefault();
+        e.stopPropagation();
+        setShowDiscardConfirm(false);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isDirty, showDiscardConfirm]);
+    window.addEventListener("keydown", handleConfirmEscape);
+    return () => window.removeEventListener("keydown", handleConfirmEscape);
+  }, [isOpen, showDiscardConfirm]);
 
   if (!isOpen) return null;
 
@@ -269,13 +284,14 @@ export function StockMovementModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="movement-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
-    >
-      <div className="w-full max-w-lg rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="movement-modal-title"
+        className="w-full max-w-lg rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
+      >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
@@ -359,7 +375,7 @@ export function StockMovementModal({
                     aria-pressed={isSelected}
                     disabled={loading}
                     onClick={() => setMovementType(t.id)}
-                    className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
+                    className={`p-2.5 min-h-[44px] rounded-xl border text-left transition flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       isSelected
                         ? "border-brand bg-red-50/70 dark:bg-red-950/40 text-brand dark:text-red-300 font-bold shadow-xs"
                         : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-50"
@@ -414,7 +430,7 @@ export function StockMovementModal({
                     type="button"
                     disabled={loading}
                     onClick={() => handleStepQuantity(step)}
-                    className="px-2.5 py-2 min-h-[38px] rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition-all active:scale-90 active:bg-gray-300 dark:active:bg-gray-600 disabled:opacity-50"
+                    className="px-2.5 py-2 min-h-[40px] sm:min-h-[38px] min-w-[40px] rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 transition-all active:scale-90 active:bg-gray-300 dark:active:bg-gray-600 disabled:opacity-50"
                   >
                     +{step}
                   </button>
@@ -508,26 +524,29 @@ export function StockMovementModal({
               value={notes}
               disabled={loading}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={isId ? "Keterangan batch produksi, surat jalan masuk, koreksi dll" : "Production batch info, incoming DO, offset info"}
               maxLength={200}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand disabled:opacity-60"
+              placeholder={
+                isId
+                  ? "Keterangan opsional: batch lot number, warna, mesin pond 02, dsb."
+                  : "Optional notes regarding this transaction..."
+              }
+              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-brand resize-none disabled:opacity-60"
             />
           </div>
 
-          {/* Actions Footer */}
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-2">
+          {/* Form Actions */}
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
             <button
               type="button"
               onClick={handleRequestClose}
-              disabled={loading}
-              className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+              className="px-4 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               {isId ? "Batal" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={loading || isOutOfStockWarning}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[38px] rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-xs active:scale-95 transition disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>{loading ? (isId ? "Menyimpan..." : "Saving...") : isId ? "Simpan Mutasi" : "Save Movement"}</span>
@@ -539,13 +558,18 @@ export function StockMovementModal({
       {/* Discard Changes In-App Confirmation Modal */}
       {showDiscardConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="discard-movement-title"
+            className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-6 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-4"
+          >
             <div className="flex items-center gap-3 text-amber-600">
               <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/70">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
-                <h4 className="font-extrabold text-base text-gray-900 dark:text-white">
+                <h4 id="discard-movement-title" className="font-extrabold text-base text-gray-900 dark:text-white">
                   {isId ? "Batalkan Pengisian?" : "Discard Changes?"}
                 </h4>
                 <p className="text-xs text-gray-500">
@@ -562,9 +586,10 @@ export function StockMovementModal({
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
+                ref={keepEditingRef}
                 type="button"
                 onClick={() => setShowDiscardConfirm(false)}
-                className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100"
+                className="px-4 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 {isId ? "Lanjutkan Mengisi" : "Keep Editing"}
               </button>
@@ -574,7 +599,7 @@ export function StockMovementModal({
                   setShowDiscardConfirm(false);
                   onClose();
                 }}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
+                className="px-4 py-2 min-h-[38px] rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
               >
                 {isId ? "Tutup & Buang" : "Discard"}
               </button>

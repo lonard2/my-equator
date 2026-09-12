@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { MaterialItem, MaterialCategory } from "@/types";
 import { X, Save, Boxes, AlertTriangle, Layers } from "lucide-react";
 import { formatIDR } from "@/lib/utils/formatters";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 
 interface MaterialFormModalProps {
   isOpen: boolean;
@@ -99,17 +100,9 @@ export function MaterialFormModal({
     );
   }, [name, category, unit, safetyThreshold, unitCost, location, notes, currentStock, materialToEdit]);
 
-  const dialogRef = useRef<HTMLDivElement | null>(null);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
-
-  // Focus the first field on open
-  useEffect(() => {
-    if (isOpen) {
-      const t = setTimeout(() => firstFieldRef.current?.focus(), 50);
-      return () => clearTimeout(t);
-    }
-  }, [isOpen]);
+  const keepEditingRef = useRef<HTMLButtonElement | null>(null);
 
   const handleAttemptClose = () => {
     if (isDirty) {
@@ -118,6 +111,35 @@ export function MaterialFormModal({
       onClose();
     }
   };
+
+  const dialogRef = useModalSafety({
+    isOpen,
+    onClose: handleAttemptClose,
+    initialFocusRef: firstFieldRef,
+    disableEscape: showDiscardConfirm,
+  });
+
+  // When discard confirmation opens, focus its non-destructive button (Cancel / Keep Editing)
+  useEffect(() => {
+    if (showDiscardConfirm) {
+      const t = setTimeout(() => keepEditingRef.current?.focus(), 30);
+      return () => clearTimeout(t);
+    }
+  }, [showDiscardConfirm]);
+
+  // Handle escape key specifically for the discard confirmation dialog
+  useEffect(() => {
+    if (!isOpen || !showDiscardConfirm) return;
+    const handleConfirmEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowDiscardConfirm(false);
+      }
+    };
+    window.addEventListener("keydown", handleConfirmEscape);
+    return () => window.removeEventListener("keydown", handleConfirmEscape);
+  }, [isOpen, showDiscardConfirm]);
 
   const handleApplyPresetName = (presetName: string, defaultUnit: string, defaultUnitCost: number) => {
     setName(presetName);
@@ -189,26 +211,10 @@ export function MaterialFormModal({
     }
   };
 
-  const trapModalTab = (e: React.KeyboardEvent, firstRef: React.RefObject<HTMLElement | null>, lastRef: React.RefObject<HTMLElement | null>) => {
-    if (e.key !== "Tab") return;
-    if (e.shiftKey) {
-      if (document.activeElement === firstRef.current) {
-        e.preventDefault();
-        lastRef.current?.focus();
-      }
-    } else if (document.activeElement === lastRef.current) {
-      e.preventDefault();
-      firstRef.current?.focus();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto"
-      onKeyDown={(e) => trapModalTab(e, firstFieldRef, closeRef)}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
       <div
         ref={dialogRef}
         role="dialog"
@@ -467,8 +473,13 @@ export function MaterialFormModal({
       {/* Discard Confirmation Dialog */}
       {showDiscardConfirm && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-5 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3">
-            <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="discard-material-confirm-title"
+            className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-900 p-5 border border-gray-200 dark:border-gray-800 shadow-2xl space-y-3"
+          >
+            <h4 id="discard-material-confirm-title" className="font-extrabold text-sm text-gray-900 dark:text-white">
               {isId ? "Tutup tanpa menyimpan?" : "Discard unsaved changes?"}
             </h4>
             <p className="text-xs text-gray-600 dark:text-gray-300">
@@ -478,9 +489,10 @@ export function MaterialFormModal({
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
+                ref={keepEditingRef}
                 type="button"
                 onClick={() => setShowDiscardConfirm(false)}
-                className="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300"
+                className="px-3.5 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 {isId ? "Lanjut Mengisi" : "Keep Editing"}
               </button>
@@ -490,7 +502,7 @@ export function MaterialFormModal({
                   setShowDiscardConfirm(false);
                   onClose();
                 }}
-                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs"
+                className="px-3.5 py-2 min-h-[38px] rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
               >
                 {isId ? "Buang Perubahan" : "Discard"}
               </button>

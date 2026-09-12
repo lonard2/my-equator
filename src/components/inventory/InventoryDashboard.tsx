@@ -6,6 +6,7 @@ import { formatIDR, formatIndonesianDate } from "@/lib/utils/formatters";
 import { calculateInsoleBom, INSOLE_BOM_PRESETS } from "@/lib/inventory/bom";
 import { MaterialFormModal } from "./MaterialFormModal";
 import { StockMovementModal } from "./StockMovementModal";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 import {
   Boxes,
   Plus,
@@ -131,6 +132,20 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const cancelDeleteRef = useRef<HTMLButtonElement | null>(null);
+  const deleteModalRef = useModalSafety({
+    isOpen: !!materialToDelete,
+    onClose: () => setMaterialToDelete(null),
+    initialFocusRef: cancelDeleteRef,
+  });
+
+  const shortcutsCloseRef = useRef<HTMLButtonElement | null>(null);
+  const shortcutsModalRef = useModalSafety({
+    isOpen: isShortcutsModalOpen,
+    onClose: () => setIsShortcutsModalOpen(false),
+    initialFocusRef: shortcutsCloseRef,
+  });
+
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showToast = (msg: string) => {
@@ -178,16 +193,17 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
   // Global Keyboard Accelerators (Alex / Power User Persona)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Yield keyboard control to active modal safety traps
+      if (isMaterialModalOpen || isMovementModalOpen || !!materialToDelete || isShortcutsModalOpen) {
+        return;
+      }
+
       const isInput =
         document.activeElement?.tagName === "INPUT" ||
         document.activeElement?.tagName === "TEXTAREA" ||
         document.activeElement?.tagName === "SELECT";
 
       if (e.key === "Escape") {
-        if (isShortcutsModalOpen) {
-          setIsShortcutsModalOpen(false);
-          return;
-        }
         if (showBomDrawer) {
           setShowBomDrawer(false);
           return;
@@ -227,7 +243,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isShortcutsModalOpen, showBomDrawer, searchTerm]);
+  }, [isShortcutsModalOpen, showBomDrawer, searchTerm, isMaterialModalOpen, isMovementModalOpen, materialToDelete]);
 
   const confirmDeleteMaterial = async () => {
     if (!materialToDelete) return;
@@ -1435,6 +1451,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {isShortcutsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
           <div
+            ref={shortcutsModalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="inventory-shortcuts-title"
@@ -1522,9 +1539,10 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
             <div className="flex justify-end pt-2">
               <button
+                ref={shortcutsCloseRef}
                 type="button"
                 onClick={() => setIsShortcutsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-xs active:scale-95 transition"
+                className="px-4 py-2 min-h-[38px] rounded-xl bg-brand text-white text-xs font-bold shadow-xs active:scale-95 transition"
               >
                 {isId ? "Mengerti" : "Got it"}
               </button>
@@ -1537,6 +1555,7 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
       {materialToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
           <div
+            ref={deleteModalRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-material-title"
@@ -1562,16 +1581,17 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
+                ref={cancelDeleteRef}
                 type="button"
                 onClick={() => setMaterialToDelete(null)}
-                className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100"
+                className="px-4 py-2 min-h-[38px] rounded-xl border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 {isId ? "Batal" : "Cancel"}
               </button>
               <button
                 type="button"
                 onClick={confirmDeleteMaterial}
-                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
+                className="px-4 py-2 min-h-[38px] rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs active:scale-95 transition"
               >
                 {isId ? "Ya, Hapus SKU" : "Delete SKU"}
               </button>
