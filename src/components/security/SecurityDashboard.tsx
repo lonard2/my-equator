@@ -477,6 +477,12 @@ export function SecurityDashboard({
       });
       const json = await res.json();
       if (json.success) {
+        setActionFeedback({
+          type: "success",
+          message: isId
+            ? `Status pengguna @${user.username} (${user.name}) berhasil diubah menjadi ${nextActive === 1 ? "Aktif" : "Nonaktif"}.`
+            : `User @${user.username} (${user.name}) status updated to ${nextActive === 1 ? "Active" : "Inactive"}.`,
+        });
         fetchUsers();
         fetchLogs();
       } else {
@@ -823,8 +829,17 @@ export function SecurityDashboard({
       </div>
 
       {/* 4-Tab Segmented Navigation Bar */}
-      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto">
+      <div
+        role="tablist"
+        aria-label={isId ? "Navigasi modul keamanan" : "Security module navigation"}
+        className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto"
+      >
         <button
+          id="tab-users"
+          role="tab"
+          aria-selected={activeTab === "USERS"}
+          aria-controls="panel-users"
+          tabIndex={activeTab === "USERS" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("USERS")}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
@@ -843,6 +858,11 @@ export function SecurityDashboard({
         </button>
 
         <button
+          id="tab-roles"
+          role="tab"
+          aria-selected={activeTab === "ROLES"}
+          aria-controls="panel-roles"
+          tabIndex={activeTab === "ROLES" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("ROLES")}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
@@ -861,6 +881,11 @@ export function SecurityDashboard({
         </button>
 
         <button
+          id="tab-audit"
+          role="tab"
+          aria-selected={activeTab === "AUDIT"}
+          aria-controls="panel-audit"
+          tabIndex={activeTab === "AUDIT" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("AUDIT")}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
@@ -879,6 +904,11 @@ export function SecurityDashboard({
         </button>
 
         <button
+          id="tab-backup"
+          role="tab"
+          aria-selected={activeTab === "BACKUP"}
+          aria-controls="panel-backup"
+          tabIndex={activeTab === "BACKUP" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("BACKUP")}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
@@ -899,7 +929,13 @@ export function SecurityDashboard({
 
       {/* TAB 1: USERS & ACCESS */}
       {activeTab === "USERS" && (
-        <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+        <div
+          id="panel-users"
+          role="tabpanel"
+          aria-labelledby="tab-users"
+          tabIndex={0}
+          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -1100,7 +1136,13 @@ export function SecurityDashboard({
 
       {/* TAB 2: ROLE MATRIX */}
       {activeTab === "ROLES" && (
-        <div className="space-y-4">
+        <div
+          id="panel-roles"
+          role="tabpanel"
+          aria-labelledby="tab-roles"
+          tabIndex={0}
+          className="space-y-4 focus:outline-none"
+        >
           {/* RBAC Header & Customizer Toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -1352,7 +1394,13 @@ export function SecurityDashboard({
 
       {/* TAB 3: AUDIT TRAIL */}
       {activeTab === "AUDIT" && (
-        <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
+        <div
+          id="panel-audit"
+          role="tabpanel"
+          aria-labelledby="tab-audit"
+          tabIndex={0}
+          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -1485,7 +1533,13 @@ export function SecurityDashboard({
 
       {/* TAB 4: BACKUP & RESILIENCY */}
       {activeTab === "BACKUP" && (
-        <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-5">
+        <div
+          id="panel-backup"
+          role="tabpanel"
+          aria-labelledby="tab-backup"
+          tabIndex={0}
+          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-5 focus:outline-none"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -1652,6 +1706,7 @@ export function SecurityDashboard({
           newRole={roleChangeConfirm.newRole}
           isId={isId}
           language={language}
+          rolePermsState={rolePermsState}
           onClose={() => setRoleChangeConfirm(null)}
           onConfirm={handleExecuteRoleChange}
         />
@@ -1690,6 +1745,7 @@ function AddUserModal({
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("equator2026!");
+  const [showPassword, setShowPassword] = useState(false);
   const [newRole, setNewRole] = useState<UserRole>("SALES_OPERATOR");
   const [creatingUser, setCreatingUser] = useState(false);
 
@@ -1810,14 +1866,24 @@ function AddUserModal({
             <label htmlFor="new-user-password" className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
               {isId ? "Kata Sandi (Password) *" : "Password *"}
             </label>
-            <input
-              id="new-user-password"
-              type="password"
-              required
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-900 dark:text-white focus:outline-none"
-            />
+            <div className="relative">
+              <input
+                id="new-user-password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 pr-9 text-xs text-gray-900 dark:text-white focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            </div>
           </div>
 
           <div>
@@ -2470,6 +2536,7 @@ interface RoleChangeConfirmModalProps {
   newRole: UserRole;
   isId: boolean;
   language: "id" | "en";
+  rolePermsState?: Record<UserRole, Permission[]>;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -2480,6 +2547,7 @@ function RoleChangeConfirmModal({
   newRole,
   isId,
   language,
+  rolePermsState,
   onClose,
   onConfirm,
 }: RoleChangeConfirmModalProps) {
@@ -2489,8 +2557,8 @@ function RoleChangeConfirmModal({
   const currentInfo = getRoleBadgeInfo(user.role, language);
   const newInfo = getRoleBadgeInfo(newRole, language);
 
-  const currentPerms = ROLE_PERMISSIONS[user.role] || [];
-  const targetPerms = ROLE_PERMISSIONS[newRole] || [];
+  const currentPerms = rolePermsState?.[user.role] || getEffectiveRolePermissions(user.role) || ROLE_PERMISSIONS[user.role] || [];
+  const targetPerms = rolePermsState?.[newRole] || getEffectiveRolePermissions(newRole) || ROLE_PERMISSIONS[newRole] || [];
 
   const gainedPerms = targetPerms.filter((p) => !currentPerms.includes(p));
   const revokedPerms = currentPerms.filter((p) => !targetPerms.includes(p));
