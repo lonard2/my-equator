@@ -273,8 +273,13 @@ export function CoretaxExportModal({
               disabled={downloadingXml}
               className="p-4 bg-neutral-50 hover:bg-neutral-100 dark:bg-neutral-950 dark:hover:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-800 hover:border-red-400 dark:hover:border-red-700/60 rounded-xl flex flex-col items-start text-left transition-all group disabled:opacity-50"
             >
-              <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-center justify-center text-red-600 dark:text-red-400 mb-2.5 group-hover:scale-105 transition-transform">
-                <FileCode className="w-5 h-5" />
+              <div className="flex items-center justify-between w-full mb-2.5">
+                <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-105 transition-transform">
+                  <FileCode className="w-5 h-5" />
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/50">
+                  {isId ? "Rekomendasi Portal DJP" : "DJP Portal Recommended"}
+                </span>
               </div>
               <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block">
                 {targetInvoices.length > 0
@@ -298,8 +303,13 @@ export function CoretaxExportModal({
               disabled={downloadingExcel}
               className="p-4 bg-neutral-50 hover:bg-neutral-100 dark:bg-neutral-950 dark:hover:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-800 hover:border-emerald-400 dark:hover:border-emerald-700/60 rounded-xl flex flex-col items-start text-left transition-all group disabled:opacity-50"
             >
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2.5 group-hover:scale-105 transition-transform">
-                <FileSpreadsheet className="w-5 h-5" />
+              <div className="flex items-center justify-between w-full mb-2.5">
+                <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-200/80 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-300/60 dark:border-neutral-700/60">
+                  {isId ? "Arsip Internal & Audit" : "Internal Archive & Audit"}
+                </span>
               </div>
               <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100 block">
                 {targetInvoices.length > 0

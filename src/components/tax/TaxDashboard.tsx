@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { TaxInvoice, TaxInvoiceStatus, SptMasaPeriodSummary, CompanyTaxProfile } from "@/types/tax";
 import { SptMasaSummaryCard } from "./SptMasaSummaryCard";
 import { TaxInvoiceList } from "./TaxInvoiceList";
@@ -8,6 +8,7 @@ import { CoretaxExportModal } from "./CoretaxExportModal";
 import { CompanyTaxProfileModal } from "./CompanyTaxProfileModal";
 import { TaxManualInvoiceModal } from "./TaxManualInvoiceModal";
 import { TaxMaterialPurchasesModal } from "./TaxMaterialPurchasesModal";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 import {
   FileSpreadsheet,
   Download,
@@ -508,45 +509,74 @@ export function TaxDashboard({ language, userRole = "SUPER_ADMIN" }: TaxDashboar
 
       {/* Accessible Non-blocking Delete Confirmation Dialog */}
       {invoiceToDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-tax-dialog-title"
-        >
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 id="delete-tax-dialog-title" className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                  {isId ? "Hapus Draft Faktur Pajak?" : "Delete Draft Invoice?"}
-                </h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  {isId
-                    ? "Draft faktur ini akan dihapus permanen dari sistem."
-                    : "This draft invoice will be permanently removed."}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-              <button
-                onClick={() => setInvoiceToDelete(null)}
-                className="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs font-medium transition-colors"
-              >
-                {isId ? "Batal" : "Cancel"}
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
-              >
-                {isId ? "Hapus Faktur" : "Delete Invoice"}
-              </button>
-            </div>
+        <DeleteTaxInvoiceConfirmModal
+          isId={isId}
+          onClose={() => setInvoiceToDelete(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
+    </div>
+  );
+}
+
+function DeleteTaxInvoiceConfirmModal({
+  isId,
+  onClose,
+  onConfirm,
+}: {
+  isId: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useModalSafety({
+    isOpen: true,
+    onClose,
+    initialFocusRef: cancelBtnRef,
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-tax-dialog-title"
+    >
+      <div
+        ref={modalRef}
+        className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-5 space-y-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 id="delete-tax-dialog-title" className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              {isId ? "Hapus Draft Faktur Pajak?" : "Delete Draft Invoice?"}
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {isId
+                ? "Draft faktur ini akan dihapus permanen dari sistem."
+                : "This draft invoice will be permanently removed."}
+            </p>
           </div>
         </div>
-      )}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+          <button
+            ref={cancelBtnRef}
+            onClick={onClose}
+            className="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs font-medium transition-colors"
+          >
+            {isId ? "Batal" : "Cancel"}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+          >
+            {isId ? "Hapus Faktur" : "Delete Invoice"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

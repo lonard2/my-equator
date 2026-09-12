@@ -6,6 +6,7 @@ import { RevenueVolumeChart } from "./RevenueVolumeChart";
 import { SizeBellCurveChart } from "./SizeBellCurveChart";
 import { CustomerShareDonut } from "./CustomerShareDonut";
 import { MaterialBurnRateHeatmap, MaterialBurnItem } from "./MaterialBurnRateHeatmap";
+import { useModalSafety } from "@/lib/utils/useModalSafety";
 import {
   BarChart3,
   TrendingUp,
@@ -45,19 +46,6 @@ export function AnalyticsDashboard({ language, onNavigateTab }: AnalyticsDashboa
   const [isSubmittingRestock, setIsSubmittingRestock] = useState<boolean>(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [restockSuccessMessage, setRestockSuccessMessage] = useState<string | null>(null);
-
-  // Close modal on Escape key
-  useEffect(() => {
-    if (!stagedMaterial) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setStagedMaterial(null);
-        setModalError(null);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [stagedMaterial]);
 
   const fetchAnalytics = async (
     targetPeriod: "30D" | "Q" | "YTD" | "ALL" = period,
@@ -490,149 +478,199 @@ export function AnalyticsDashboard({ language, onNavigateTab }: AnalyticsDashboa
 
       {/* Quick Material Restock Staging Modal */}
       {stagedMaterial && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="restock-modal-title"
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={`p-2 rounded-xl ${
-                    stagedMaterial.healthStatus === "CRITICAL"
-                      ? "bg-red-50 dark:bg-red-950/60 text-brand"
-                      : "bg-amber-50 dark:bg-amber-950/60 text-amber-600"
-                  }`}
-                >
-                  <Boxes className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 id="restock-modal-title" className="font-extrabold text-sm text-gray-900 dark:text-white">
-                    {isId ? "Pengadaan Cepat Stok Material" : "Quick Material Restock Intake"}
-                  </h3>
-                  <p className="text-[11px] text-gray-500">
-                    {isId ? "Catat penerimaan bahan baku langsung ke gudang" : "Record raw material intake directly to warehouse"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setStagedMaterial(null);
-                  setModalError(null);
-                }}
-                aria-label={isId ? "Tutup dialog" : "Close dialog"}
-                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
+        <QuickMaterialRestockModal
+          stagedMaterial={stagedMaterial}
+          isId={isId}
+          modalError={modalError}
+          restockQuantity={restockQuantity}
+          restockOperator={restockOperator}
+          restockNotes={restockNotes}
+          isSubmittingRestock={isSubmittingRestock}
+          onClose={() => {
+            setStagedMaterial(null);
+            setModalError(null);
+          }}
+          onQuantityChange={setRestockQuantity}
+          onOperatorChange={setRestockOperator}
+          onNotesChange={setRestockNotes}
+          onSubmit={handleSubmitRestock}
+        />
+      )}
+    </div>
+  );
+}
+
+interface QuickMaterialRestockModalProps {
+  stagedMaterial: MaterialBurnItem;
+  isId: boolean;
+  modalError: string | null;
+  restockQuantity: number;
+  restockOperator: string;
+  restockNotes: string;
+  isSubmittingRestock: boolean;
+  onClose: () => void;
+  onQuantityChange: (qty: number) => void;
+  onOperatorChange: (op: string) => void;
+  onNotesChange: (notes: string) => void;
+  onSubmit: () => void;
+}
+
+function QuickMaterialRestockModal({
+  stagedMaterial,
+  isId,
+  modalError,
+  restockQuantity,
+  restockOperator,
+  restockNotes,
+  isSubmittingRestock,
+  onClose,
+  onQuantityChange,
+  onOperatorChange,
+  onNotesChange,
+  onSubmit,
+}: QuickMaterialRestockModalProps) {
+  const modalRef = useModalSafety({
+    isOpen: true,
+    onClose,
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="restock-modal-title"
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95"
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`p-2 rounded-xl ${
+                stagedMaterial.healthStatus === "CRITICAL"
+                  ? "bg-red-50 dark:bg-red-950/60 text-brand"
+                  : "bg-amber-50 dark:bg-amber-950/60 text-amber-600"
+              }`}
+            >
+              <Boxes className="h-5 w-5" />
             </div>
-
-            {/* In-Modal Error Banner (Eliminates native alert) */}
-            {modalError && (
-              <div
-                role="alert"
-                aria-live="assertive"
-                className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-xs text-red-800 dark:text-red-300 font-semibold flex items-center gap-2"
-              >
-                <AlertTriangle className="h-4 w-4 shrink-0 text-brand dark:text-red-400" />
-                <span>{modalError}</span>
-              </div>
-            )}
-
-            {/* Selected Material Info Card */}
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-xs space-y-1.5">
-              <div className="flex justify-between items-center font-bold">
-                <span className="text-gray-900 dark:text-white">{stagedMaterial.name}</span>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                    stagedMaterial.healthStatus === "CRITICAL"
-                      ? "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300"
-                  }`}
-                >
-                  {stagedMaterial.projectedDaysRemaining} {isId ? "hari tersisa" : "days left"}
-                </span>
-              </div>
-              <p className="text-[11px] text-gray-500 font-mono">
-                {isId ? "Stok Saat Ini" : "Current Stock"}: {stagedMaterial.currentStock} {stagedMaterial.unit} &middot;{" "}
-                {isId ? "Estimasi konsumsi" : "Burn rate"}: ~{stagedMaterial.estimatedMonthlyBurn}/{isId ? "bln" : "mo"}
+            <div>
+              <h3 id="restock-modal-title" className="font-extrabold text-sm text-gray-900 dark:text-white">
+                {isId ? "Pengadaan Cepat Stok Material" : "Quick Material Restock Intake"}
+              </h3>
+              <p className="text-[11px] text-gray-500">
+                {isId ? "Catat penerimaan bahan baku langsung ke gudang" : "Record raw material intake directly to warehouse"}
               </p>
             </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={isId ? "Tutup dialog" : "Close dialog"}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-            {/* Form Fields */}
-            <div className="space-y-3 text-xs">
-              <div>
-                <label htmlFor="restock-qty-input" className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  {isId ? "Jumlah Penerimaan (Unit / Lembar)" : "Intake Quantity (Units / Sheets)"}
-                </label>
-                <input
-                  id="restock-qty-input"
-                  type="number"
-                  min="1"
-                  value={restockQuantity}
-                  onChange={(e) => setRestockQuantity(Math.max(1, parseInt(e.target.value, 10) || 0))}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-brand focus:outline-none"
-                />
-              </div>
+        {/* In-Modal Error Banner (Eliminates native alert) */}
+        {modalError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-xs text-red-800 dark:text-red-300 font-semibold flex items-center gap-2"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0 text-brand dark:text-red-400" />
+            <span>{modalError}</span>
+          </div>
+        )}
 
-              <div>
-                <label htmlFor="restock-operator-input" className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  {isId ? "Operator Penerima / Petugas" : "Receiving Operator"}
-                </label>
-                <input
-                  id="restock-operator-input"
-                  type="text"
-                  value={restockOperator}
-                  onChange={(e) => setRestockOperator(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand focus:outline-none"
-                />
-              </div>
+        {/* Selected Material Info Card */}
+        <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 text-xs space-y-1.5">
+          <div className="flex justify-between items-center font-bold">
+            <span className="text-gray-900 dark:text-white">{stagedMaterial.name}</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                stagedMaterial.healthStatus === "CRITICAL"
+                  ? "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300"
+              }`}
+            >
+              {stagedMaterial.projectedDaysRemaining} {isId ? "hari tersisa" : "days left"}
+            </span>
+          </div>
+          <p className="text-[11px] text-gray-500 font-mono">
+            {isId ? "Stok Saat Ini" : "Current Stock"}: {stagedMaterial.currentStock} {stagedMaterial.unit} &middot;{" "}
+            {isId ? "Estimasi konsumsi" : "Burn rate"}: ~{stagedMaterial.estimatedMonthlyBurn}/{isId ? "bln" : "mo"}
+          </p>
+        </div>
 
-              <div>
-                <label htmlFor="restock-notes-input" className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  {isId ? "Catatan Pengadaan / Referensi Supplier" : "Intake Notes / Supplier PO Ref"}
-                </label>
-                <input
-                  id="restock-notes-input"
-                  type="text"
-                  value={restockNotes}
-                  onChange={(e) => setRestockNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand focus:outline-none"
-                />
-              </div>
-            </div>
+        {/* Form Fields */}
+        <div className="space-y-3 text-xs">
+          <div>
+            <label htmlFor="restock-qty-input" className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+              {isId ? "Jumlah Penerimaan (Unit / Lembar)" : "Intake Quantity (Units / Sheets)"}
+            </label>
+            <input
+              id="restock-qty-input"
+              type="number"
+              min="1"
+              value={restockQuantity}
+              onChange={(e) => onQuantityChange(Math.max(1, parseInt(e.target.value, 10) || 0))}
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-brand focus:outline-none"
+            />
+          </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setStagedMaterial(null);
-                  setModalError(null);
-                }}
-                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              >
-                {isId ? "Batal" : "Cancel"}
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingRestock || restockQuantity <= 0}
-                onClick={handleSubmitRestock}
-                className="flex-1 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                {isSubmittingRestock ? (
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <PlusCircle className="h-3.5 w-3.5" />
-                )}
-                <span>{isId ? "Konfirmasi Masuk Stok" : "Confirm Restock"}</span>
-              </button>
-            </div>
+          <div>
+            <label htmlFor="restock-operator-input" className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+              {isId ? "Operator Penerima / Petugas" : "Receiving Operator"}
+            </label>
+            <input
+              id="restock-operator-input"
+              type="text"
+              value={restockOperator}
+              onChange={(e) => onOperatorChange(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="restock-notes-input" className="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+              {isId ? "Catatan Pengadaan / Referensi Supplier" : "Intake Notes / Supplier PO Ref"}
+            </label>
+            <input
+              id="restock-notes-input"
+              type="text"
+              value={restockNotes}
+              onChange={(e) => onNotesChange(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand focus:outline-none"
+            />
           </div>
         </div>
-      )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            {isId ? "Batal" : "Cancel"}
+          </button>
+          <button
+            type="button"
+            disabled={isSubmittingRestock || restockQuantity <= 0}
+            onClick={onSubmit}
+            className="flex-1 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md active:scale-95 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+          >
+            {isSubmittingRestock ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <PlusCircle className="h-3.5 w-3.5" />
+            )}
+            <span>{isId ? "Konfirmasi Masuk Stok" : "Confirm Restock"}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
