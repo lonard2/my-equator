@@ -286,6 +286,7 @@ export default function HomePage() {
   // Khatulistiwa AI Assistant: 1-Click Apply Draft Order
   const handleApplyDraftOrder = (draftData: any) => {
     setStagedDraftData(draftData);
+    setIsAssistantOpen(false);
     setIsFormOpen(true);
   };
 
