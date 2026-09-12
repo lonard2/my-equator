@@ -156,6 +156,24 @@ export function CadStudio({ language }: CadStudioProps) {
 
   const trapModalTab = (e: React.KeyboardEvent, firstRef: React.RefObject<HTMLElement | null>, lastRef: React.RefObject<HTMLElement | null>) => {
     if (e.key !== "Tab") return;
+    if (firstRef.current && lastRef.current && firstRef.current === lastRef.current) {
+      const container = firstRef.current.closest("[role='dialog']") || (e.currentTarget as HTMLElement);
+      const focusables = container.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
+      );
+      if (focusables.length > 1) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+        return;
+      }
+    }
     if (e.shiftKey) {
       if (document.activeElement === firstRef.current) {
         e.preventDefault();

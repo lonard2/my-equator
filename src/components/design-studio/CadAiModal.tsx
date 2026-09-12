@@ -314,7 +314,10 @@ export function CadAiModal({
         if (e.key === "Tab") {
           const dlg = aiCloseRef.current?.closest("[role='dialog']");
           const focusables = dlg?.querySelectorAll<HTMLElement>("button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])");
-          if (!focusables || focusables.length < 2) return;
+          if (!focusables || focusables.length < 2) {
+            e.preventDefault();
+            return;
+          }
           const first = focusables[0];
           const last = focusables[focusables.length - 1];
           if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }

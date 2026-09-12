@@ -350,9 +350,22 @@ describe("Insole CAD Studio P0 Hardenings (Impeccable Harden)", () => {
         "Shortcuts dialog must trap tab navigation between close and got-it buttons"
       );
       assert.ok(
+        freshCadStudio.includes("firstRef.current === lastRef.current") &&
+          freshCadStudio.includes("focusables.length > 1"),
+        "trapModalTab must dynamically resolve focusable boundaries when first and last refs match (preventing lock in library modal)"
+      );
+      assert.ok(
         freshCadStudio.includes("ref={confirmOverwriteRef}") &&
           freshCadStudio.includes("ref={shortcutsGotItRef}"),
         "Dialog buttons must attach the respective ref elements for focus trapping"
+      );
+    });
+
+    it("1. Harden (cont): prevents tab leak in CadAiModal when few focusable elements exist", () => {
+      assert.ok(
+        cadAiModalSource.includes("focusables.length < 2") &&
+          cadAiModalSource.includes("e.preventDefault()"),
+        "CadAiModal must prevent default when focusables < 2 to prevent focus leak"
       );
     });
 
