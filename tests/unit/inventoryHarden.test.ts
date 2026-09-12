@@ -109,4 +109,27 @@ describe("Inventory Industrial Hardening, Modal Safety & Usability Heuristics", 
     assert.ok(typeof bomResult.allSufficient === "boolean");
     assert.ok(typeof bomResult.totalEstimatedCostIDR === "number");
   });
+
+  it("verifies inventory table row action buttons have accessible aria-label and tablet touch sizing", () => {
+    assert.match(
+      inventoryDashboardSource,
+      /aria-label=\{isId \? `Catat mutasi untuk \$\{m\.name\}` : `Record stock movement for \$\{m\.name\}`\}/,
+      "Stock movement action button must have accessible aria-label naming the material."
+    );
+    assert.match(
+      inventoryDashboardSource,
+      /aria-label=\{isId \? `Edit parameter \$\{m\.name\}` : `Edit material \$\{m\.name\}`\}/,
+      "Edit SKU button must have accessible aria-label naming the material."
+    );
+    assert.match(
+      inventoryDashboardSource,
+      /aria-label=\{isId \? `Hapus bahan \$\{m\.name\}` : `Delete material \$\{m\.name\}`\}/,
+      "Delete SKU button must have accessible aria-label naming the material."
+    );
+    assert.match(
+      inventoryDashboardSource,
+      /p-2\s+min-h-\[36px\]\s+min-w-\[36px\]\s+flex\s+items-center\s+justify-center/,
+      "Table row action buttons must enforce min-h-[36px] min-w-[36px] touch targets for tablet safety."
+    );
+  });
 });

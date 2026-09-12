@@ -1273,10 +1273,11 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                               <button
                                 type="button"
                                 onClick={() => handleOpenMovement(m.id)}
-                                className="p-1.5 rounded-xl bg-red-50 dark:bg-red-950 text-brand dark:text-red-300 hover:bg-red-100 transition active:scale-95 shadow-xs"
+                                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-950 text-brand dark:text-red-300 hover:bg-red-100 transition active:scale-95 shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                                 title={isId ? "Catat Mutasi IN / OUT" : "Record Stock Movement"}
+                                aria-label={isId ? `Catat mutasi untuk ${m.name}` : `Record stock movement for ${m.name}`}
                               >
-                                <ArrowDownRight className="h-3.5 w-3.5" />
+                                <ArrowDownRight className="h-4 w-4" />
                               </button>
                               <button
                                 type="button"
@@ -1284,18 +1285,20 @@ export function InventoryDashboard({ language }: InventoryDashboardProps) {
                                   setMaterialToEdit(m);
                                   setIsMaterialModalOpen(true);
                                 }}
-                                className="p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition active:scale-95"
+                                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
                                 title={isId ? "Edit Parameter Bahan" : "Edit SKU"}
+                                aria-label={isId ? `Edit parameter ${m.name}` : `Edit material ${m.name}`}
                               >
-                                <Edit2 className="h-3.5 w-3.5" />
+                                <Edit2 className="h-4 w-4" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setMaterialToDelete(m)}
-                                className="p-1.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-950 text-red-600 transition active:scale-95"
+                                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-xl hover:bg-red-50 dark:hover:bg-red-950 text-red-600 transition active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                                 title={isId ? "Hapus Bahan" : "Delete SKU"}
+                                aria-label={isId ? `Hapus bahan ${m.name}` : `Delete material ${m.name}`}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           </td>
