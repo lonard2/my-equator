@@ -717,7 +717,7 @@ export function SecurityDashboard({
   });
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto [scrollbar-gutter:stable] bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto [scrollbar-gutter:stable] bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-3.5 sm:space-y-4">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -787,15 +787,15 @@ export function SecurityDashboard({
       )}
 
       {/* Active User Card & Privileges (Always visible contextual anchor) */}
-      <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <Avatar name={currentUser.name} className="w-13 h-13 text-base" />
+      <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar name={currentUser.name} className="w-10 h-10 text-sm" />
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white">
+              <h3 className="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white">
                 {currentUser.name}
               </h3>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${currentRoleInfo.badgeBg}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${currentRoleInfo.badgeBg}`}>
                 {currentRoleInfo.label}
               </span>
             </div>
@@ -804,7 +804,7 @@ export function SecurityDashboard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
           <span className="text-[10px] font-extrabold uppercase text-gray-400 mr-1 block sm:inline">
             {isId ? "Izin Aktif (Klik untuk detail):" : "Active Permissions (Click for info):"}
           </span>
@@ -832,7 +832,7 @@ export function SecurityDashboard({
       <div
         role="tablist"
         aria-label={isId ? "Navigasi modul keamanan" : "Security module navigation"}
-        className="sticky top-0 z-20 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-xs flex items-center gap-2.5 border-b border-gray-200 dark:border-gray-800 py-2.5 overflow-x-auto scrollbar-none w-full shrink-0 min-w-0"
+        className="sticky top-0 z-20 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-xs flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pt-1 pb-2 overflow-x-auto scrollbar-none w-full shrink-0 min-w-0"
       >
         <button
           id="tab-users"
@@ -934,7 +934,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-users"
           tabIndex={0}
-          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none min-w-0"
+          className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-3.5 focus:outline-none min-w-0"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1141,7 +1141,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-roles"
           tabIndex={0}
-          className="space-y-4 focus:outline-none min-w-0"
+          className="space-y-3.5 focus:outline-none min-w-0"
         >
           {/* RBAC Header & Customizer Toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1399,7 +1399,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-audit"
           tabIndex={0}
-          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none min-w-0"
+          className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-3.5 focus:outline-none min-w-0"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
             <div>
@@ -1545,7 +1545,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-backup"
           tabIndex={0}
-          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-5 focus:outline-none min-w-0"
+          className="p-4 sm:p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none min-w-0"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
