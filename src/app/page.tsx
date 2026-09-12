@@ -1092,6 +1092,14 @@ export default function HomePage() {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAssistant={() => setIsAssistantOpen(true)}
         language={language}
+        orders={orders}
+        currentUser={currentUser}
+        onSelectOrder={(orderId) => {
+          const found = orders.find((o) => o.id === orderId);
+          if (found) setSelectedOrder(found);
+          setCurrentTab("DELIVERY_ORDERS");
+          setIsMobileDetailOpen(true);
+        }}
       />
 
       {/* Khatulistiwa AI Assistant Truly Floating Pop-up Widget */}

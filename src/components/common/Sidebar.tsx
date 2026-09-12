@@ -76,7 +76,7 @@ export function Sidebar({ currentTab, onTabChange, language, userRole }: Sidebar
 
   return (
     <aside className="w-60 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col justify-between p-3 shrink-0">
-      <div className="space-y-1">
+      <nav aria-label={isId ? "Navigasi Utama Pabrik" : "Main Factory Navigation"} className="space-y-1">
         <div className="px-3 py-2 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
           {isId ? "Modul Pabrik" : "Factory Modules"}
         </div>
@@ -87,20 +87,27 @@ export function Sidebar({ currentTab, onTabChange, language, userRole }: Sidebar
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition active:scale-95 ${
+              aria-current={isActive ? "page" : undefined}
+              className={`relative w-full flex items-center justify-between px-3 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold transition active:scale-95 ${
                 isActive
-                  ? "bg-red-50 dark:bg-red-950/50 text-brand dark:text-red-400 font-bold shadow-xs border border-red-100 dark:border-red-900/40"
+                  ? "bg-red-50/70 dark:bg-red-950/40 text-brand dark:text-red-300 font-bold"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
             >
-              <div className="flex items-center space-x-2.5">
-                <Icon className={`h-4 w-4 ${isActive ? "text-brand dark:text-red-400" : "text-gray-500"}`} />
-                <span>{item.label}</span>
+              {isActive && (
+                <span
+                  className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-brand dark:bg-red-500"
+                  aria-hidden="true"
+                />
+              )}
+              <div className="flex items-center space-x-2.5 pl-1">
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-brand dark:text-red-400" : "text-gray-500"}`} />
+                <span className="truncate">{item.label}</span>
               </div>
             </button>
           );
         })}
-      </div>
+      </nav>
 
       <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs space-y-1">
         <p className="font-bold text-gray-800 dark:text-gray-200">Equator Insole Bandung</p>
