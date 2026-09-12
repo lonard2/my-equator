@@ -717,7 +717,7 @@ export function SecurityDashboard({
   });
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto [scrollbar-gutter:stable] bg-gray-50 dark:bg-gray-950 p-4 sm:p-6 space-y-6">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -832,7 +832,7 @@ export function SecurityDashboard({
       <div
         role="tablist"
         aria-label={isId ? "Navigasi modul keamanan" : "Security module navigation"}
-        className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto"
+        className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto scrollbar-none min-w-0"
       >
         <button
           id="tab-users"
@@ -842,7 +842,7 @@ export function SecurityDashboard({
           tabIndex={activeTab === "USERS" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("USERS")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "USERS"
               ? "bg-brand text-white shadow-xs"
               : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -865,7 +865,7 @@ export function SecurityDashboard({
           tabIndex={activeTab === "ROLES" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("ROLES")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "ROLES"
               ? "bg-brand text-white shadow-xs"
               : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -888,7 +888,7 @@ export function SecurityDashboard({
           tabIndex={activeTab === "AUDIT" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("AUDIT")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "AUDIT"
               ? "bg-brand text-white shadow-xs"
               : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -911,7 +911,7 @@ export function SecurityDashboard({
           tabIndex={activeTab === "BACKUP" ? 0 : -1}
           type="button"
           onClick={() => setActiveTab("BACKUP")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "BACKUP"
               ? "bg-brand text-white shadow-xs"
               : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -934,7 +934,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-users"
           tabIndex={0}
-          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none"
+          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none min-w-0"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -976,7 +976,7 @@ export function SecurityDashboard({
                 </button>
               ) : (
                 <div
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-[11px] font-semibold border border-gray-200 dark:border-gray-700 cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-[11px] font-semibold border border-gray-200 dark:border-gray-700 cursor-not-allowed"
                   title={isId ? "Hanya Super Admin yang berwenang menambah pengguna" : "Super Admin privileges required"}
                 >
                   <Lock className="h-3 w-3" />
@@ -1000,7 +1000,7 @@ export function SecurityDashboard({
 
           {/* User Management Scrollable Table Container */}
           <div className="overflow-x-auto max-h-[460px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[640px]">
               <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
                 <tr>
                   <th className="py-2.5 px-3">{isId ? "Pengguna" : "User"}</th>
@@ -1141,7 +1141,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-roles"
           tabIndex={0}
-          className="space-y-4 focus:outline-none"
+          className="space-y-4 focus:outline-none min-w-0"
         >
           {/* RBAC Header & Customizer Toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1399,7 +1399,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-audit"
           tabIndex={0}
-          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none"
+          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none min-w-0"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1451,7 +1451,7 @@ export function SecurityDashboard({
           </div>
 
           {/* Entity Type Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
             {[
               { key: "ALL", label: isId ? "Semua Entitas" : "All Entities" },
               { key: "DELIVERY_ORDER", label: isId ? "Surat Jalan" : "Delivery Orders" },
@@ -1464,20 +1464,20 @@ export function SecurityDashboard({
                 key={f.key}
                 type="button"
                 onClick={() => setLogEntityTypeFilter(f.key as any)}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                className={`shrink-0 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                   logEntityTypeFilter === f.key
-                    ? "bg-brand text-white shadow-xs"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    ? "bg-brand text-white shadow-xs font-bold"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200/60 dark:border-gray-700/60"
                 }`}
               >
-                {f.label}
+                <span>{f.label}</span>
               </button>
             ))}
           </div>
 
           {/* Logs Scrollable Table */}
           <div className="overflow-x-auto max-h-[460px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 scrollbar-thin">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[640px]">
               <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-gray-800/95 backdrop-blur-xs border-b border-gray-200 dark:border-gray-800 text-[10px] uppercase font-bold text-gray-500">
                 <tr>
                   <th className="py-2.5 px-3">{isId ? "Waktu" : "Time"}</th>
@@ -1519,7 +1519,7 @@ export function SecurityDashboard({
                       <td className="py-2 px-3 font-semibold text-gray-600 dark:text-gray-300">
                         {log.entityType}
                       </td>
-                      <td className="py-2 px-3 text-gray-600 dark:text-gray-400 font-medium">
+                      <td className="py-2 px-3 text-gray-600 dark:text-gray-400 font-medium max-w-md break-words">
                         {log.details || "-"}
                       </td>
                     </tr>
@@ -1538,7 +1538,7 @@ export function SecurityDashboard({
           role="tabpanel"
           aria-labelledby="tab-backup"
           tabIndex={0}
-          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-5 focus:outline-none"
+          className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-5 focus:outline-none min-w-0"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>

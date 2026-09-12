@@ -19,12 +19,16 @@ describe("SecurityDashboard Industrial Hardening & Truth-Gate Safeguards", () =>
     );
   });
 
-  it("verifies 4 segmented tab definitions (USERS, ROLES, AUDIT, BACKUP)", () => {
+  it("verifies 4 segmented tab definitions (USERS, ROLES, AUDIT, BACKUP) and anti-cramp ergonomic styling", () => {
     assert.match(securityDashboardSource, /type SecurityTab = "USERS" \| "ROLES" \| "AUDIT" \| "BACKUP";/);
     assert.match(securityDashboardSource, /setActiveTab\("USERS"\)/);
     assert.match(securityDashboardSource, /setActiveTab\("ROLES"\)/);
     assert.match(securityDashboardSource, /setActiveTab\("AUDIT"\)/);
     assert.match(securityDashboardSource, /setActiveTab\("BACKUP"\)/);
+    // Anti-cramping safeguards
+    assert.match(securityDashboardSource, /\[scrollbar-gutter:stable\]/);
+    assert.match(securityDashboardSource, /shrink-0 inline-flex items-center gap-2 px-4 py-2.5/);
+    assert.match(securityDashboardSource, /id="panel-audit"[^>]*min-w-0/);
   });
 
   it("verifies truth-gate role change confirmation modal and delta calculation", () => {
