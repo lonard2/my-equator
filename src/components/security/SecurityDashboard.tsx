@@ -832,7 +832,7 @@ export function SecurityDashboard({
       <div
         role="tablist"
         aria-label={isId ? "Navigasi modul keamanan" : "Security module navigation"}
-        className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto scrollbar-none min-w-0"
+        className="sticky top-0 z-20 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-xs flex items-center gap-2.5 border-b border-gray-200 dark:border-gray-800 py-2.5 overflow-x-auto scrollbar-none w-full shrink-0 min-w-0"
       >
         <button
           id="tab-users"
@@ -1401,20 +1401,23 @@ export function SecurityDashboard({
           tabIndex={0}
           className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4 focus:outline-none min-w-0"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
             <div>
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                 <History className="h-4 w-4 text-brand" />
                 <span>{isId ? "Log Audit Aktivitas & Jejak Operasional" : "Factory Audit Trail & Security Logs"}</span>
+                <span className="text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-mono">
+                  {filteredLogs.length} / {logs.length}
+                </span>
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mt-0.5">
                 {isId
                   ? "Jejak audit permanen pencatatan login, mutasi inventaris, penerbitan surat jalan, dan perubahan status"
                   : "Immutable chronological record of user sessions and critical operational mutations"}
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <div className="relative">
                 <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -1422,7 +1425,7 @@ export function SecurityDashboard({
                   value={logFilter}
                   onChange={(e) => setLogFilter(e.target.value)}
                   placeholder={isId ? "Cari log audit..." : "Search logs..."}
-                  className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
+                  className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-3 py-1.5 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none w-44 sm:w-56"
                   aria-label={isId ? "Cari catatan log audit" : "Search audit trail logs"}
                 />
               </div>
@@ -1450,24 +1453,28 @@ export function SecurityDashboard({
             </div>
           </div>
 
-          {/* Entity Type Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 pb-1">
+          {/* Subdued Entity Filter Chips (Clean secondary data filters, non-competing) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 shrink-0">
+              {isId ? "Filter Entitas:" : "Filter Entity:"}
+            </span>
             {[
-              { key: "ALL", label: isId ? "Semua Entitas" : "All Entities" },
+              { key: "ALL", label: isId ? "Semua" : "All" },
               { key: "DELIVERY_ORDER", label: isId ? "Surat Jalan" : "Delivery Orders" },
               { key: "INVENTORY", label: isId ? "Inventori" : "Inventory" },
               { key: "USER", label: isId ? "Pengguna" : "Users" },
               { key: "CAD", label: isId ? "CAD Insole" : "CAD Studio" },
-              { key: "SECURITY", label: isId ? "Sistem & Keamanan" : "Security" },
+              { key: "SECURITY", label: isId ? "Sistem" : "System" },
             ].map((f) => (
               <button
                 key={f.key}
                 type="button"
                 onClick={() => setLogEntityTypeFilter(f.key as any)}
-                className={`shrink-0 px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                aria-pressed={logEntityTypeFilter === f.key}
+                className={`shrink-0 px-2.5 py-1 min-h-[32px] rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${
                   logEntityTypeFilter === f.key
-                    ? "bg-brand text-white shadow-xs font-bold"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200/60 dark:border-gray-700/60"
+                    ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 shadow-2xs font-bold"
+                    : "bg-gray-100 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200/50 dark:border-gray-700/50"
                 }`}
               >
                 <span>{f.label}</span>

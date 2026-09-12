@@ -27,8 +27,12 @@ describe("SecurityDashboard Industrial Hardening & Truth-Gate Safeguards", () =>
     assert.match(securityDashboardSource, /setActiveTab\("BACKUP"\)/);
     // Anti-cramping safeguards
     assert.match(securityDashboardSource, /\[scrollbar-gutter:stable\]/);
+    assert.match(securityDashboardSource, /sticky top-0 z-20/);
     assert.match(securityDashboardSource, /shrink-0 inline-flex items-center gap-2 px-4 py-2.5/);
     assert.match(securityDashboardSource, /id="panel-audit"[^>]*min-w-0/);
+    // Subdued secondary entity filters (not duplicate crimson tabs)
+    assert.match(securityDashboardSource, /Filter Entitas:|Filter Entity:/);
+    assert.match(securityDashboardSource, /bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900/);
   });
 
   it("verifies truth-gate role change confirmation modal and delta calculation", () => {
