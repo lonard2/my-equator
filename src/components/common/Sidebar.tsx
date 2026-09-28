@@ -109,9 +109,25 @@ export function Sidebar({ currentTab, onTabChange, language, userRole }: Sidebar
         })}
       </nav>
 
-      <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs space-y-1">
-        <p className="font-bold text-gray-800 dark:text-gray-200">Equator Insole Bandung</p>
-        <p className="text-gray-500 dark:text-gray-400 text-[11px]">{isId ? "ERP & CAD Pabrik" : "Factory ERP & CAD"}</p>
+      {/* Factory Floor Telemetry Widget */}
+      <div className="p-3 rounded-xl bg-gray-50/90 dark:bg-gray-800/50 border border-gray-200/80 dark:border-gray-800 text-xs space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="font-bold text-gray-800 dark:text-gray-200 text-xs">Equator Insole</p>
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            ONLINE
+          </span>
+        </div>
+        <div className="space-y-1 font-mono text-[10px] text-gray-500 dark:text-gray-400">
+          <div className="flex justify-between">
+            <span>DATABASE:</span>
+            <span className="text-gray-700 dark:text-gray-300 font-semibold">SQLite (Local)</span>
+          </div>
+          <div className="flex justify-between">
+            <span>SPOOLER:</span>
+            <span className="text-gray-700 dark:text-gray-300 font-semibold">ESC/P 80-Col</span>
+          </div>
+        </div>
       </div>
     </aside>
   );

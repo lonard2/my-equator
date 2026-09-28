@@ -356,7 +356,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-950 font-sans antialiased text-gray-900 dark:text-gray-100 overflow-hidden">
+    <div className="flex h-screen h-[100dvh] flex-col bg-gray-50 dark:bg-gray-950 font-sans antialiased text-gray-900 dark:text-gray-100 overflow-hidden">
       {/* Top Header */}
       <Header
         theme={theme}
@@ -391,7 +391,7 @@ export default function HomePage() {
         </div>
 
         {/* Dynamic Center Work Area */}
-        <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col min-h-0 overflow-hidden relative outline-none">
           <div key={currentTab} className="flex-1 flex flex-col min-h-0 overflow-hidden animate-view-enter">
           {currentTab === "DELIVERY_ORDERS" ? (
             <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">

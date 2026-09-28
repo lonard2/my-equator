@@ -78,23 +78,93 @@
     background-color: var(--color-gray-50);
     color: var(--color-gray-900);
     font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
     padding: 0;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
   [data-theme="dark"] body {
     background-color: var(--color-gray-950);
     color: var(--color-gray-100);
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
 
   code, kbd, samp, pre, .font-mono {
     font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-feature-settings: "tnum" 1, "zero" 1;
   }
+}
+
+/* Subtle Precision Factory Micro-Grid (Evokes technical CAD drafting table & cutting mat) */
+.bg-factory-grid {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+[data-theme="dark"] .bg-factory-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Tactile Specular Shadows for High-Precision Manufacturing Aesthetic */
+.shadow-tactile-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+[data-theme="dark"] .shadow-tactile-sm {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.shadow-tactile-card {
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.04), 0 1px 4px -2px rgba(0, 0, 0, 0.03);
+}
+[data-theme="dark"] .shadow-tactile-card {
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Shimmer skeleton for non-jarring loading states */
+@keyframes shimmer-move {
+  100% { transform: translateX(100%); }
+}
+.shimmer-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(229, 231, 235, 0.7);
+}
+[data-theme="dark"] .shimmer-skeleton {
+  background-color: rgba(31, 41, 55, 0.6);
+}
+.shimmer-skeleton::after {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.4) 20%,
+    rgba(255, 255, 255, 0.6) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer-move 1.8s infinite;
+  content: '';
+}
+[data-theme="dark"] .shimmer-skeleton::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.04) 20%,
+    rgba(255, 255, 255, 0.08) 60%,
+    rgba(255, 255, 255, 0)
+  );
 }
 
 /* Precision Industrial Micro-Interactions & Motion Suite */

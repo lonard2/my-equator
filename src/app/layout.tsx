@@ -36,6 +36,12 @@ export default function RootLayout({
       className={`${sansFont.variable} ${monoFont.variable}`}
     >
       <body className="antialiased font-sans bg-gray-50 text-gray-900">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand focus:text-white focus:rounded-xl focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-400 font-bold text-xs transition"
+        >
+          Lewati ke konten utama / Skip to main content
+        </a>
         {children}
       </body>
     </html>

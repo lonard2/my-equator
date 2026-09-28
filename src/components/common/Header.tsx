@@ -95,21 +95,21 @@ export function Header({
   const canAccessTax = currentUser ? canAccessTaxFiling(currentUser.role) : false;
 
   return (
-    <header className="sticky top-0 z-40 bg-brand text-white shadow-md transition-colors">
+    <header className="sticky top-0 z-40 bg-gradient-to-r from-[#7a0000] via-[#8B0000] to-[#680000] border-b border-red-950/70 text-white shadow-sm transition-colors relative after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:h-[1px] after:bg-white/15">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-3.5 sm:px-6">
         {/* Brand Compass Logo & Name */}
         <div className="flex items-center space-x-2.5 sm:space-x-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-md">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-xs transition hover:shadow-md active:scale-95">
             <Compass className="h-5 w-5 text-brand stroke-[2.2]" />
           </div>
           <div>
-            <h1 className="font-bold leading-tight text-sm sm:text-base tracking-wide flex items-center gap-1.5 sm:gap-2">
+            <h1 className="font-bold leading-tight text-sm sm:text-base tracking-tight flex items-center gap-1.5 sm:gap-2">
               MyEquator
-              <span className="rounded bg-red-900/60 px-1.5 py-0.5 text-[10px] uppercase font-semibold text-red-200">
+              <span className="rounded bg-red-950/60 px-1.5 py-0.5 text-[10px] uppercase font-semibold text-red-200 border border-red-900/60 shadow-xs">
                 Factory ERP
               </span>
             </h1>
-            <p className="text-[10px] sm:text-[11px] text-red-200">Equator Insole • Bandung</p>
+            <p className="text-[10px] sm:text-[11px] text-red-200/90 font-medium">Equator Insole • Bandung</p>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export function Header({
           {onOpenCommandPalette && (
             <button
               onClick={onOpenCommandPalette}
-              className="flex items-center gap-2 rounded-xl bg-red-950/50 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-red-100 hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
+              className="flex items-center gap-2 rounded-xl bg-red-950/50 px-3 py-1.5 min-h-[36px] text-xs font-semibold text-red-100 hover:bg-red-900/70 transition active:scale-[0.97] border border-red-800/60 shadow-xs"
               title={isId ? "Cari atau Buka Perintah (⌘K)" : "Search or Open Commands (⌘K)"}
               aria-label={isId ? "Buka Palet Perintah (⌘K)" : "Open Command Palette (⌘K)"}
             >
@@ -135,7 +135,7 @@ export function Header({
           {currentUser && (
             <button
               onClick={onOpenSecurity}
-              className="flex items-center gap-2 rounded-xl bg-red-950/50 p-1 pr-2.5 min-h-[36px] text-xs font-semibold text-white hover:bg-red-900/70 transition border border-red-800/60 shadow-xs"
+              className="flex items-center gap-2 rounded-xl bg-red-950/50 p-1 pr-2.5 min-h-[36px] text-xs font-semibold text-white hover:bg-red-900/70 transition active:scale-[0.97] border border-red-800/60 shadow-xs"
               title={isId ? "Ganti Pengguna & Hak Akses (RBAC)" : "User & Security Settings (RBAC)"}
               aria-label={isId ? `Profil ${currentUser.name} (${roleInfo?.label || currentUser.role})` : `User Profile ${currentUser.name} (${roleInfo?.label || currentUser.role})`}
             >
@@ -152,7 +152,7 @@ export function Header({
           {/* Language Switcher */}
           <button
             onClick={onLanguageToggle}
-            className="flex items-center gap-1.5 rounded-lg bg-red-950/40 px-2.5 py-1.5 min-h-[36px] text-xs font-semibold text-red-100 hover:bg-red-900/60 transition border border-red-800/60"
+            className="flex items-center gap-1.5 rounded-lg bg-red-950/40 px-2.5 py-1.5 min-h-[36px] text-xs font-semibold text-red-100 hover:bg-red-900/60 transition active:scale-[0.97] border border-red-800/60"
             title="Ganti Bahasa / Switch Language"
             aria-label={isId ? "Beralih Bahasa ke English" : "Switch Language to Bahasa Indonesia"}
           >
@@ -163,7 +163,7 @@ export function Header({
           {/* Theme Toggle */}
           <button
             onClick={onThemeToggle}
-            className="rounded-lg bg-red-950/40 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-red-100 hover:bg-red-900/60 transition border border-red-800/60"
+            className="rounded-lg bg-red-950/40 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-red-100 hover:bg-red-900/60 transition active:scale-[0.97] border border-red-800/60"
             title={theme === "dark" ? "Light Mode" : "Dark Mode"}
             aria-label={theme === "dark" ? (isId ? "Beralih ke Mode Terang" : "Switch to Light Mode") : (isId ? "Beralih ke Mode Gelap" : "Switch to Dark Mode")}
           >
@@ -175,7 +175,7 @@ export function Header({
           {/* UI Settings Modal Trigger */}
           <button
             onClick={onOpenSettings}
-            className="flex items-center gap-1.5 rounded-lg bg-red-950/40 px-2.5 py-1.5 min-h-[36px] text-xs font-semibold text-red-100 hover:bg-red-900/60 transition border border-red-800/60"
+            className="flex items-center gap-1.5 rounded-lg bg-red-950/40 px-2.5 py-1.5 min-h-[36px] text-xs font-semibold text-red-100 hover:bg-red-900/60 transition active:scale-[0.97] border border-red-800/60"
             title={isId ? "Pengaturan Tampilan & Kerapatan UI" : "Display & UI Density Settings"}
             aria-label={isId ? "Buka Pengaturan Tampilan" : "Open Display Settings"}
           >
@@ -187,7 +187,7 @@ export function Header({
           {currentUser && onLogout && (
             <button
               onClick={() => setShowLogoutConfirm(true)}
-              className="rounded-lg bg-red-950/40 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-red-200 hover:text-white hover:bg-red-900/80 transition border border-red-800/60"
+              className="rounded-lg bg-red-950/40 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-red-200 hover:text-white hover:bg-red-900/80 transition active:scale-[0.97] border border-red-800/60"
               title={isId ? "Keluar dari Sesi" : "Log Out of Session"}
               aria-label={isId ? "Keluar dari Sesi" : "Log Out of Session"}
             >
